@@ -4,3 +4,6 @@ version = "0.1.0"
 authors = ["Olle <ollebull@gmail.com>"]
 
 [dependencies]
+sdl2 = "0.18"
+rand = "0.3"
+time = "0.1"
