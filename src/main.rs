@@ -78,6 +78,39 @@ impl RSTrisPlayfield {
             }
         }
     }
+
+    fn test_figure(&self, fig: &Figure, dir: i32, x: i32, y: i32) -> bool {
+        for row in 0..4 {
+            let offs_y  = y + row;
+            for col in 0..4 {
+                let offs_x  = x + col;
+                let b = fig.blocks[dir as usize][row as usize][col as usize];
+                if b != 0 {
+                    if offs_y < 0 || offs_y >= self.pf_height as i32 {
+                        return false;
+                    }
+                    if offs_x < 0 || offs_x >= self.pf_width as i32 {
+                        return false;
+                    }
+                    if self.playfield[offs_y as usize][offs_x as usize] != 0 {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    fn move_figure(&mut self, fig: &Figure, dir: i32, x: i32, y: i32,
+                   x_offs: i32, y_offs: i32) -> bool {
+        self.rm_figure(fig, dir, x, y);
+        if self.test_figure(fig, dir, x + x_offs, y + y_offs) {
+            self.place_figure(fig, dir, x + x_offs, y + y_offs);
+            return true;
+        }
+        self.place_figure(fig, dir, x, y);
+        return false;
+    }
 }
 
 impl RSTris {
@@ -98,20 +131,35 @@ impl RSTris {
 
     fn update(&mut self) {
         if self.current_figure == -1 {
-            self.current_figure = (rand::random::<u8>() % 7) as i32;
+            self.current_figure =
+                (rand::random::<u8>() % self.figures.len() as u8) as i32;
             self.fig_dir = 0;
             self.fig_x_pos = (self.pf.pf_width / 2 - 1) as i32;
             self.fig_y_pos = 0;
-            self.pf.place_figure(&self.figures[self.current_figure as usize],
-                                 self.fig_dir, self.fig_x_pos, self.fig_y_pos);
+            let fig = &self.figures[self.current_figure as usize];
+            if self.pf.test_figure(fig, self.fig_dir, self.fig_x_pos,
+                                   self.fig_y_pos) {
+                self.pf.place_figure(fig, self.fig_dir,
+                                     self.fig_x_pos, self.fig_y_pos);
+            }
+            else {
+                // Game over?
+                self.current_figure = -2;
+                println!("Game Over!");
+            }
         }
-        else {
-            /* Move figure down one step */
-            self.pf.rm_figure(&self.figures[self.current_figure as usize],
-                              self.fig_dir, self.fig_x_pos, self.fig_y_pos);
-            self.fig_y_pos += 1;
-            self.pf.place_figure(&self.figures[self.current_figure as usize],
-                                 self.fig_dir, self.fig_x_pos, self.fig_y_pos);
+        else if self.current_figure >= 0 {
+            if self.pf.move_figure(&self.figures[self.current_figure as usize],
+                                   self.fig_dir, self.fig_x_pos,
+                                   self.fig_y_pos,
+                                   0, 1) {
+                self.fig_y_pos += 1;
+            }
+            else {
+                // Figure couldn't be moved further - Leave where ut is and
+                // place another figure.
+                self.current_figure = -1;
+            }
         }
     }
 
@@ -333,7 +381,7 @@ fn main() {
             }
         }
 
-        if (last_update + 1000000000) < current_ticks {
+        if (last_update + 500000000) < current_ticks {
             last_update = current_ticks;
             rstris.update();
         }
