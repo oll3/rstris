@@ -39,6 +39,15 @@ pub struct RSTris {
 */
 }
 
+impl Figure {
+    pub fn new() -> Figure {
+        Figure{dir: vec![]}
+    }
+    pub fn add_direction(&mut self, dir_blocks: Vec<Vec<u8>>) {
+        self.dir.push(FigureDir{blocks: dir_blocks});
+    }
+}
+
 
 impl Playfield {
     pub fn new(width: usize, height: usize) -> Playfield {

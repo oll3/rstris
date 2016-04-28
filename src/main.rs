@@ -44,85 +44,84 @@ fn draw_playfield(playfield: &rstris::Playfield, renderer: &mut Renderer) {
 
 fn init_figures(playfield: &mut rstris::Playfield)
 {
-    let fig1 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![0, 0, 0],
-                                                 vec![1, 1, 1],
-                                                 vec![0, 1, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 1, 0],
-                                                 vec![1, 1, 0],
-                                                 vec![0, 1, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 1, 0],
-                                                 vec![1, 1, 1],
-                                                 vec![0, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 1, 0],
-                                                 vec![0, 1, 1],
-                                                 vec![0, 1, 0]]}]};
-
-    let fig2 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![0, 0, 0],
-                                                 vec![2, 2, 2],
-                                                 vec![0, 0, 2],
-                                                 vec![0, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 2, 0],
-                                                 vec![0, 2, 0],
-                                                 vec![2, 2, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![2, 0, 0],
-                                                 vec![2, 2, 2],
-                                                 vec![0, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 2, 2],
-                                                 vec![0, 2, 0],
-                                                 vec![0, 2, 0]]}]};
-
-    let fig3 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![3, 3, 0],
-                                                 vec![0, 3, 3],
-                                                 vec![0, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 3, 0],
-                                                 vec![3, 3, 0],
-                                                 vec![3, 0, 0]]}]};
-
-    let fig4 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![4, 4],
-                                                 vec![4, 4]]}]};
-
-    let fig5 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![0, 5, 5],
-                                                 vec![5, 5, 0],
-                                                 vec![0, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![5, 0, 0],
-                                                 vec![5, 5, 0],
-                                                 vec![0, 5, 0]]}]};
-
-    let fig6 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![0, 0, 0],
-                                                 vec![6, 6, 6],
-                                                 vec![6, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![6, 6, 0],
-                                                 vec![0, 6, 0],
-                                                 vec![0, 6, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 0, 6],
-                                                 vec![6, 6, 6],
-                                                 vec![0, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 6, 0],
-                                                 vec![0, 6, 0],
-                                                 vec![0, 6, 6]]}]};
-
-    let fig7 = rstris::Figure{
-        dir: vec![rstris::FigureDir{blocks: vec![vec![0, 7, 0, 0],
-                                                 vec![0, 7, 0, 0],
-                                                 vec![0, 7, 0, 0],
-                                                 vec![0, 7, 0, 0]]},
-                  rstris::FigureDir{blocks: vec![vec![0, 0, 0, 0],
-                                                 vec![7, 7, 7, 7],
-                                                 vec![0, 0, 0, 0],
-                                                 vec![0, 0, 0, 0]]}]};
-
+    let mut fig1 = rstris::Figure::new();
+    fig1.add_direction(vec![vec![0, 0, 0],
+                            vec![1, 1, 1],
+                            vec![0, 1, 0]]);
+    fig1.add_direction(vec![vec![0, 1, 0],
+                            vec![1, 1, 0],
+                            vec![0, 1, 0]]);
+    fig1.add_direction(vec![vec![0, 1, 0],
+                            vec![1, 1, 1],
+                            vec![0, 0, 0]]);
+    fig1.add_direction(vec![vec![0, 1, 0],
+                            vec![0, 1, 1],
+                            vec![0, 1, 0]]);
     playfield.add_figure(fig1);
+
+    let mut fig2 = rstris::Figure::new();
+    fig2.add_direction(vec![vec![0, 0, 0],
+                            vec![2, 2, 2],
+                            vec![0, 0, 2],
+                            vec![0, 0, 0]]);
+    fig2.add_direction(vec![vec![0, 2, 0],
+                            vec![0, 2, 0],
+                            vec![2, 2, 0]]);
+    fig2.add_direction(vec![vec![2, 0, 0],
+                            vec![2, 2, 2],
+                            vec![0, 0, 0]]);
+    fig2.add_direction(vec![vec![0, 2, 2],
+                            vec![0, 2, 0],
+                            vec![0, 2, 0]]);
     playfield.add_figure(fig2);
+
+    let mut fig3 = rstris::Figure::new();
+    fig3.add_direction(vec![vec![3, 3, 0],
+                            vec![0, 3, 3],
+                            vec![0, 0, 0]]);
+    fig3.add_direction(vec![vec![0, 3, 0],
+                            vec![3, 3, 0],
+                            vec![3, 0, 0]]);
     playfield.add_figure(fig3);
+
+    let mut fig4 = rstris::Figure::new();
+    fig4.add_direction(vec![vec![4, 4],
+                            vec![4, 4]]);
     playfield.add_figure(fig4);
+
+    let mut fig5 = rstris::Figure::new();
+    fig5.add_direction(vec![vec![0, 5, 5],
+                            vec![5, 5, 0],
+                            vec![0, 0, 0]]);
+    fig5.add_direction(vec![vec![5, 0, 0],
+                            vec![5, 5, 0],
+                            vec![0, 5, 0]]);
     playfield.add_figure(fig5);
+
+    let mut fig6 = rstris::Figure::new();
+    fig6.add_direction(vec![vec![0, 0, 0],
+                            vec![6, 6, 6],
+                            vec![6, 0, 0]]);
+    fig6.add_direction(vec![vec![6, 6, 0],
+                            vec![0, 6, 0],
+                            vec![0, 6, 0]]);
+    fig6.add_direction(vec![vec![0, 0, 6],
+                            vec![6, 6, 6],
+                            vec![0, 0, 0]]);
+    fig6.add_direction(vec![vec![0, 6, 0],
+                            vec![0, 6, 0],
+                            vec![0, 6, 6]]);
     playfield.add_figure(fig6);
+
+    let mut fig7 = rstris::Figure::new();
+    fig7.add_direction(vec![vec![0, 7, 0, 0],
+                            vec![0, 7, 0, 0],
+                            vec![0, 7, 0, 0],
+                            vec![0, 7, 0, 0]]);
+    fig7.add_direction(vec![vec![0, 0, 0, 0],
+                            vec![7, 7, 7, 7],
+                            vec![0, 0, 0, 0],
+                            vec![0, 0, 0, 0]]);
     playfield.add_figure(fig7);
 }
 
