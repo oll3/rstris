@@ -1,17 +1,14 @@
 extern crate rand;
 
 #[derive(Clone, Debug)]
-pub struct Figure {
-    pub blocks: [[[u8; 4]; 4]; 4]
+pub struct FigureDir {
+    pub blocks: Vec<Vec<u8>>,
 }
 
-/*
-struct RSTrisLiveFigure {
-    fig: i32,
-    x: i32,
-    y: i32,
-    dir: i32,
-}*/
+#[derive(Clone, Debug)]
+pub struct Figure {
+    pub dir: Vec<FigureDir>,
+}
 
 #[derive(Clone, Debug)]
 struct FigurePosition {
@@ -73,9 +70,10 @@ impl Playfield {
     }
 
     fn place_figure(&mut self, fig: &Figure, dir: i32, x: i32, y: i32) {
-        for row in 0..4 {
-            for col in 0..4 {
-                let b = fig.blocks[dir as usize][row][col];
+        let fig_dir = fig.dir[dir as usize].clone();
+        for row in 0..fig_dir.blocks.len() {
+            for col in 0..fig_dir.blocks[row].len() {
+                let b = fig_dir.blocks[row][col];
                 if b != 0 {
                     self.blocks[y as usize + row][x as usize + col] = b;
                 }
@@ -84,9 +82,10 @@ impl Playfield {
     }
 
     fn rm_figure(&mut self, fig: &Figure, dir: i32, x: i32, y: i32) {
-        for row in 0..4 {
-            for col in 0..4 {
-                let b = fig.blocks[dir as usize][row][col];
+        let fig_dir = fig.dir[dir as usize].clone();
+        for row in 0..fig_dir.blocks.len() {
+            for col in 0..fig_dir.blocks[row].len() {
+                let b = fig_dir.blocks[row][col];
                 if b != 0 {
                     self.blocks[y as usize + row][x as usize + col] = 0;
                 }
@@ -95,11 +94,12 @@ impl Playfield {
     }
 
     fn test_figure(&self, fig: &Figure, dir: i32, x: i32, y: i32) -> bool {
-        for row in 0..4 {
-            let offs_y  = y + row;
-            for col in 0..4 {
-                let offs_x  = x + col;
-                let b = fig.blocks[dir as usize][row as usize][col as usize];
+        let fig_dir = fig.dir[dir as usize].clone();
+        for row in 0..fig_dir.blocks.len() {
+            let offs_y = y + row as i32;
+            for col in 0..fig_dir.blocks[row].len() {
+                let offs_x = x + col as i32;
+                let b = fig_dir.blocks[row][col];
                 if b != 0 {
                     if offs_y < 0 || offs_y >= self.pf_height as i32 {
                         return false;
@@ -185,19 +185,6 @@ impl RSTris {
     pub fn update(&mut self) {
         for i in 0..self.playfields.len() {
             self.playfields.get_mut(i).unwrap().update();
-        }
-    }
-
-    fn dump_figure(figure: &Figure) {
-        for d in 0..4 {
-            println!("Direction {}:", d);
-            for y in 0..4 {
-                for x in 0..4 {
-                    print!("{}",
-                           if figure.blocks[d][y][x] == 0 {" " } else {"X"});
-                }
-                println!("");
-            }
         }
     }
 }
