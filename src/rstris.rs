@@ -40,16 +40,6 @@ impl Position {
         Position{x_pos: x, y_pos: y, dir: dirf}
     }
 
-    pub fn is_zero(&self) -> bool {
-        self.x_pos == 0 && self.y_pos == 0 && self.dir == 0
-    }
-
-    pub fn offset_pos(&mut self, x_pos: i32, y_pos: i32, dir: i32) {
-        self.x_pos += x_pos;
-        self.y_pos += y_pos;
-        self.dir += dir;
-    }
-
     fn add_pos(pos1: &Position, pos2: &Position) -> Position {
         Position{x_pos: pos1.x_pos + pos2.x_pos,
                  y_pos: pos1.y_pos + pos2.y_pos,
@@ -171,8 +161,6 @@ impl <'a> Player<'a> {
 
         let figure = self.current_figure.clone().unwrap();
         if !figure.test_figure(pf, &self.current_pos) {
-            println!("{}: Failed to place figure {} in playfield",
-                     self.player_name, figure.figure_name);
             return false;
         } else {
             self.next_figure.place_figure(pf, &self.current_pos);
@@ -199,11 +187,8 @@ impl <'a> Player<'a> {
             new_pos.dir = n_dirs + new_pos.dir;
         }
         new_pos.dir %= n_dirs;
-
-        println!("{}: Move from {:?} to {:?}",
-                 self.player_name, self.current_pos, new_pos);
         let result = figure.move_figure(pf, &self.current_pos, &new_pos);
-        if (result) {
+        if result {
             self.current_pos = new_pos;
             return true;
         } else {
@@ -236,5 +221,46 @@ impl Playfield {
     fn contains(&self, x: i32, y: i32) -> bool {
         x >= 0 && x < self.pf_width as i32 &&
             y >= 0 && y < self.pf_height as i32
+    }
+    fn block_is_set(&self, x: usize, y: usize) -> bool {
+        self.get_block(x, y) != 0
+    }
+
+    //
+    // Search playfield for full lines (returned in order of top to bottom)
+    //
+    pub fn find_full_lines(&self) -> Vec<usize> {
+        let mut full_lines: Vec<usize> = vec![];
+
+        for y in 0..self.pf_height {
+            let mut line_full = true;
+            for x in 0..self.pf_width {
+                if !self.block_is_set(x, y) {
+                    line_full = false;
+                    break;
+                }
+            }
+            if line_full {
+                full_lines.push(y);
+            }
+        }
+        return full_lines;
+    }
+
+    //
+    // Remove a line from playfield and move all lines above downwards
+    //
+    pub fn throw_line(&mut self, line: usize) {
+        let mut y = line as i32;
+        while y >= 0 {
+            for x in 0..self.pf_width {
+                if y >= 1 {
+                    self.blocks[y as usize][x] = self.blocks[y as usize - 1][x];
+                } else {
+                    self.blocks[y as usize][x] = 0;
+                }
+            }
+            y -= 1;
+        }
     }
 }

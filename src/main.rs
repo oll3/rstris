@@ -159,7 +159,6 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut last_update = time::precise_time_ns();
     'running: loop {
-        let mut rel_move = rstris::Position::new(0, 0, 0);
         let mut moves: Vec<rstris::Position> = vec![];
         let current_ticks = time::precise_time_ns();
         for event in event_pump.poll_iter() {
@@ -189,14 +188,22 @@ fn main() {
             last_update = current_ticks;
             moves.push(rstris::Position::new(0, 1, 0));
         }
+
         for fig_move in moves {
             if !player1.move_figure(&mut pf1, &fig_move) {
+
+                // Check for full lines in playfield and throw them away
+                let full_lines = pf1.find_full_lines();
+                for line in full_lines {
+                    pf1.throw_line(line);
+                }
+
+                // Place new figure in playfield
                 if !player1.place_next_figure(&mut pf1) {
                     println!("Game over!");
                 }
             }
         }
-
         /* Render graphics */
         let _ = renderer.set_draw_color(Color::RGB(101, 208, 246));
         let _ = renderer.clear();
