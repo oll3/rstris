@@ -7,66 +7,222 @@ pub struct FigureDir {
 
 #[derive(Clone, Debug)]
 pub struct Figure {
+    figure_name: String,
     pub dir: Vec<FigureDir>,
 }
 
 #[derive(Clone, Debug)]
-struct FigurePosition {
-    fig_index: i32,
-    fig_dir: i32,
-    fig_x_pos: i32,
-    fig_y_pos: i32,
+pub struct Position {
+    dir: i32,
+    x_pos: i32,
+    y_pos: i32,
 }
 
+#[derive(Debug)]
+pub struct Player<'a> {
+    player_name: String,
+    current_pos: Position,
+    avail_figures: &'a Vec<Figure>,
+    next_figure: Figure,
+    current_figure: Option<Figure>,
+}
 
 #[derive(Debug)]
 pub struct Playfield {
+    pf_name: String,
     pf_width: usize,
     pf_height: usize,
     blocks: Vec<Vec<u8>>,
-    figures: Vec<Figure>,
-    figure: FigurePosition,
 }
 
-#[derive(Debug)]
-pub struct RSTris {
-    playfields: Vec<Playfield>,
-    /*
-    current_figure: i32,
-    fig_dir: i32,
-    fig_x_pos: i32,
-    fig_y_pos: i32,
-*/
+impl Position {
+    pub fn new(x: i32, y: i32, dirf: i32) -> Position {
+        Position{x_pos: x, y_pos: y, dir: dirf}
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.x_pos == 0 && self.y_pos == 0 && self.dir == 0
+    }
+
+    pub fn offset_pos(&mut self, x_pos: i32, y_pos: i32, dir: i32) {
+        self.x_pos += x_pos;
+        self.y_pos += y_pos;
+        self.dir += dir;
+    }
+
+    fn add_pos(pos1: &Position, pos2: &Position) -> Position {
+        Position{x_pos: pos1.x_pos + pos2.x_pos,
+                 y_pos: pos1.y_pos + pos2.y_pos,
+                 dir: pos1.dir + pos2.dir}
+    }
 }
 
 impl Figure {
-    pub fn new() -> Figure {
-        Figure{dir: vec![]}
+    pub fn new(name: String) -> Figure {
+        Figure{figure_name: name, dir: vec![]}
     }
     pub fn add_direction(&mut self, dir_blocks: Vec<Vec<u8>>) {
         self.dir.push(FigureDir{blocks: dir_blocks});
+    }
+    fn get_fig_dir(&self, dir_index: usize) -> FigureDir {
+        let dir_index = dir_index % self.dir.len();
+        return self.dir[dir_index].clone();
+    }
+
+    fn place_figure(&self, pf: &mut Playfield, pos: &Position) {
+        let fig_dir = self.get_fig_dir(pos.dir as usize);
+        for row in 0..fig_dir.blocks.len() {
+            let pos_y = pos.y_pos + row as i32;
+            for col in 0..fig_dir.blocks[row].len() {
+                let b = fig_dir.blocks[row][col];
+                let pos_x = pos.x_pos + col as i32;
+                if b != 0 && pf.contains(pos_x, pos_y) {
+                    pf.blocks[pos_y as usize][pos_x as usize] = b;
+                }
+            }
+        }
+    }
+
+    fn remove_figure(&self, pf: &mut Playfield, pos: &Position) {
+        let fig_dir = self.get_fig_dir(pos.dir as usize);
+        for row in 0..fig_dir.blocks.len() {
+            let pos_y = pos.y_pos + row as i32;
+            for col in 0..fig_dir.blocks[row].len() {
+                let b = fig_dir.blocks[row][col];
+                let pos_x = pos.x_pos + col as i32;
+                if b != 0 && pf.contains(pos_x, pos_y) {
+                    pf.blocks[pos_y as usize][pos_x as usize] = 0;
+                }
+            }
+        }
+    }
+
+    fn test_figure(&self, pf: &Playfield, pos: &Position) -> bool {
+        let fig_dir = self.get_fig_dir(pos.dir as usize);
+        for row in 0..fig_dir.blocks.len() {
+            let offs_y = pos.y_pos + row as i32;
+            for col in 0..fig_dir.blocks[row].len() {
+                let offs_x = pos.x_pos + col as i32;
+                let b = fig_dir.blocks[row][col];
+                if b != 0 {
+                    if !pf.contains(offs_x, offs_y) {
+                        return false;
+                    } else if pf.blocks[offs_y as usize][offs_x as usize] != 0 {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    fn move_figure(&self, pf: &mut Playfield,
+                   current_pos: &Position,
+                   new_pos: &Position) -> bool {
+        self.remove_figure(pf, current_pos);
+        if self.test_figure(pf, new_pos) {
+            self.place_figure(pf, new_pos);
+            return true;
+        }
+        self.place_figure(pf, current_pos);
+        return false;
+    }
+}
+
+
+impl <'a> Player<'a> {
+    pub fn new(name: String, figures: &Vec<Figure>) -> Player {
+        Player{player_name: name,
+               avail_figures: figures,
+               current_pos: Position::new(-1, -1, -1),
+               current_figure: None,
+               next_figure: Player::get_next_figure(figures),
+        }
+    }
+
+    //
+    // Get a random figure from array of figures
+    //
+    fn get_next_figure(avail_figures: &Vec<Figure>) -> Figure {
+        let next_figure = (rand::random::<u8>() %
+                           avail_figures.len() as u8) as usize;
+        let figure = avail_figures[next_figure].clone();
+        return figure;
+    }
+
+    //
+    // Generate next figure to be placed
+    //
+    pub fn gen_next_figure(&mut self) {
+        self.next_figure = Player::get_next_figure(self.avail_figures);
+        println!("{}: Next figure is {}", self.player_name,
+                 self.next_figure.figure_name);
+    }
+
+    //
+    // Place the next figure in playfield.
+    // Game is over if this function returns false.
+    //
+    pub fn place_next_figure(&mut self, pf: &mut Playfield) -> bool {
+        self.current_pos.dir = 0;
+        self.current_pos.x_pos = (pf.width() / 2 - 1) as i32;
+        self.current_pos.y_pos = 0;
+        self.current_figure = Some(self.next_figure.clone());
+
+        let figure = self.current_figure.clone().unwrap();
+        if !figure.test_figure(pf, &self.current_pos) {
+            println!("{}: Failed to place figure {} in playfield",
+                     self.player_name, figure.figure_name);
+            return false;
+        } else {
+            self.next_figure.place_figure(pf, &self.current_pos);
+            println!("{}: Placed figure {} in playfield",
+                     self.player_name, self.next_figure.figure_name);
+
+            self.gen_next_figure();
+        }
+        return true;
+    }
+
+    //
+    // Move figure to new (relative) position.
+    // If the move is downwards and fails false is returned, else true.
+    //
+    pub fn move_figure(&mut self, pf: &mut Playfield,
+                       rel_pos: &Position) -> bool {
+
+        let figure = self.current_figure.clone().unwrap();
+        let mut new_pos = Position::add_pos(&self.current_pos, &rel_pos);
+        let n_dirs = figure.dir.len() as i32;
+        if new_pos.dir < 0 {
+            // Handle negative rotation
+            new_pos.dir = n_dirs + new_pos.dir;
+        }
+        new_pos.dir %= n_dirs;
+
+        println!("{}: Move from {:?} to {:?}",
+                 self.player_name, self.current_pos, new_pos);
+        let result = figure.move_figure(pf, &self.current_pos, &new_pos);
+        if (result) {
+            self.current_pos = new_pos;
+            return true;
+        } else {
+            return rel_pos.y_pos == 0;
+        }
     }
 }
 
 
 impl Playfield {
-    pub fn new(width: usize, height: usize) -> Playfield {
-        let mut playfield = Playfield{pf_width: width,
+    pub fn new(name:String, width: usize, height: usize) -> Playfield {
+        let mut playfield = Playfield{pf_name: name,
+                                      pf_width: width,
                                       pf_height: height,
-                                      blocks: vec![],
-                                      figures: vec![],
-                                      figure:
-                                      FigurePosition{fig_index: -1,
-                                                     fig_dir: -1,
-                                                     fig_x_pos: 0,
-                                                     fig_y_pos: 0}};
+                                      blocks: vec![]};
         for _ in 0..height {
             playfield.blocks.push(vec![0; width as usize]);
         }
         playfield
-    }
-    pub fn add_figure(&mut self, fig: Figure) {
-        self.figures.push(fig);
     }
     pub fn get_block(&self, x: usize, y: usize) -> u8 {
         self.blocks[y][x]
@@ -77,123 +233,8 @@ impl Playfield {
     pub fn height(&self) -> usize {
         self.pf_height
     }
-
-    fn place_figure(&mut self, fig: &Figure, dir: i32, x: i32, y: i32) {
-        let fig_dir = fig.dir[dir as usize].clone();
-        for row in 0..fig_dir.blocks.len() {
-            for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.blocks[row][col];
-                if b != 0 {
-                    self.blocks[y as usize + row][x as usize + col] = b;
-                }
-            }
-        }
-    }
-
-    fn rm_figure(&mut self, fig: &Figure, dir: i32, x: i32, y: i32) {
-        let fig_dir = fig.dir[dir as usize].clone();
-        for row in 0..fig_dir.blocks.len() {
-            for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.blocks[row][col];
-                if b != 0 {
-                    self.blocks[y as usize + row][x as usize + col] = 0;
-                }
-            }
-        }
-    }
-
-    fn test_figure(&self, fig: &Figure, dir: i32, x: i32, y: i32) -> bool {
-        let fig_dir = fig.dir[dir as usize].clone();
-        for row in 0..fig_dir.blocks.len() {
-            let offs_y = y + row as i32;
-            for col in 0..fig_dir.blocks[row].len() {
-                let offs_x = x + col as i32;
-                let b = fig_dir.blocks[row][col];
-                if b != 0 {
-                    if offs_y < 0 || offs_y >= self.pf_height as i32 {
-                        return false;
-                    }
-                    if offs_x < 0 || offs_x >= self.pf_width as i32 {
-                        return false;
-                    }
-                    if self.blocks[offs_y as usize][offs_x as usize] != 0 {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    fn move_figure(&mut self, fig: &Figure, dir: i32, x: i32, y: i32,
-                   x_offs: i32, y_offs: i32) -> bool {
-        self.rm_figure(fig, dir, x, y);
-        if self.test_figure(fig, dir, x + x_offs, y + y_offs) {
-            self.place_figure(fig, dir, x + x_offs, y + y_offs);
-            return true;
-        }
-        self.place_figure(fig, dir, x, y);
-        return false;
-    }
-
-    fn update(&mut self) {
-        let mut figure = self.figure.clone();
-        if figure.fig_index == -1 {
-            figure.fig_index =
-                (rand::random::<u8>() % self.figures.len() as u8) as i32;
-            figure.fig_dir = 0;
-            figure.fig_x_pos = (self.width() / 2 - 1) as i32;
-            figure.fig_y_pos = 0;
-            let fig = self.figures[figure.fig_index as usize].clone();
-            if self.test_figure(&fig, figure.fig_dir,
-                                figure.fig_x_pos,
-                                figure.fig_y_pos) {
-                self.place_figure(&fig, figure.fig_dir,
-                                  figure.fig_x_pos,
-                                  figure.fig_y_pos);
-            }
-            else {
-                // Game over?
-                figure.fig_index = -2;
-                println!("Game Over!");
-            }
-        }
-        else if figure.fig_index >= 0 {
-            let fig = self.figures[figure.fig_index as usize].clone();
-            if self.move_figure(&fig,
-                                figure.fig_dir,
-                                figure.fig_x_pos,
-                                figure.fig_y_pos,
-                                0, 1) {
-                figure.fig_y_pos += 1;
-            }
-            else {
-                // Figure couldn't be moved further - Leave where ut is and
-                // place another figure.
-                figure.fig_index = -1;
-            }
-        }
-        self.figure = figure;
-    }
-}
-
-impl RSTris {
-
-    pub fn new() -> RSTris {
-        RSTris{playfields: vec![]}
-    }
-
-    pub fn add_playfield(&mut self, playfield: Playfield) {
-        self.playfields.push(playfield);
-    }
-
-    pub fn get_playfields(&self) -> &Vec<Playfield> {
-        &self.playfields
-    }
-
-    pub fn update(&mut self) {
-        for i in 0..self.playfields.len() {
-            self.playfields.get_mut(i).unwrap().update();
-        }
+    fn contains(&self, x: i32, y: i32) -> bool {
+        x >= 0 && x < self.pf_width as i32 &&
+            y >= 0 && y < self.pf_height as i32
     }
 }
