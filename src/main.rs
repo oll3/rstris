@@ -28,9 +28,19 @@ fn draw_playfield(playfield: &rstris::Playfield, renderer: &mut Renderer) {
         draw_block(renderer, 0, y as i32, frame_color);
         for x in 0..playfield.width() {
             let block = playfield.get_block(x, y);
+            let block_color = match block {
+                1 => Color::RGB(50, 180, 50),
+                2 => Color::RGB(180, 50, 50),
+                3 => Color::RGB(50, 50, 180),
+                4 => Color::RGB(120, 120, 120),
+                5 => Color::RGB(20, 80, 80),
+                6 => Color::RGB(120, 150, 0),
+                7 => Color::RGB(220, 50, 140),
+                _ => Color::RGB(0, 0, 0),
+            };
             if block != 0 {
                 draw_block(renderer, (x + 1) as i32, y as i32,
-                           Color::RGB(0, 128, 128));
+                           block_color);
             }
         }
         draw_block(renderer, (playfield.width() + 1) as i32,
