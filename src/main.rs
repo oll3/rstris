@@ -8,7 +8,7 @@ use sdl2::render::Renderer;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-
+use std::collections::HashMap;
 
 
 fn draw_block(renderer: &mut Renderer, x: i32, y: i32, color: Color) {
@@ -166,31 +166,54 @@ fn main() {
 
     player1.place_next_figure(&mut pf1);
 
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut line_count = 0;
+
+    let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
+    let mut events = sdl_context.event_pump().unwrap();
     let mut last_update = time::precise_time_ns();
     'running: loop {
         let mut moves: Vec<rstris::Position> = vec![];
         let current_ticks = time::precise_time_ns();
-        for event in event_pump.poll_iter() {
+        for event in events.poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown {
                     keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },Event::KeyDown {
-                    keycode: Some(Keycode::Left), .. } => {
-                    moves.push(rstris::Position::new(-1, 0, 0));
-                },Event::KeyDown {
-                    keycode: Some(Keycode::Right), .. } => {
-                    moves.push(rstris::Position::new(1, 0, 0));
-                },Event::KeyDown {
-                    keycode: Some(Keycode::Down), .. } => {
-                    moves.push(rstris::Position::new(0, 1, 0));
-                    last_update = current_ticks;
-                }, Event::KeyDown {
-                    keycode: Some(Keycode::Up), .. } => {
-                    moves.push(rstris::Position::new(0, 0, 1));
+                    keycode: Some(key), .. } => {
+                    if !pressed_keys.contains_key(&key) {
+                        pressed_keys.insert(key, (current_ticks, 140000000));
+                    }
+                },Event::KeyUp {
+                    keycode: Some(key), .. } => {
+                    if pressed_keys.contains_key(&key) {
+                        pressed_keys.remove(&key);
+                    }
                 },
+
                 _ => {}
+            }
+        }
+
+        let keys = pressed_keys.clone();
+        for (key, (time, this_delay)) in keys {
+            if time <= current_ticks {
+                let next_delay = (this_delay * 2) / 5 + 20000000;
+                pressed_keys.insert(key, (current_ticks + this_delay,
+                                          next_delay));
+                match key {
+                    Keycode::Left => {
+                        moves.push(rstris::Position::new(-1, 0, 0));
+                    },Keycode::Right => {
+                        moves.push(rstris::Position::new(1, 0, 0));
+                    },Keycode::Down => {
+                        moves.push(rstris::Position::new(0, 1, 0));
+                        last_update = current_ticks;
+                    },Keycode::Up => {
+                        moves.push(rstris::Position::new(0, 0, 1));
+                    },
+                    _ => {}
+                }
             }
         }
 
@@ -204,14 +227,25 @@ fn main() {
 
                 // Check for full lines in playfield and throw them away
                 let full_lines = pf1.find_full_lines();
+                let num_full_lines = full_lines.len();
                 for line in full_lines {
                     pf1.throw_line(line);
+                }
+
+                if num_full_lines > 0 {
+                    line_count += num_full_lines;
+                    println!("Removed {} lines. Total: {}",
+                             num_full_lines, line_count);
                 }
 
                 // Place new figure in playfield
                 if !player1.place_next_figure(&mut pf1) {
                     println!("Game over!");
                 }
+
+                // Reset all key timings (Maybe we should only do
+                // this for the movement keys?)
+                pressed_keys.clear();
             }
         }
         /* Render graphics */
