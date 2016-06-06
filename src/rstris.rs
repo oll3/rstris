@@ -2,6 +2,8 @@ extern crate rand;
 
 #[derive(Clone, Debug)]
 pub struct FigureDir {
+    pub width: usize,
+    pub height: usize,
     pub blocks: Vec<Vec<u8>>,
 }
 
@@ -52,7 +54,9 @@ impl Figure {
         Figure{figure_name: name, dir: vec![]}
     }
     pub fn add_direction(&mut self, dir_blocks: Vec<Vec<u8>>) {
-        self.dir.push(FigureDir{blocks: dir_blocks});
+        self.dir.push(FigureDir{height: dir_blocks.len(),
+                                width: dir_blocks[0].len(),
+                                blocks: dir_blocks});
     }
     fn get_fig_dir(&self, dir_index: usize) -> FigureDir {
         let dir_index = dir_index % self.dir.len();
@@ -126,27 +130,22 @@ impl <'a> Player<'a> {
                avail_figures: figures,
                current_pos: Position::new(-1, -1, -1),
                current_figure: None,
-               next_figure: Player::get_next_figure(figures),
+               next_figure: Player::get_rand_figure(figures),
         }
     }
 
     //
     // Get a random figure from array of figures
     //
-    fn get_next_figure(avail_figures: &Vec<Figure>) -> Figure {
+    fn get_rand_figure(avail_figures: &Vec<Figure>) -> Figure {
         let next_figure = (rand::random::<u8>() %
                            avail_figures.len() as u8) as usize;
         let figure = avail_figures[next_figure].clone();
         return figure;
     }
 
-    //
-    // Generate next figure to be placed
-    //
-    pub fn gen_next_figure(&mut self) {
-        self.next_figure = Player::get_next_figure(self.avail_figures);
-        println!("{}: Next figure is {}", self.player_name,
-                 self.next_figure.figure_name);
+    pub fn get_next_figure(&self) -> Figure {
+        return self.next_figure.clone();
     }
 
     //
@@ -167,7 +166,9 @@ impl <'a> Player<'a> {
             println!("{}: Placed figure {} in playfield",
                      self.player_name, self.next_figure.figure_name);
 
-            self.gen_next_figure();
+            self.next_figure = Player::get_rand_figure(self.avail_figures);
+            println!("{}: Next figure is {}", self.player_name,
+                     self.next_figure.figure_name);
         }
         return true;
     }

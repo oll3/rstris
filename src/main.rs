@@ -11,44 +11,88 @@ use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
 
 
-fn draw_block(renderer: &mut Renderer, x: i32, y: i32, color: Color) {
-    let block_width: i32 = 32;
-    let block_height: i32 = 32;
-    let block_spacing: i32 = 2;
+static PF_WIDTH: u32 = 10;
+static PF_HEIGHT: u32 = 20;
+static BLOCK_SIZE: u32 = 32;
+static BLOCK_SPACING: u32 = 2;
+static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
+static FILL_COLOR: Color = Color::RGB(98, 204, 244);
+static BG_COLOR: Color = Color::RGB(101, 208, 246);
+
+fn draw_block(renderer: &mut Renderer, x: u32, y: u32, color: Color) {
+    let block_width: u32 = BLOCK_SIZE;
+    let block_height: u32 = BLOCK_SIZE;
+    let block_spacing: u32 = BLOCK_SPACING;
     renderer.set_draw_color(color);
-    let border_rect = Rect::new(x * block_width + x * block_spacing,
-                                y * block_height + y * block_spacing,
-                                block_width as u32, block_height as u32);
+    let border_rect = Rect::new((x * block_width + x * block_spacing) as i32,
+                                (y * block_height + y * block_spacing) as i32,
+                                block_width, block_height);
     let _ = renderer.fill_rect(border_rect);
 }
 
+fn get_block_color(block_id: u8) -> Color {
+    match block_id {
+        1 => Color::RGB(50, 180, 50),
+        2 => Color::RGB(180, 50, 50),
+        3 => Color::RGB(50, 50, 180),
+        4 => Color::RGB(120, 120, 120),
+        5 => Color::RGB(20, 80, 80),
+        6 => Color::RGB(120, 150, 0),
+        7 => Color::RGB(220, 50, 140),
+        _ => Color::RGB(0, 0, 0),
+    }
+}
+
 fn draw_playfield(playfield: &rstris::Playfield, renderer: &mut Renderer) {
-    let frame_color = Color::RGB(200, 64, 64);
     for y in 0..playfield.height() {
-        draw_block(renderer, 0, y as i32, frame_color);
+        draw_block(renderer, 0, y as u32, FRAME_COLOR);
         for x in 0..playfield.width() {
             let block = playfield.get_block(x, y);
-            let block_color = match block {
-                1 => Color::RGB(50, 180, 50),
-                2 => Color::RGB(180, 50, 50),
-                3 => Color::RGB(50, 50, 180),
-                4 => Color::RGB(120, 120, 120),
-                5 => Color::RGB(20, 80, 80),
-                6 => Color::RGB(120, 150, 0),
-                7 => Color::RGB(220, 50, 140),
-                _ => Color::RGB(0, 0, 0),
-            };
             if block != 0 {
-                draw_block(renderer, (x + 1) as i32, y as i32,
-                           block_color);
+                draw_block(renderer, (x + 1) as u32, y as u32,
+                           get_block_color(block));
+            } else {
+                draw_block(renderer, (x + 1) as u32, y as u32,
+                           FILL_COLOR);
             }
         }
-        draw_block(renderer, (playfield.width() + 1) as i32,
-                   y as i32, frame_color);
+        draw_block(renderer, (playfield.width() + 1) as u32,
+                   y as u32, FRAME_COLOR);
     }
     for bottom in 0..(playfield.width() + 2) {
-        draw_block(renderer, bottom as i32,
-                   playfield.height() as i32, frame_color);
+        draw_block(renderer, bottom as u32,
+                   playfield.height() as u32, FRAME_COLOR);
+    }
+}
+
+fn draw_next_figure(figure: &rstris::Figure, offs_x: u32, offs_y: u32,
+                    fig_max_width: u32, fig_max_heigth: u32,
+                    renderer: &mut Renderer) {
+    for y in 0..(fig_max_heigth + 2) {
+        for x in 0..(fig_max_width + 2) {
+            if y == 0 || y == (fig_max_heigth + 1) ||
+                x == 0 || x == (fig_max_width + 1) {
+                    draw_block(renderer, x as u32 + offs_x, y as u32 + offs_y,
+                               FRAME_COLOR);
+                }
+            else {
+                draw_block(renderer, x as u32 + offs_x, y as u32 + offs_y,
+                           FILL_COLOR);
+            }
+        }
+    }
+
+    let fig_dir = &figure.dir[0];
+    for y in 0..fig_dir.blocks.len() {
+        for x in 0..fig_dir.blocks[y].len() {
+            let block = fig_dir.blocks[y][x];
+            if block != 0 {
+                draw_block(renderer,
+                           x as u32 + offs_x + 1,
+                           y as u32 + offs_y + 1,
+                           get_block_color(block));
+            }
+        }
     }
 }
 
@@ -140,14 +184,40 @@ fn init_figures() -> Vec<rstris::Figure> {
     return figure_list;
 }
 
-
+fn get_max_figure_dimensions(figure_list: &Vec<rstris::Figure>)
+                             -> (u32, u32) {
+    let mut max_width: u32 = 0;
+    let mut max_height: u32 = 0;
+    for fig in figure_list {
+        for dir in fig.dir.clone() {
+            if dir.width as u32 > max_width {
+                max_width = dir.width as u32;
+            }
+            if dir.height as u32 > max_height {
+                max_height = dir.height as u32;
+            }
+        }
+    }
+    return (max_width, max_height);
+}
 
 fn main() {
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("rust-sdl2 demo: Video", 800, 600)
+    let figure_list = init_figures();
+    let (figure_max_width, figure_max_height) =
+        get_max_figure_dimensions(&figure_list);
+    println!("Max figure dimensions: {} x {}",
+             figure_max_width, figure_max_height);
+
+    let window_width: u32 = (PF_WIDTH + 2 + figure_max_width + 3) *
+        (BLOCK_SIZE + BLOCK_SPACING);
+    let window_height: u32 = (PF_HEIGHT + 1) * (BLOCK_SIZE + BLOCK_SPACING);
+
+    let window = video_subsystem.window("rust-sdl2 demo: Video",
+                                        window_width, window_height)
         .position_centered()
         .opengl()
         .build()
@@ -159,10 +229,10 @@ fn main() {
     renderer.clear();
     renderer.present();
 
-    let figure_list = init_figures();
     let mut player1 =
         rstris::Player::new(String::from("Player 1"), &figure_list);
-    let mut pf1 = rstris::Playfield::new(String::from("Playfield 1"), 12, 16);
+    let mut pf1 = rstris::Playfield::new(String::from("Playfield 1"),
+                                         PF_WIDTH as usize, PF_HEIGHT as usize);
 
     player1.place_next_figure(&mut pf1);
 
@@ -249,9 +319,12 @@ fn main() {
             }
         }
         /* Render graphics */
-        let _ = renderer.set_draw_color(Color::RGB(101, 208, 246));
+        let _ = renderer.set_draw_color(BG_COLOR);
         let _ = renderer.clear();
         draw_playfield(&pf1, &mut renderer);
+        draw_next_figure(&player1.get_next_figure(), PF_WIDTH + 3, 0,
+                         figure_max_width, figure_max_height,
+                         &mut renderer);
         let _ = renderer.present();
     }
 }
