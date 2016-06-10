@@ -41,15 +41,20 @@ impl Figure {
         Figure{figure_name: name, dir: vec![]}
     }
 
-    pub fn new_from_face(name: String, face_blocks: Vec<Vec<u8>>) -> Figure {
+    //
+    // Build new figure by rotating the face of a figure 90 degrees
+    //
+    pub fn new_from_face(name: String,
+                         face_blocks: Vec<Vec<u8>>) -> Figure {
         let mut fig = Figure::new(name);
         let mut dir = FigureDir::new(face_blocks);
         fig.dir.push(dir.clone());
         for _ in 0..3 {
             let mut next_dir = FigureDir::new_empty(&dir.height, &dir.width);
-            for y in 0..dir.height {
-                for x in 0..dir.width {
-                    next_dir.blocks[x][y] = dir.blocks[y][x];
+            for y in 0..dir.get_height() {
+                for x in 0..dir.get_width() {
+                    next_dir.blocks[x][y] =
+                        dir.blocks[dir.get_height() - y - 1][x];
                 }
             }
             fig.dir.push(next_dir.clone());
@@ -128,4 +133,73 @@ impl Figure {
         self.place_figure(pf, current_pos);
         return false;
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_figure1() {
+        let fig = Figure::new_from_face(String::from("Figure 1"),
+                                        vec![vec![0, 0, 0],
+                                             vec![1, 1, 1],
+                                             vec![0, 1, 0]]);
+        assert_eq!(fig.dir.len(), 4);
+        assert_eq!(fig.dir[0].blocks, [[0, 0, 0],
+                                       [1, 1, 1],
+                                       [0, 1, 0]]);
+        assert_eq!(fig.dir[1].blocks, [[0, 1, 0],
+                                       [1, 1, 0],
+                                       [0, 1, 0]]);
+        assert_eq!(fig.dir[2].blocks, [[0, 1, 0],
+                                       [1, 1, 1],
+                                       [0, 0, 0]]);
+        assert_eq!(fig.dir[3].blocks, [[0, 1, 0],
+                                       [0, 1, 1],
+                                       [0, 1, 0]]);
+    }
+    #[test]
+    fn test_figure2() {
+        let fig = Figure::new_from_face(String::from("Figure 2"),
+                                        vec![vec![0, 1, 0],
+                                             vec![0, 1, 0],
+                                             vec![0, 1, 0],
+                                             vec![0, 1, 0]]);
+        assert_eq!(fig.dir.len(), 4);
+        assert_eq!(fig.dir[0].blocks, [[0, 1, 0],
+                                       [0, 1, 0],
+                                       [0, 1, 0],
+                                       [0, 1, 0]]);
+        assert_eq!(fig.dir[1].blocks, [[0, 0, 0, 0],
+                                       [1, 1, 1, 1],
+                                       [0, 0, 0, 0]]);
+        assert_eq!(fig.dir[2].blocks, [[0, 1, 0],
+                                       [0, 1, 0],
+                                       [0, 1, 0],
+                                       [0, 1, 0]]);
+        assert_eq!(fig.dir[3].blocks, [[0, 0, 0, 0],
+                                       [1, 1, 1, 1],
+                                       [0, 0, 0, 0]]);
+    }
+    #[test]
+    fn test_figure3() {
+        let fig = Figure::new_from_face(String::from("Figure 3"),
+                                        vec![vec![1, 0],
+                                             vec![1, 1],
+                                             vec![0, 1]]);
+        assert_eq!(fig.dir.len(), 4);
+        assert_eq!(fig.dir[0].blocks, [[1, 0],
+                                       [1, 1],
+                                       [0, 1]]);
+        assert_eq!(fig.dir[1].blocks, [[0, 1, 1],
+                                       [1, 1, 0]]);
+        assert_eq!(fig.dir[2].blocks, [[1, 0],
+                                       [1, 1],
+                                       [0, 1]]);
+        assert_eq!(fig.dir[3].blocks, [[0, 1, 1],
+                                       [1, 1, 0]]);
+    }
+
 }
