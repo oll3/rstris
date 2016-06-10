@@ -83,13 +83,15 @@ fn draw_next_figure(figure: &rstris::Figure, offs_x: u32, offs_y: u32,
     }
 
     let fig_dir = &figure.dir[0];
+    let fig_x_offs = (fig_max_width - fig_dir.get_width() as u32) / 2;
+    let fig_y_offs = (fig_max_heigth - fig_dir.get_height() as u32) / 2;
     for y in 0..fig_dir.get_height() {
         for x in 0..fig_dir.get_width() {
             let block = fig_dir.get_block(x, y);
             if block != 0 {
                 draw_block(renderer,
-                           x as u32 + offs_x + 1,
-                           y as u32 + offs_y + 1,
+                           x as u32 + offs_x + 1 + fig_x_offs,
+                           y as u32 + offs_y + 1 + fig_y_offs,
                            get_block_color(block));
             }
         }
