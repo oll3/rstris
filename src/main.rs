@@ -102,85 +102,39 @@ fn draw_next_figure(figure: &rstris::Figure, offs_x: u32, offs_y: u32,
 //
 fn init_figures() -> Vec<rstris::Figure> {
     let mut figure_list: Vec<rstris::Figure> = Vec::new();
-    let mut fig1 = rstris::Figure::new(String::from("1"));
-    fig1.add_direction(vec![vec![0, 0, 0],
-                            vec![1, 1, 1],
-                            vec![0, 1, 0]]);
-    fig1.add_direction(vec![vec![0, 1, 0],
-                            vec![1, 1, 0],
-                            vec![0, 1, 0]]);
-    fig1.add_direction(vec![vec![0, 1, 0],
-                            vec![1, 1, 1],
-                            vec![0, 0, 0]]);
-    fig1.add_direction(vec![vec![0, 1, 0],
-                            vec![0, 1, 1],
-                            vec![0, 1, 0]]);
-    figure_list.push(fig1);
-
-    let mut fig2 = rstris::Figure::new(String::from("2"));
-    fig2.add_direction(vec![vec![0, 0, 0],
-                            vec![2, 2, 2],
-                            vec![0, 0, 2],
-                            vec![0, 0, 0]]);
-    fig2.add_direction(vec![vec![0, 2, 0],
-                            vec![0, 2, 0],
-                            vec![2, 2, 0]]);
-    fig2.add_direction(vec![vec![2, 0, 0],
-                            vec![2, 2, 2],
-                            vec![0, 0, 0]]);
-    fig2.add_direction(vec![vec![0, 2, 2],
-                            vec![0, 2, 0],
-                            vec![0, 2, 0]]);
-    figure_list.push(fig2);
-
-    let mut fig3 = rstris::Figure::new(String::from("3"));
-    fig3.add_direction(vec![vec![3, 3, 0],
-                            vec![0, 3, 3],
-                            vec![0, 0, 0]]);
-    fig3.add_direction(vec![vec![0, 3, 0],
-                            vec![3, 3, 0],
-                            vec![3, 0, 0]]);
-    figure_list.push(fig3);
-
-    let mut fig4 = rstris::Figure::new(String::from("4"));
-    fig4.add_direction(vec![vec![4, 4],
-                            vec![4, 4]]);
-    figure_list.push(fig4);
-
-    let mut fig5 = rstris::Figure::new(String::from("5"));
-    fig5.add_direction(vec![vec![0, 5, 5],
-                            vec![5, 5, 0],
-                            vec![0, 0, 0]]);
-    fig5.add_direction(vec![vec![5, 0, 0],
-                            vec![5, 5, 0],
-                            vec![0, 5, 0]]);
-    figure_list.push(fig5);
-
-    let mut fig6 = rstris::Figure::new(String::from("6"));
-    fig6.add_direction(vec![vec![0, 0, 0],
-                            vec![6, 6, 6],
-                            vec![6, 0, 0]]);
-    fig6.add_direction(vec![vec![6, 6, 0],
-                            vec![0, 6, 0],
-                            vec![0, 6, 0]]);
-    fig6.add_direction(vec![vec![0, 0, 6],
-                            vec![6, 6, 6],
-                            vec![0, 0, 0]]);
-    fig6.add_direction(vec![vec![0, 6, 0],
-                            vec![0, 6, 0],
-                            vec![0, 6, 6]]);
-    figure_list.push(fig6);
-
-    let mut fig7 = rstris::Figure::new(String::from("7"));
-    fig7.add_direction(vec![vec![0, 7, 0, 0],
-                            vec![0, 7, 0, 0],
-                            vec![0, 7, 0, 0],
-                            vec![0, 7, 0, 0]]);
-    fig7.add_direction(vec![vec![0, 0, 0, 0],
-                            vec![7, 7, 7, 7],
-                            vec![0, 0, 0, 0],
-                            vec![0, 0, 0, 0]]);
-    figure_list.push(fig7);
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("1"),
+                                   vec![vec![0, 0, 0],
+                                        vec![1, 1, 1],
+                                        vec![0, 1, 0]]));
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("2"),
+                                   vec![vec![0, 0, 0],
+                                        vec![2, 2, 2],
+                                        vec![0, 0, 2]]));
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("3"),
+                                   vec![vec![0, 0, 3],
+                                        vec![3, 3, 3],
+                                        vec![0, 0, 0]]));
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("4"),
+                                   vec![vec![4, 4],
+                                        vec![4, 4]]));
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("5"),
+                                   vec![vec![0, 5, 5],
+                                        vec![5, 5, 0]]));
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("6"),
+                                   vec![vec![6, 6, 0],
+                                        vec![0, 6, 6]]));
+    figure_list.push(rstris::Figure::
+                     new_from_face(String::from("7"),
+                                   vec![vec![0, 7, 0],
+                                        vec![0, 7, 0],
+                                        vec![0, 7, 0],
+                                        vec![0, 7, 0]]));
     return figure_list;
 }
 
