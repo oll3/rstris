@@ -66,7 +66,8 @@ impl Figure {
     pub fn get_name(&self) -> &String {
         &self.figure_name
     }
-    pub fn add_direction(&mut self, dir_blocks: Vec<Vec<u8>>) {
+    #[allow(dead_code)]
+    pub fn add_dir_face(&mut self, dir_blocks: Vec<Vec<u8>>) {
         self.dir.push(FigureDir::new(dir_blocks));
     }
     pub fn get_fig_dir(&self, dir_index: usize) -> FigureDir {
