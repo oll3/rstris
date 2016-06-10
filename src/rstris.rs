@@ -49,15 +49,46 @@ impl Position {
     }
 }
 
+impl FigureDir {
+    pub fn new(dir_blocks: Vec<Vec<u8>>) -> FigureDir {
+        FigureDir{height: dir_blocks.len(),
+                  width: dir_blocks[0].len(),
+                  blocks: dir_blocks}
+    }
+    pub fn new_empty(blocks_width: &usize, blocks_height: &usize) -> FigureDir {
+        FigureDir{height: *blocks_height,
+                  width: *blocks_width,
+                  blocks: vec![vec![0; *blocks_width]; *blocks_height]}
+    }
+
+}
+
 impl Figure {
     pub fn new(name: String) -> Figure {
         Figure{figure_name: name, dir: vec![]}
     }
-    pub fn add_direction(&mut self, dir_blocks: Vec<Vec<u8>>) {
-        self.dir.push(FigureDir{height: dir_blocks.len(),
-                                width: dir_blocks[0].len(),
-                                blocks: dir_blocks});
+
+    pub fn new_from_face(name: String, face_blocks: Vec<Vec<u8>>) -> Figure {
+        let mut fig = Figure::new(name);
+        let mut dir = FigureDir::new(face_blocks);
+        fig.dir.push(dir.clone());
+        for _ in 0..3 {
+            let mut next_dir = FigureDir::new_empty(&dir.height, &dir.width);
+            for y in 0..dir.height {
+                for x in 0..dir.width {
+                    next_dir.blocks[x][y] = dir.blocks[y][x];
+                }
+            }
+            fig.dir.push(next_dir.clone());
+            dir = next_dir;
+        }
+        fig
     }
+
+    pub fn add_direction(&mut self, dir_blocks: Vec<Vec<u8>>) {
+        self.dir.push(FigureDir::new(dir_blocks));
+    }
+
     fn get_fig_dir(&self, dir_index: usize) -> FigureDir {
         let dir_index = dir_index % self.dir.len();
         return self.dir[dir_index].clone();
