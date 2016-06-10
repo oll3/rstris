@@ -66,17 +66,19 @@ impl <'a> Player<'a> {
     // If the move is downwards and fails false is returned, else true.
     //
     pub fn move_figure(&mut self, pf: &mut Playfield,
-                       rel_pos: &Position) -> bool {
+                       movement: Movement) -> bool {
 
         let figure = self.current_figure.clone().unwrap();
-        let mut new_pos = Position::add_pos(&self.current_pos, &rel_pos);
+        let mut new_pos = Position::apply_move(&self.current_pos, &movement);
         new_pos.normalize_dir(figure.dir.len());
         let result = figure.move_figure(pf, &self.current_pos, &new_pos);
         if result {
             self.current_pos = new_pos;
             return true;
-        } else {
-            return rel_pos.get_y() == 0;
+        }
+        return match movement {
+            Movement::MoveDown => true,
+            _ => false
         }
     }
 }

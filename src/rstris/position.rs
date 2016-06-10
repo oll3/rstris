@@ -5,14 +5,29 @@ pub struct Position {
     y_pos: i32,
 }
 
+#[allow(dead_code)]
+pub enum Movement {
+    MoveLeft,
+    MoveRigth,
+    MoveDown,
+    RotateCW,
+    RotateCCW,
+}
+
 impl Position {
     pub fn new(x: i32, y: i32, dirf: i32) -> Position {
         Position{x_pos: x, y_pos: y, dir: dirf}
     }
-    pub fn add_pos(pos1: &Position, pos2: &Position) -> Position {
-        Position{x_pos: pos1.x_pos + pos2.x_pos,
-                 y_pos: pos1.y_pos + pos2.y_pos,
-                 dir: pos1.dir + pos2.dir}
+    pub fn apply_move(pos1: &Position, movement: &Movement) -> Position {
+        let mut pos = pos1.clone();
+        match *movement {
+            Movement::MoveLeft => {pos.x_pos += 1},
+            Movement::MoveRigth => {pos.x_pos -= 1},
+            Movement::MoveDown => {pos.y_pos += 1},
+            Movement::RotateCW => {pos.dir += 1},
+            Movement::RotateCCW => {pos.dir -= 1},
+        };
+        pos
     }
     pub fn get_x(&self) -> i32 {
         self.x_pos

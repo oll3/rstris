@@ -198,7 +198,7 @@ fn main() {
     let mut events = sdl_context.event_pump().unwrap();
     let mut last_update = time::precise_time_ns();
     'running: loop {
-        let mut moves: Vec<rstris::Position> = vec![];
+        let mut moves: Vec<rstris::Movement> = vec![];
         let current_ticks = time::precise_time_ns();
         for event in events.poll_iter() {
             match event {
@@ -229,14 +229,14 @@ fn main() {
                                           next_delay));
                 match key {
                     Keycode::Left => {
-                        moves.push(rstris::Position::new(-1, 0, 0));
+                        moves.push(rstris::Movement::MoveLeft);
                     },Keycode::Right => {
-                        moves.push(rstris::Position::new(1, 0, 0));
+                        moves.push(rstris::Movement::MoveRigth);
                     },Keycode::Down => {
-                        moves.push(rstris::Position::new(0, 1, 0));
+                        moves.push(rstris::Movement::MoveDown);
                         last_update = current_ticks;
                     },Keycode::Up => {
-                        moves.push(rstris::Position::new(0, 0, 1));
+                        moves.push(rstris::Movement::RotateCW);
                     },
                     _ => {}
                 }
@@ -245,11 +245,11 @@ fn main() {
 
         if (last_update + 500000000) < current_ticks {
             last_update = current_ticks;
-            moves.push(rstris::Position::new(0, 1, 0));
+            moves.push(rstris::Movement::MoveDown);
         }
 
         for fig_move in moves {
-            if !player1.move_figure(&mut pf1, &fig_move) {
+            if !player1.move_figure(&mut pf1, fig_move) {
 
                 // Check for full lines in playfield and throw them away
                 let full_lines = pf1.find_full_lines();
