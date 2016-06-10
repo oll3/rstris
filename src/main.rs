@@ -83,9 +83,9 @@ fn draw_next_figure(figure: &rstris::Figure, offs_x: u32, offs_y: u32,
     }
 
     let fig_dir = &figure.dir[0];
-    for y in 0..fig_dir.blocks.len() {
-        for x in 0..fig_dir.blocks[y].len() {
-            let block = fig_dir.blocks[y][x];
+    for y in 0..fig_dir.get_height() {
+        for x in 0..fig_dir.get_width() {
+            let block = fig_dir.get_block(x, y);
             if block != 0 {
                 draw_block(renderer,
                            x as u32 + offs_x + 1,
@@ -190,11 +190,11 @@ fn get_max_figure_dimensions(figure_list: &Vec<rstris::Figure>)
     let mut max_height: u32 = 0;
     for fig in figure_list {
         for dir in fig.dir.clone() {
-            if dir.width as u32 > max_width {
-                max_width = dir.width as u32;
+            if dir.get_width() as u32 > max_width {
+                max_width = dir.get_width() as u32;
             }
-            if dir.height as u32 > max_height {
-                max_height = dir.height as u32;
+            if dir.get_height() as u32 > max_height {
+                max_height = dir.get_height() as u32;
             }
         }
     }
