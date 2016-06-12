@@ -231,7 +231,7 @@ fn main() {
                     Keycode::Left => {
                         moves.push(rstris::Movement::MoveLeft);
                     },Keycode::Right => {
-                        moves.push(rstris::Movement::MoveRigth);
+                        moves.push(rstris::Movement::MoveRight);
                     },Keycode::Down => {
                         moves.push(rstris::Movement::MoveDown);
                         last_update = current_ticks;

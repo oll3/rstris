@@ -8,7 +8,7 @@ pub struct Position {
 #[allow(dead_code)]
 pub enum Movement {
     MoveLeft,
-    MoveRigth,
+    MoveRight,
     MoveDown,
     RotateCW,
     RotateCCW,
@@ -21,8 +21,8 @@ impl Position {
     pub fn apply_move(pos1: &Position, movement: &Movement) -> Position {
         let mut pos = pos1.clone();
         match *movement {
-            Movement::MoveLeft => {pos.x_pos += 1},
-            Movement::MoveRigth => {pos.x_pos -= 1},
+            Movement::MoveLeft => {pos.x_pos -= 1},
+            Movement::MoveRight => {pos.x_pos += 1},
             Movement::MoveDown => {pos.y_pos += 1},
             Movement::RotateCW => {pos.dir += 1},
             Movement::RotateCCW => {pos.dir -= 1},
