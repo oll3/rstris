@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Position {
     dir: i32,
     x_pos: i32,

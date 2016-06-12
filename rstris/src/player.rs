@@ -33,11 +33,15 @@ impl <'a> Player<'a> {
         let figure = avail_figures[next_figure].clone();
         return figure;
     }
-
     pub fn get_next_figure(&self) -> Figure {
         return self.next_figure.clone();
     }
-
+    pub fn get_current_figure(&self) -> Figure {
+        return self.current_figure.clone().unwrap();
+    }
+    pub fn get_current_pos(&self) -> Position {
+        return self.current_pos.clone();
+    }
     //
     // Place the next figure in playfield.
     // Game is over if this function returns false.

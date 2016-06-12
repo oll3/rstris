@@ -1,7 +1,7 @@
 use playfield::*;
 use position::*;
 
-#[derive(Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct FigureDir {
     width: usize,
     height: usize,
@@ -66,7 +66,9 @@ impl Figure {
     pub fn get_name(&self) -> &String {
         &self.figure_name
     }
-    #[allow(dead_code)]
+    pub fn get_num_dirs(&self) -> usize {
+        return self.dir.len();
+    }
     pub fn add_dir_face(&mut self, dir_blocks: Vec<Vec<u8>>) {
         self.dir.push(FigureDir::new(dir_blocks));
     }
