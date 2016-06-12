@@ -1,7 +1,11 @@
 extern crate sdl2;
 extern crate time;
+extern crate rstris;
 
-mod rstris;
+use rstris::playfield::*;
+use rstris::player::*;
+use rstris::figure::*;
+use rstris::position::*;
 
 use sdl2::rect::Rect;
 use sdl2::render::Renderer;
@@ -43,7 +47,7 @@ fn get_block_color(block_id: u8) -> Color {
     }
 }
 
-fn draw_playfield(playfield: &rstris::Playfield, renderer: &mut Renderer) {
+fn draw_playfield(playfield: &Playfield, renderer: &mut Renderer) {
     for y in 0..playfield.height() {
         draw_block(renderer, 0, y as u32, FRAME_COLOR);
         for x in 0..playfield.width() {
@@ -65,7 +69,7 @@ fn draw_playfield(playfield: &rstris::Playfield, renderer: &mut Renderer) {
     }
 }
 
-fn draw_next_figure(figure: &rstris::Figure, offs_x: u32, offs_y: u32,
+fn draw_next_figure(figure: &Figure, offs_x: u32, offs_y: u32,
                     fig_max_width: u32, fig_max_heigth: u32,
                     renderer: &mut Renderer) {
     for y in 0..(fig_max_heigth + 2) {
@@ -102,36 +106,36 @@ fn draw_next_figure(figure: &rstris::Figure, offs_x: u32, offs_y: u32,
 //
 // Build list of figures
 //
-fn init_figures() -> Vec<rstris::Figure> {
-    let mut figure_list: Vec<rstris::Figure> = Vec::new();
-    figure_list.push(rstris::Figure::
+fn init_figures() -> Vec<Figure> {
+    let mut figure_list: Vec<Figure> = Vec::new();
+    figure_list.push(Figure::
                      new_from_face(String::from("1"),
                                    vec![vec![0, 0, 0],
                                         vec![1, 1, 1],
                                         vec![0, 1, 0]]));
-    figure_list.push(rstris::Figure::
+    figure_list.push(Figure::
                      new_from_face(String::from("2"),
                                    vec![vec![0, 0, 0],
                                         vec![2, 2, 2],
                                         vec![0, 0, 2]]));
-    figure_list.push(rstris::Figure::
+    figure_list.push(Figure::
                      new_from_face(String::from("3"),
                                    vec![vec![0, 0, 3],
                                         vec![3, 3, 3],
                                         vec![0, 0, 0]]));
-    figure_list.push(rstris::Figure::
+    figure_list.push(Figure::
                      new_from_face(String::from("4"),
                                    vec![vec![4, 4],
                                         vec![4, 4]]));
-    figure_list.push(rstris::Figure::
+    figure_list.push(Figure::
                      new_from_face(String::from("5"),
                                    vec![vec![0, 5, 5],
                                         vec![5, 5, 0]]));
-    figure_list.push(rstris::Figure::
+    figure_list.push(Figure::
                      new_from_face(String::from("6"),
                                    vec![vec![6, 6, 0],
                                         vec![0, 6, 6]]));
-    figure_list.push(rstris::Figure::
+    figure_list.push(Figure::
                      new_from_face(String::from("7"),
                                    vec![vec![0, 7, 0],
                                         vec![0, 7, 0],
@@ -140,7 +144,7 @@ fn init_figures() -> Vec<rstris::Figure> {
     return figure_list;
 }
 
-fn get_max_figure_dimensions(figure_list: &Vec<rstris::Figure>)
+fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
                              -> (u32, u32) {
     let mut max_width: u32 = 0;
     let mut max_height: u32 = 0;
@@ -185,10 +189,9 @@ fn main() {
     renderer.clear();
     renderer.present();
 
-    let mut player1 =
-        rstris::Player::new(String::from("Player 1"), &figure_list);
-    let mut pf1 = rstris::Playfield::new(String::from("Playfield 1"),
-                                         PF_WIDTH as usize, PF_HEIGHT as usize);
+    let mut player1 = Player::new(String::from("Player 1"), &figure_list);
+    let mut pf1 = Playfield::new(String::from("Playfield 1"),
+                                 PF_WIDTH as usize, PF_HEIGHT as usize);
 
     player1.place_next_figure(&mut pf1);
 
@@ -198,7 +201,7 @@ fn main() {
     let mut events = sdl_context.event_pump().unwrap();
     let mut last_update = time::precise_time_ns();
     'running: loop {
-        let mut moves: Vec<rstris::Movement> = vec![];
+        let mut moves: Vec<Movement> = vec![];
         let current_ticks = time::precise_time_ns();
         for event in events.poll_iter() {
             match event {
@@ -229,14 +232,14 @@ fn main() {
                                           next_delay));
                 match key {
                     Keycode::Left => {
-                        moves.push(rstris::Movement::MoveLeft);
+                        moves.push(Movement::MoveLeft);
                     },Keycode::Right => {
-                        moves.push(rstris::Movement::MoveRight);
+                        moves.push(Movement::MoveRight);
                     },Keycode::Down => {
-                        moves.push(rstris::Movement::MoveDown);
+                        moves.push(Movement::MoveDown);
                         last_update = current_ticks;
                     },Keycode::Up => {
-                        moves.push(rstris::Movement::RotateCW);
+                        moves.push(Movement::RotateCW);
                     },
                     _ => {}
                 }
@@ -245,7 +248,7 @@ fn main() {
 
         if (last_update + 500000000) < current_ticks {
             last_update = current_ticks;
-            moves.push(rstris::Movement::MoveDown);
+            moves.push(Movement::MoveDown);
         }
 
         for fig_move in moves {

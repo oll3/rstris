@@ -1,11 +1,7 @@
 [package]
-name = "rstris_demo"
+name = "rstris"
 version = "0.1.0"
 authors = ["Olle <ollebull@gmail.com>"]
 
 [dependencies]
-sdl2 = "*"
-time = "0.1"
-
-[dependencies.rstris]
-path = "rstris"
+rand = "0.3"

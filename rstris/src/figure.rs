@@ -1,5 +1,5 @@
-use rstris::playfield::*;
-use rstris::position::*;
+use playfield::*;
+use position::*;
 
 #[derive(Clone, Debug)]
 pub struct FigureDir {

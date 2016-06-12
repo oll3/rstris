@@ -1,8 +1,8 @@
 extern crate rand;
 
-use rstris::position::*;
-use rstris::figure::*;
-use rstris::playfield::*;
+use position::*;
+use figure::*;
+use playfield::*;
 
 #[derive(Debug)]
 pub struct Player<'a> {
