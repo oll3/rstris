@@ -77,8 +77,8 @@ impl <'a> Player<'a> {
             return true;
         }
         return match movement {
-            Movement::MoveDown => true,
-            _ => false
+            Movement::MoveDown => false,
+            _ => true
         }
     }
 }
