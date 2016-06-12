@@ -196,6 +196,7 @@ fn main() {
     player1.place_next_figure(&mut pf1);
 
     let mut line_count = 0;
+    let mut pause = false;
 
     let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
@@ -208,6 +209,13 @@ fn main() {
                 Event::Quit {..} | Event::KeyDown {
                     keycode: Some(Keycode::Escape), .. } => {
                     break 'running
+                },Event::KeyDown { keycode: Some(Keycode::P), .. } => {
+                    pause = !pause;
+                    if pause {
+                        println!("Paused");
+                    } else {
+                        println!("Continued");
+                    }
                 },Event::KeyDown {
                     keycode: Some(key), .. } => {
                     if !pressed_keys.contains_key(&key) {
@@ -222,6 +230,10 @@ fn main() {
 
                 _ => {}
             }
+        }
+
+        if pause {
+            continue;
         }
 
         let keys = pressed_keys.clone();
