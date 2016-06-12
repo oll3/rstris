@@ -10,6 +10,7 @@ pub enum Movement {
     MoveLeft,
     MoveRight,
     MoveDown,
+    MoveUp,
     RotateCW,
     RotateCCW,
 }
@@ -24,6 +25,7 @@ impl Position {
             Movement::MoveLeft => {pos.x_pos -= 1},
             Movement::MoveRight => {pos.x_pos += 1},
             Movement::MoveDown => {pos.y_pos += 1},
+            Movement::MoveUp => {pos.y_pos -= 1},
             Movement::RotateCW => {pos.dir += 1},
             Movement::RotateCCW => {pos.dir -= 1},
         };
