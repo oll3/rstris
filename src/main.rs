@@ -23,6 +23,11 @@ static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
 static BG_COLOR: Color = Color::RGB(101, 208, 246);
 
+struct PlayerStats {
+    line_count: usize,
+}
+
+
 fn draw_block(renderer: &mut Renderer, x: u32, y: u32, color: Color) {
     let block_width: u32 = BLOCK_SIZE;
     let block_height: u32 = BLOCK_SIZE;
@@ -161,6 +166,37 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
     return (max_width, max_height);
 }
 
+
+fn handle_player_moves(stats: &mut PlayerStats, pf: &mut Playfield,
+                       player: &mut Player, moves: Vec<Movement>) {
+    for fig_move in moves {
+        if !player.move_figure(pf, fig_move) {
+
+            // Figure couldn't be moved downwards
+
+            // Check for full lines in playfield and throw them away
+            let full_lines = pf.find_full_lines();
+            let num_full_lines = full_lines.len();
+            for line in full_lines {
+                pf.throw_line(line);
+            }
+
+            if num_full_lines > 0 {
+                stats.line_count += num_full_lines;
+                println!("Removed {} lines. Total: {}",
+                         num_full_lines, stats.line_count);
+            }
+
+            // Place new figure in playfield
+            if !player.place_next_figure(pf) {
+                println!("Game over!");
+            }
+        }
+    }
+}
+
+
+
 fn main() {
 
     let sdl_context = sdl2::init().unwrap();
@@ -195,14 +231,13 @@ fn main() {
 
     player1.place_next_figure(&mut pf1);
 
-    let mut line_count = 0;
+    let mut player1_stats = PlayerStats{line_count: 0};
     let mut pause = false;
 
     let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
     let mut last_update = time::precise_time_ns();
     'running: loop {
-        let mut moves: Vec<Movement> = vec![];
         let current_ticks = time::precise_time_ns();
         for event in events.poll_iter() {
             match event {
@@ -236,6 +271,7 @@ fn main() {
             continue;
         }
 
+        let mut moves: Vec<Movement> = vec![];
         let keys = pressed_keys.clone();
         for (key, (time, this_delay)) in keys {
             if time <= current_ticks {
@@ -263,32 +299,8 @@ fn main() {
             moves.push(Movement::MoveDown);
         }
 
-        for fig_move in moves {
-            if !player1.move_figure(&mut pf1, fig_move) {
-
-                // Check for full lines in playfield and throw them away
-                let full_lines = pf1.find_full_lines();
-                let num_full_lines = full_lines.len();
-                for line in full_lines {
-                    pf1.throw_line(line);
-                }
-
-                if num_full_lines > 0 {
-                    line_count += num_full_lines;
-                    println!("Removed {} lines. Total: {}",
-                             num_full_lines, line_count);
-                }
-
-                // Place new figure in playfield
-                if !player1.place_next_figure(&mut pf1) {
-                    println!("Game over!");
-                }
-
-                // Reset all key timings (Maybe we should only do
-                // this for the movement keys?)
-                pressed_keys.clear();
-            }
-        }
+        handle_player_moves(&mut player1_stats, &mut pf1,
+                            &mut player1, moves);
         /* Render graphics */
         let _ = renderer.set_draw_color(BG_COLOR);
         let _ = renderer.clear();
