@@ -17,14 +17,15 @@ use std::collections::HashMap;
 
 static PF_WIDTH: u32 = 10;
 static PF_HEIGHT: u32 = 20;
-static BLOCK_SIZE: u32 = 32;
-static BLOCK_SPACING: u32 = 2;
+static BLOCK_SIZE: u32 = 4;
+static BLOCK_SPACING: u32 = 1;
 static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
 static BG_COLOR: Color = Color::RGB(101, 208, 246);
 
 struct PlayerStats {
     line_count: usize,
+    time_last_move: HashMap<Movement, u64>,
 }
 
 
@@ -169,7 +170,9 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
 
 fn handle_player_moves(stats: &mut PlayerStats, pf: &mut Playfield,
                        player: &mut Player, moves: Vec<Movement>) {
+    let current_ticks = time::precise_time_ns();
     for fig_move in moves {
+        stats.time_last_move.insert(fig_move.clone(), current_ticks);
         if !player.move_figure(pf, fig_move) {
 
             // Figure couldn't be moved downwards
@@ -195,6 +198,44 @@ fn handle_player_moves(stats: &mut PlayerStats, pf: &mut Playfield,
     }
 }
 
+fn handle_player_input(pressed_keys:
+                       &mut HashMap<Keycode, (u64, u64)>) -> Vec<Movement> {
+    let current_ticks = time::precise_time_ns();
+    let mut moves: Vec<Movement> = vec![];
+    let keys = pressed_keys.clone();
+    for (key, (time, this_delay)) in keys {
+        if time <= current_ticks {
+            let next_delay = (this_delay * 2) / 5 + 20000000;
+            pressed_keys.insert(key, (current_ticks + this_delay,
+                                      next_delay));
+            match key {
+                Keycode::Left => {
+                    moves.push(Movement::MoveLeft);
+                },Keycode::Right => {
+                    moves.push(Movement::MoveRight);
+                },Keycode::Down => {
+                    moves.push(Movement::MoveDown);
+                },Keycode::Up => {
+                    moves.push(Movement::RotateCW);
+                },
+                _ => {}
+            }
+        }
+    }
+    return moves;
+}
+
+fn move_every(stats: &PlayerStats, movement: Movement,
+              every_ns: u64) -> Vec<Movement> {
+    let mut moves: Vec<Movement> = vec![];
+    let current_ticks = time::precise_time_ns();
+    let last_move = stats.time_last_move.get(&movement);
+    if last_move.is_none() ||
+        (last_move.unwrap() + every_ns) < current_ticks {
+            moves.push(movement);
+        }
+    return moves;
+}
 
 
 fn main() {
@@ -231,12 +272,12 @@ fn main() {
 
     player1.place_next_figure(&mut pf1);
 
-    let mut player1_stats = PlayerStats{line_count: 0};
+    let mut player1_stats = PlayerStats{line_count: 0,
+                                        time_last_move: HashMap::new()};
     let mut pause = false;
 
     let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
-    let mut last_update = time::precise_time_ns();
     'running: loop {
         let current_ticks = time::precise_time_ns();
         for event in events.poll_iter() {
@@ -271,34 +312,10 @@ fn main() {
             continue;
         }
 
-        let mut moves: Vec<Movement> = vec![];
-        let keys = pressed_keys.clone();
-        for (key, (time, this_delay)) in keys {
-            if time <= current_ticks {
-                let next_delay = (this_delay * 2) / 5 + 20000000;
-                pressed_keys.insert(key, (current_ticks + this_delay,
-                                          next_delay));
-                match key {
-                    Keycode::Left => {
-                        moves.push(Movement::MoveLeft);
-                    },Keycode::Right => {
-                        moves.push(Movement::MoveRight);
-                    },Keycode::Down => {
-                        moves.push(Movement::MoveDown);
-                        last_update = current_ticks;
-                    },Keycode::Up => {
-                        moves.push(Movement::RotateCW);
-                    },
-                    _ => {}
-                }
-            }
-        }
-
-        if (last_update + 500000000) < current_ticks {
-            last_update = current_ticks;
-            moves.push(Movement::MoveDown);
-        }
-
+        let mut moves = handle_player_input(&mut pressed_keys);
+        moves.append(&mut move_every(&mut player1_stats,
+                                     Movement::MoveDown,
+                                     500000000 /* ns */));
         handle_player_moves(&mut player1_stats, &mut pf1,
                             &mut player1, moves);
         /* Render graphics */

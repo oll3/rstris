@@ -5,7 +5,7 @@ pub struct Position {
     y_pos: i32,
 }
 
-#[allow(dead_code)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum Movement {
     MoveLeft,
     MoveRight,
