@@ -5,12 +5,18 @@ use figure::*;
 use playfield::*;
 
 
+//
+// Returns a list of all valid placements of a figure in
+// playfield. All positions returned should be possible to
+// reach from the starting point.
+//
 pub fn find_placing(pf: &Playfield, fig: &Figure,
                     start_pos: Position) -> Vec<Position> {
 
     let mut placements: Vec<Position> = Vec::new();
     let mut moves: LinkedList<Position> = LinkedList::new();
     let mut visited: HashSet<Position> = HashSet::new();
+    let mut it_cnt = 0;
 
     println!("Find valid placements for figure {} (starting at {:?})",
              fig.get_name(), start_pos);
@@ -61,7 +67,9 @@ pub fn find_placing(pf: &Playfield, fig: &Figure,
             visited.insert(tmp_pos.clone());
             moves.push_back(tmp_pos);
         }
+        it_cnt += 1;
     }
-
+    println!("Found {} valid placements for {} (iterated {} times)",
+             placements.len(), fig.get_name(), it_cnt);
     return placements;
 }
