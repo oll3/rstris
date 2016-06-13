@@ -1,3 +1,5 @@
+extern crate time;
+
 use std::collections::LinkedList;
 use std::collections::HashSet;
 use position::*;
@@ -12,7 +14,7 @@ use playfield::*;
 //
 pub fn find_placing(pf: &Playfield, fig: &Figure,
                     start_pos: Position) -> Vec<Position> {
-
+    let current_ticks = time::precise_time_ns();
     let mut placements: Vec<Position> = Vec::new();
     let mut moves: LinkedList<Position> = LinkedList::new();
     let mut visited: HashSet<Position> = HashSet::new();
@@ -62,14 +64,15 @@ pub fn find_placing(pf: &Playfield, fig: &Figure,
         if !fig.test(&pf, &tmp_pos) {
             // Valid placement
             println!("Valid position: {:?}", tmp_pos);
-            placements.push(current_pos);
+            placements.push(current_pos.clone());
         } else if !visited.contains(&tmp_pos) {
-            visited.insert(tmp_pos.clone());
-            moves.push_back(tmp_pos);
+            moves.push_back(tmp_pos.clone());
+            visited.insert(tmp_pos);
         }
         it_cnt += 1;
     }
-    println!("Found {} valid placements for {} (iterated {} times)",
-             placements.len(), fig.get_name(), it_cnt);
+    println!("Found {} valid placements for {} (iterated {} times, {} ms)",
+             placements.len(), fig.get_name(), it_cnt,
+             (time::precise_time_ns() - current_ticks) as f64 / 1000000.0);
     return placements;
 }
