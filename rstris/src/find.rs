@@ -14,7 +14,7 @@ pub fn find_placing(pf: &Playfield, fig: &Figure,
 
     println!("Find valid placements for figure {} (starting at {:?})",
              fig.get_name(), start_pos);
-    if !fig.test_figure(pf, &start_pos) {
+    if !fig.test(pf, &start_pos) {
         println!("Invalid starting point ({:?}) for figure {}",
                  start_pos, fig.get_name());
         return placements;
@@ -30,13 +30,13 @@ pub fn find_placing(pf: &Playfield, fig: &Figure,
         // already (one left, right, down, rotate cw).
         let tmp_pos = Position::apply_move(&current_pos,
                                            &Movement::MoveLeft);
-        if !visited.contains(&tmp_pos) && fig.test_figure(&pf, &tmp_pos) {
+        if !visited.contains(&tmp_pos) && fig.test(&pf, &tmp_pos) {
             visited.insert(tmp_pos.clone());
             moves.push_back(tmp_pos);
         }
         let tmp_pos = Position::apply_move(&current_pos,
                                            &Movement::MoveRight);
-        if !visited.contains(&tmp_pos) && fig.test_figure(&pf, &tmp_pos) {
+        if !visited.contains(&tmp_pos) && fig.test(&pf, &tmp_pos) {
             visited.insert(tmp_pos.clone());
             moves.push_back(tmp_pos);
         }
@@ -44,7 +44,7 @@ pub fn find_placing(pf: &Playfield, fig: &Figure,
                                            &Movement::RotateCW);
         if tmp_pos.get_dir() < fig.get_num_dirs() as i32 &&
             !visited.contains(&tmp_pos) &&
-            fig.test_figure(&pf, &tmp_pos) {
+            fig.test(&pf, &tmp_pos) {
                 visited.insert(tmp_pos.clone());
                 moves.push_back(tmp_pos);
         }
@@ -53,7 +53,7 @@ pub fn find_placing(pf: &Playfield, fig: &Figure,
         // the current position is a valid placement.
         let tmp_pos = Position::apply_move(&current_pos,
                                            &Movement::MoveDown);
-        if !fig.test_figure(&pf, &tmp_pos) {
+        if !fig.test(&pf, &tmp_pos) {
             // Valid placement
             println!("Valid position: {:?}", tmp_pos);
             placements.push(current_pos);

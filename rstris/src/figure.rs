@@ -77,7 +77,10 @@ impl Figure {
         return self.dir[dir_index].clone();
     }
 
-    pub fn place_figure(&self, pf: &mut Playfield, pos: &Position) {
+    //
+    // Place figure in playfield
+    //
+    pub fn place(&self, pf: &mut Playfield, pos: &Position) {
         let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
         for row in 0..fig_dir.blocks.len() {
             let pos_y = pos.get_y() + row as i32;
@@ -91,7 +94,10 @@ impl Figure {
         }
     }
 
-    pub fn remove_figure(&self, pf: &mut Playfield, pos: &Position) {
+    //
+    // Remove figure from playfield
+    //
+    pub fn remove(&self, pf: &mut Playfield, pos: &Position) {
         let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
         for row in 0..fig_dir.blocks.len() {
             let pos_y = pos.get_y() + row as i32;
@@ -105,7 +111,11 @@ impl Figure {
         }
     }
 
-    pub fn test_figure(&self, pf: &Playfield, pos: &Position) -> bool {
+    //
+    // Test if figure can be placed in playfield at position
+    // Returns false if not, true if it can be placed.
+    //
+    pub fn test(&self, pf: &Playfield, pos: &Position) -> bool {
         let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
         for row in 0..fig_dir.blocks.len() {
             let offs_y = pos.get_y() + row as i32;
@@ -125,15 +135,19 @@ impl Figure {
         return true;
     }
 
-    pub fn move_figure(&self, pf: &mut Playfield,
-                       current_pos: &Position,
-                       new_pos: &Position) -> bool {
-        self.remove_figure(pf, current_pos);
-        if self.test_figure(pf, new_pos) {
-            self.place_figure(pf, new_pos);
+    //
+    // Move a figure in playfield from position to position.
+    // Remove from current position, if the new position is valid then
+    // place figure there, else put it back on previous position.
+    //
+    pub fn move_fig(&self, pf: &mut Playfield, current_pos: &Position,
+                    new_pos: &Position) -> bool {
+        self.remove(pf, current_pos);
+        if self.test(pf, new_pos) {
+            self.place(pf, new_pos);
             return true;
         }
-        self.place_figure(pf, current_pos);
+        self.place(pf, current_pos);
         return false;
     }
 }

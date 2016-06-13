@@ -51,10 +51,10 @@ impl <'a> Player<'a> {
         self.current_figure = Some(self.next_figure.clone());
 
         let figure = self.current_figure.clone().unwrap();
-        if !figure.test_figure(pf, &self.current_pos) {
+        if !figure.test(pf, &self.current_pos) {
             return false;
         } else {
-            self.next_figure.place_figure(pf, &self.current_pos);
+            self.next_figure.place(pf, &self.current_pos);
             println!("{}: Placed figure {} in playfield",
                      self.player_name, self.next_figure.get_name());
 
@@ -75,7 +75,7 @@ impl <'a> Player<'a> {
         let figure = self.current_figure.clone().unwrap();
         let mut new_pos = Position::apply_move(&self.current_pos, &movement);
         new_pos.normalize_dir(figure.dir.len());
-        let result = figure.move_figure(pf, &self.current_pos, &new_pos);
+        let result = figure.move_fig(pf, &self.current_pos, &new_pos);
         if result {
             self.current_pos = new_pos;
             return true;
