@@ -8,8 +8,8 @@ pub struct Playfield {
 
 
 impl Playfield {
-    pub fn new(name:String, width: usize, height: usize) -> Playfield {
-        let mut playfield = Playfield{pf_name: name,
+    pub fn new(name: &str, width: usize, height: usize) -> Playfield {
+        let mut playfield = Playfield{pf_name: name.to_owned(),
                                       pf_width: width,
                                       pf_height: height,
                                       blocks: vec![]};

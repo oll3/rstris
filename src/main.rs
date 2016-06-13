@@ -115,34 +115,34 @@ fn draw_next_figure(figure: &Figure, offs_x: u32, offs_y: u32,
 fn init_figures() -> Vec<Figure> {
     let mut figure_list: Vec<Figure> = Vec::new();
     figure_list.push(Figure::
-                     new_from_face(String::from("1"),
+                     new_from_face("1",
                                    vec![vec![0, 0, 0],
                                         vec![1, 1, 1],
                                         vec![0, 1, 0]]));
     figure_list.push(Figure::
-                     new_from_face(String::from("2"),
+                     new_from_face("2",
                                    vec![vec![0, 0, 0],
                                         vec![2, 2, 2],
                                         vec![0, 0, 2]]));
     figure_list.push(Figure::
-                     new_from_face(String::from("3"),
+                     new_from_face("3",
                                    vec![vec![0, 0, 3],
                                         vec![3, 3, 3],
                                         vec![0, 0, 0]]));
     figure_list.push(Figure::
-                     new_from_face(String::from("4"),
+                     new_from_face("4",
                                    vec![vec![4, 4],
                                         vec![4, 4]]));
     figure_list.push(Figure::
-                     new_from_face(String::from("5"),
+                     new_from_face("5",
                                    vec![vec![0, 5, 5],
                                         vec![5, 5, 0]]));
     figure_list.push(Figure::
-                     new_from_face(String::from("6"),
+                     new_from_face("6",
                                    vec![vec![6, 6, 0],
                                         vec![0, 6, 6]]));
     figure_list.push(Figure::
-                     new_from_face(String::from("7"),
+                     new_from_face("7",
                                    vec![vec![0, 7, 0],
                                         vec![0, 7, 0],
                                         vec![0, 7, 0],
@@ -266,8 +266,8 @@ fn main() {
     renderer.clear();
     renderer.present();
 
-    let mut player1 = Player::new(String::from("Player 1"), &figure_list);
-    let mut pf1 = Playfield::new(String::from("Playfield 1"),
+    let mut player1 = Player::new("Player 1", &figure_list);
+    let mut pf1 = Playfield::new("Playfield 1",
                                  PF_WIDTH as usize, PF_HEIGHT as usize);
 
     player1.place_next_figure(&mut pf1);

@@ -37,14 +37,14 @@ impl FigureDir {
 }
 
 impl Figure {
-    pub fn new(name: String) -> Figure {
-        Figure{figure_name: name, dir: vec![]}
+    pub fn new(name: &str) -> Figure {
+        Figure{figure_name: name.to_owned(), dir: vec![]}
     }
 
     //
     // Build new figure by rotating the face of a figure 90 degrees
     //
-    pub fn new_from_face(name: String,
+    pub fn new_from_face(name: &str,
                          face_blocks: Vec<Vec<u8>>) -> Figure {
         let mut fig = Figure::new(name);
         let mut dir = FigureDir::new(face_blocks);
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_figure1() {
-        let fig = Figure::new_from_face(String::from("Figure 1"),
+        let fig = Figure::new_from_face("Figure 1",
                                         vec![vec![0, 0, 0],
                                              vec![1, 1, 1],
                                              vec![0, 1, 0]]);
@@ -191,7 +191,7 @@ mod tests {
     }
     #[test]
     fn test_figure2() {
-        let fig = Figure::new_from_face(String::from("Figure 2"),
+        let fig = Figure::new_from_face("Figure 2",
                                         vec![vec![0, 1, 0],
                                              vec![0, 1, 0],
                                              vec![0, 1, 0],
@@ -207,7 +207,7 @@ mod tests {
     }
     #[test]
     fn test_figure3() {
-        let fig = Figure::new_from_face(String::from("Figure 3"),
+        let fig = Figure::new_from_face("Figure 3",
                                         vec![vec![1, 0],
                                              vec![1, 1],
                                              vec![0, 1]]);

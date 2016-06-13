@@ -15,8 +15,8 @@ pub struct Player<'a> {
 
 
 impl <'a> Player<'a> {
-    pub fn new(name: String, figures: &Vec<Figure>) -> Player {
-        Player{player_name: name,
+    pub fn new(name: &str, figures: &'a Vec<Figure>) -> Self {
+        Player{player_name: name.to_owned(),
                avail_figures: figures,
                current_pos: Position::new(-1, -1, -1),
                current_figure: None,
