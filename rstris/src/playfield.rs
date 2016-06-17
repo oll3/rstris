@@ -1,9 +1,11 @@
+use block::*;
+
 #[derive(Debug)]
 pub struct Playfield {
     pf_name: String,
     pf_width: usize,
     pf_height: usize,
-    blocks: Vec<Vec<u8>>,
+    blocks: Vec<Vec<Block>>,
 }
 
 
@@ -14,12 +16,15 @@ impl Playfield {
                                       pf_height: height,
                                       blocks: vec![]};
         for _ in 0..height {
-            playfield.blocks.push(vec![0; width as usize]);
+            playfield.blocks.push(vec![Block::new(0); width as usize]);
         }
         playfield
     }
-    pub fn get_block(&self, x: usize, y: usize) -> u8 {
-        self.blocks[y][x]
+    pub fn get_block_id(&self, x: usize, y: usize) -> u8 {
+        self.blocks[y][x].id
+    }
+    pub fn get_block(&self, x: usize, y: usize) -> Block {
+        self.blocks[y][x].clone()
     }
     pub fn width(&self) -> usize {
         self.pf_width
@@ -32,9 +37,9 @@ impl Playfield {
             y >= 0 && y < self.pf_height as i32
     }
     pub fn block_is_set(&self, x: usize, y: usize) -> bool {
-        self.get_block(x, y) != 0
+        self.get_block(x, y).id != 0
     }
-    pub fn set_block(&mut self, x: usize, y: usize, block: u8) {
+    pub fn set_block(&mut self, x: usize, y: usize, block: Block) {
         self.blocks[y][x] = block;
     }
 
@@ -67,9 +72,10 @@ impl Playfield {
         while y >= 0 {
             for x in 0..self.pf_width {
                 if y >= 1 {
-                    self.blocks[y as usize][x] = self.blocks[y as usize - 1][x];
+                    self.blocks[y as usize][x] =
+                        self.blocks[y as usize - 1][x].clone();
                 } else {
-                    self.blocks[y as usize][x] = 0;
+                    self.blocks[y as usize][x] = Block::new(0);
                 }
             }
             y -= 1;

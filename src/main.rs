@@ -2,6 +2,7 @@ extern crate sdl2;
 extern crate time;
 extern crate rstris;
 
+use rstris::block::*;
 use rstris::playfield::*;
 use rstris::player::*;
 use rstris::figure::*;
@@ -40,8 +41,8 @@ fn draw_block(renderer: &mut Renderer, x: u32, y: u32, color: Color) {
     let _ = renderer.fill_rect(border_rect);
 }
 
-fn get_block_color(block_id: u8) -> Color {
-    match block_id {
+fn get_block_color(block: &Block) -> Color {
+    match block.id {
         1 => Color::RGB(50, 180, 50),
         2 => Color::RGB(180, 50, 50),
         3 => Color::RGB(50, 50, 180),
@@ -58,9 +59,9 @@ fn draw_playfield(playfield: &Playfield, renderer: &mut Renderer) {
         draw_block(renderer, 0, y as u32, FRAME_COLOR);
         for x in 0..playfield.width() {
             let block = playfield.get_block(x, y);
-            if block != 0 {
+            if block.is_set() {
                 draw_block(renderer, (x + 1) as u32, y as u32,
-                           get_block_color(block));
+                           get_block_color(&block));
             } else {
                 draw_block(renderer, (x + 1) as u32, y as u32,
                            FILL_COLOR);
@@ -98,11 +99,11 @@ fn draw_next_figure(figure: &Figure, offs_x: u32, offs_y: u32,
     for y in 0..fig_dir.get_height() {
         for x in 0..fig_dir.get_width() {
             let block = fig_dir.get_block(x, y);
-            if block != 0 {
+            if block.is_set() {
                 draw_block(renderer,
                            x as u32 + offs_x + 1 + fig_x_offs,
                            y as u32 + offs_y + 1 + fig_y_offs,
-                           get_block_color(block));
+                           get_block_color(&block));
             }
         }
     }

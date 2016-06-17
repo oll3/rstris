@@ -1,12 +1,8 @@
+use block::*;
+use figure_dir::*;
 use playfield::*;
 use position::*;
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
-pub struct FigureDir {
-    width: usize,
-    height: usize,
-    blocks: Vec<Vec<u8>>,
-}
 
 #[derive(Clone, Debug)]
 pub struct Figure {
@@ -14,27 +10,6 @@ pub struct Figure {
     pub dir: Vec<FigureDir>,
 }
 
-impl FigureDir {
-    pub fn new(dir_blocks: Vec<Vec<u8>>) -> FigureDir {
-        FigureDir{height: dir_blocks.len(),
-                  width: dir_blocks[0].len(),
-                  blocks: dir_blocks}
-    }
-    pub fn new_empty(blocks_width: &usize, blocks_height: &usize) -> FigureDir {
-        FigureDir{height: *blocks_height,
-                  width: *blocks_width,
-                  blocks: vec![vec![0; *blocks_width]; *blocks_height]}
-    }
-    pub fn get_width(&self) -> usize {
-        self.width
-    }
-    pub fn get_height(&self) -> usize {
-        self.height
-    }
-    pub fn get_block(&self, x: usize, y: usize) -> u8 {
-        self.blocks[y][x]
-    }
-}
 
 impl Figure {
     pub fn new(name: &str) -> Figure {
@@ -54,7 +29,7 @@ impl Figure {
             for y in 0..dir.get_height() {
                 for x in 0..dir.get_width() {
                     next_dir.blocks[x][y] =
-                        dir.blocks[dir.get_height() - y - 1][x];
+                        dir.blocks[dir.get_height() - y - 1][x].clone();
                 }
             }
             if !fig.test_dir_present(&next_dir) {
@@ -62,7 +37,7 @@ impl Figure {
             }
             dir = next_dir;
         }
-        println!("Buildt figure {} with {} directions",
+        println!("Built figure {} with {} directions",
                  fig.get_name(), fig.get_num_dirs());
         fig
     }
@@ -97,9 +72,9 @@ impl Figure {
         for row in 0..fig_dir.blocks.len() {
             let pos_y = pos.get_y() + row as i32;
             for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.blocks[row][col];
+                let b = fig_dir.get_block(col, row);
                 let pos_x = pos.get_x() + col as i32;
-                if b != 0 && pf.contains(pos_x, pos_y) {
+                if b.is_set() && pf.contains(pos_x, pos_y) {
                     pf.set_block(pos_x as usize, pos_y as usize, b);
                 }
             }
@@ -114,10 +89,10 @@ impl Figure {
         for row in 0..fig_dir.blocks.len() {
             let pos_y = pos.get_y() + row as i32;
             for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.blocks[row][col];
+                let b = fig_dir.get_block(col, row);
                 let pos_x = pos.get_x() + col as i32;
-                if b != 0 && pf.contains(pos_x, pos_y) {
-                    pf.set_block(pos_x as usize, pos_y as usize, 0);
+                if b.is_set() && pf.contains(pos_x, pos_y) {
+                    pf.set_block(pos_x as usize, pos_y as usize, Block::new(0));
                 }
             }
         }
@@ -133,7 +108,7 @@ impl Figure {
             let offs_y = pos.get_y() + row as i32;
             for col in 0..fig_dir.blocks[row].len() {
                 let offs_x = pos.get_x() + col as i32;
-                let b = fig_dir.blocks[row][col];
+                let b = fig_dir.get_block_id(col, row);
                 if b != 0 {
                     if !pf.contains(offs_x, offs_y) {
                         return false;
