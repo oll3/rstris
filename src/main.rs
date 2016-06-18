@@ -1,9 +1,6 @@
 extern crate sdl2;
 extern crate time;
 extern crate rstris;
-extern crate rustc_serialize;
-
-
 
 mod draw;
 
@@ -21,7 +18,7 @@ use std::collections::HashMap;
 
 static PF_WIDTH: u32 = 10;
 static PF_HEIGHT: u32 = 20;
-static BLOCK_SIZE: u32 = 4;
+static BLOCK_SIZE: u32 = 20;
 static BLOCK_SPACING: u32 = 1;
 static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
