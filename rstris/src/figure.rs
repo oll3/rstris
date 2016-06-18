@@ -143,6 +143,7 @@ impl Figure {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use figure_dir::*;
 
     #[test]
     fn test_figure1() {
@@ -151,18 +152,18 @@ mod tests {
                                              vec![1, 1, 1],
                                              vec![0, 1, 0]]);
         assert_eq!(fig.get_num_dirs(), 4);
-        assert_eq!(fig.dir[0].blocks, [[0, 0, 0],
-                                       [1, 1, 1],
-                                       [0, 1, 0]]);
-        assert_eq!(fig.dir[1].blocks, [[0, 1, 0],
-                                       [1, 1, 0],
-                                       [0, 1, 0]]);
-        assert_eq!(fig.dir[2].blocks, [[0, 1, 0],
-                                       [1, 1, 1],
-                                       [0, 0, 0]]);
-        assert_eq!(fig.dir[3].blocks, [[0, 1, 0],
-                                       [0, 1, 1],
-                                       [0, 1, 0]]);
+        assert_eq!(fig.dir[0], FigureDir::new(vec![vec![0, 0, 0],
+                                                   vec![1, 1, 1],
+                                                   vec![0, 1, 0]]));
+        assert_eq!(fig.dir[1], FigureDir::new(vec![vec![0, 1, 0],
+                                                   vec![1, 1, 0],
+                                                   vec![0, 1, 0]]));
+        assert_eq!(fig.dir[2], FigureDir::new(vec![vec![0, 1, 0],
+                                                   vec![1, 1, 1],
+                                                   vec![0, 0, 0]]));
+        assert_eq!(fig.dir[3], FigureDir::new(vec![vec![0, 1, 0],
+                                                   vec![0, 1, 1],
+                                                   vec![0, 1, 0]]));
     }
     #[test]
     fn test_figure2() {
@@ -172,13 +173,13 @@ mod tests {
                                              vec![0, 1, 0],
                                              vec![0, 1, 0]]);
         assert_eq!(fig.get_num_dirs(), 2);
-        assert_eq!(fig.dir[0].blocks, [[0, 1, 0],
-                                       [0, 1, 0],
-                                       [0, 1, 0],
-                                       [0, 1, 0]]);
-        assert_eq!(fig.dir[1].blocks, [[0, 0, 0, 0],
-                                       [1, 1, 1, 1],
-                                       [0, 0, 0, 0]]);
+        assert_eq!(fig.dir[0], FigureDir::new(vec![vec![0, 1, 0],
+                                                   vec![0, 1, 0],
+                                                   vec![0, 1, 0],
+                                                   vec![0, 1, 0]]));
+        assert_eq!(fig.dir[1], FigureDir::new(vec![vec![0, 0, 0, 0],
+                                                   vec![1, 1, 1, 1],
+                                                   vec![0, 0, 0, 0]]));
     }
     #[test]
     fn test_figure3() {
@@ -187,11 +188,11 @@ mod tests {
                                              vec![1, 1],
                                              vec![0, 1]]);
         assert_eq!(fig.get_num_dirs(), 2);
-        assert_eq!(fig.dir[0].blocks, [[1, 0],
-                                       [1, 1],
-                                       [0, 1]]);
-        assert_eq!(fig.dir[1].blocks, [[0, 1, 1],
-                                       [1, 1, 0]]);
+        assert_eq!(fig.dir[0], FigureDir::new(vec![vec![1, 0],
+                                                   vec![1, 1],
+                                                   vec![0, 1]]));
+        assert_eq!(fig.dir[1], FigureDir::new(vec![vec![0, 1, 1],
+                                                   vec![1, 1, 0]]));
     }
 
 }
