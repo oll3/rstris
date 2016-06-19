@@ -123,8 +123,8 @@ impl Figure {
             let offs_y = pos.get_y() + row as i32;
             for col in 0..fig_dir.blocks[row].len() {
                 let offs_x = pos.get_x() + col as i32;
-                let b = fig_dir.get_block_id(col, row);
-                if b != 0 {
+                let b = fig_dir.get_block(col, row);
+                if b.is_set() {
                     if !pf.contains(offs_x, offs_y) {
                         return false;
                     }
