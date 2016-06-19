@@ -24,6 +24,14 @@ static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
 static BG_COLOR: Color = Color::RGB(101, 208, 246);
 
+struct PlayerKeys {
+    step_left: Option<Keycode>,
+    step_right: Option<Keycode>,
+    step_down: Option<Keycode>,
+    rot_cw: Option<Keycode>,
+    rot_ccw: Option<Keycode>,
+}
+
 struct PlayerStats {
     line_count: usize,
     time_last_move: HashMap<Movement, u64>,
@@ -119,7 +127,7 @@ fn handle_player_moves(stats: &mut PlayerStats, pf: &mut Playfield,
     }
 }
 
-fn handle_player_input(pressed_keys:
+fn handle_player_input(keyMap: &PlayerKeys, pressed_keys:
                        &mut HashMap<Keycode, (u64, u64)>) -> Vec<Movement> {
     let current_ticks = time::precise_time_ns();
     let mut moves: Vec<Movement> = vec![];
@@ -129,17 +137,21 @@ fn handle_player_input(pressed_keys:
             let next_delay = (this_delay * 2) / 5 + 20000000;
             pressed_keys.insert(key, (current_ticks + this_delay,
                                       next_delay));
-            match key {
-                Keycode::Left => {
-                    moves.push(Movement::MoveLeft);
-                },Keycode::Right => {
-                    moves.push(Movement::MoveRight);
-                },Keycode::Down => {
+            if !keyMap.step_left.is_none() &&
+                key == keyMap.step_left.unwrap() {
+                moves.push(Movement::MoveLeft);
+            } else if !keyMap.step_right.is_none() &&
+                key == keyMap.step_right.unwrap() {
+                moves.push(Movement::MoveRight);
+            } else if !keyMap.step_down.is_none() &&
+                key == keyMap.step_down.unwrap() {
                     moves.push(Movement::MoveDown);
-                },Keycode::Up => {
+                } else if !keyMap.rot_cw.is_none() &&
+                key == keyMap.rot_cw.unwrap() {
                     moves.push(Movement::RotateCW);
-                },
-                _ => {}
+                } else if !keyMap.rot_ccw.is_none() &&
+                key == keyMap.rot_ccw.unwrap() {
+                    moves.push(Movement::RotateCCW);
             }
         }
     }
@@ -185,6 +197,12 @@ fn main() {
                                     FILL_COLOR);
 
     let mut player1 = Player::new("Player 1", &figure_list);
+    let player1_key_map = PlayerKeys{step_left: Some(Keycode::Left),
+                                     step_right: Some(Keycode::Right),
+                                     step_down: Some(Keycode::Down),
+                                     rot_cw: Some(Keycode::Up),
+                                     rot_ccw: None};
+
     let mut pf1 = Playfield::new("Playfield 1",
                                  PF_WIDTH as usize, PF_HEIGHT as usize);
 
@@ -230,7 +248,7 @@ fn main() {
             continue;
         }
 
-        let mut moves = handle_player_input(&mut pressed_keys);
+        let mut moves = handle_player_input(&player1_key_map, &mut pressed_keys);
         moves.append(&mut move_every(&mut player1_stats,
                                      Movement::MoveDown,
                                      500000000 /* ns */));
