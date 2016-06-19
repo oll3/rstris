@@ -145,7 +145,7 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
     }
 }
 
-fn handle_player_input(keyMap: &PlayerKeys, pressed_keys:
+fn handle_player_input(key_map: &PlayerKeys, pressed_keys:
                        &mut HashMap<Keycode, (u64, u64)>) -> Vec<Movement> {
     let current_ticks = time::precise_time_ns();
     let mut moves: Vec<Movement> = vec![];
@@ -155,20 +155,20 @@ fn handle_player_input(keyMap: &PlayerKeys, pressed_keys:
             let next_delay = (this_delay * 2) / 5 + 20000000;
             pressed_keys.insert(key, (current_ticks + this_delay,
                                       next_delay));
-            if !keyMap.step_left.is_none() &&
-                key == keyMap.step_left.unwrap() {
+            if !key_map.step_left.is_none() &&
+                key == key_map.step_left.unwrap() {
                 moves.push(Movement::MoveLeft);
-            } else if !keyMap.step_right.is_none() &&
-                key == keyMap.step_right.unwrap() {
+            } else if !key_map.step_right.is_none() &&
+                key == key_map.step_right.unwrap() {
                 moves.push(Movement::MoveRight);
-            } else if !keyMap.step_down.is_none() &&
-                key == keyMap.step_down.unwrap() {
+            } else if !key_map.step_down.is_none() &&
+                key == key_map.step_down.unwrap() {
                     moves.push(Movement::MoveDown);
-                } else if !keyMap.rot_cw.is_none() &&
-                key == keyMap.rot_cw.unwrap() {
+                } else if !key_map.rot_cw.is_none() &&
+                key == key_map.rot_cw.unwrap() {
                     moves.push(Movement::RotateCW);
-                } else if !keyMap.rot_ccw.is_none() &&
-                key == keyMap.rot_ccw.unwrap() {
+                } else if !key_map.rot_ccw.is_none() &&
+                key == key_map.rot_ccw.unwrap() {
                     moves.push(Movement::RotateCCW);
             }
         }
