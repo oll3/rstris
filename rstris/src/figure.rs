@@ -81,6 +81,21 @@ impl Figure {
         }
     }
 
+    pub fn lock(&self, pf: &mut Playfield, pos: &Position) {
+        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
+        for row in 0..fig_dir.blocks.len() {
+            let pos_y = pos.get_y() + row as i32;
+            for col in 0..fig_dir.blocks[row].len() {
+                let mut b = fig_dir.get_block(col, row);
+                let pos_x = pos.get_x() + col as i32;
+                if b.is_set() && pf.contains(pos_x, pos_y) {
+                    b.locked = true;
+                    pf.set_block(pos_x as usize, pos_y as usize, b);
+                }
+            }
+        }
+    }
+
     //
     // Remove figure from playfield
     //

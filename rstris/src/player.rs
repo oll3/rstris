@@ -75,14 +75,20 @@ impl <'a> Player<'a> {
         let figure = self.current_figure.clone().unwrap();
         let mut new_pos = Position::apply_move(&self.current_pos, &movement);
         new_pos.normalize_dir(figure.dir.len());
-        let result = figure.move_fig(pf, &self.current_pos, &new_pos);
-        if result {
+
+        figure.remove(pf, &self.current_pos);
+        if figure.test(pf, &new_pos) {
             self.current_pos = new_pos;
+            figure.place(pf, &self.current_pos);
             return true;
-        }
-        return match movement {
-            Movement::MoveDown => false,
-            _ => true
+        } else if movement != Movement::MoveDown {
+            figure.place(pf, &self.current_pos);
+            return true;
+        } else {
+            /* Figure couldn't be moved down - Mark figure blocks
+            as locked in its current position */
+            figure.lock(pf, &self.current_pos);
+            return false;
         }
     }
 }
