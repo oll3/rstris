@@ -34,9 +34,24 @@ struct PlayerKeys {
 
 struct PlayerStats {
     line_count: usize,
+}
+
+struct PlayerContext {
+    key_map: PlayerKeys,
+    stats: PlayerStats,
     time_last_move: HashMap<Movement, u64>,
 }
 
+impl PlayerContext {
+    pub fn new(key_map: PlayerKeys) -> Self {
+        PlayerContext{key_map: key_map,
+                      stats: PlayerStats{
+                          line_count: 0,
+                      },
+                      time_last_move: HashMap::new(),
+        }
+    }
+}
 
 //
 // Build list of figures
@@ -97,11 +112,11 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
 }
 
 
-fn handle_player_moves(stats: &mut PlayerStats, pf: &mut Playfield,
+fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
                        player: &mut Player, moves: Vec<Movement>) {
     let current_ticks = time::precise_time_ns();
     for fig_move in moves {
-        stats.time_last_move.insert(fig_move.clone(), current_ticks);
+        player_ctx.time_last_move.insert(fig_move.clone(), current_ticks);
         if !player.move_figure(pf, fig_move) {
 
             // Figure couldn't be moved downwards
@@ -114,9 +129,9 @@ fn handle_player_moves(stats: &mut PlayerStats, pf: &mut Playfield,
             }
 
             if num_full_lines > 0 {
-                stats.line_count += num_full_lines;
+                player_ctx.stats.line_count += num_full_lines;
                 println!("Removed {} lines. Total: {}",
-                         num_full_lines, stats.line_count);
+                         num_full_lines, player_ctx.stats.line_count);
             }
 
             // Place new figure in playfield
@@ -158,11 +173,12 @@ fn handle_player_input(keyMap: &PlayerKeys, pressed_keys:
     return moves;
 }
 
-fn move_every(stats: &PlayerStats, movement: Movement,
+
+fn move_every(time_last_move: &HashMap<Movement, u64>, movement: Movement,
               every_ns: u64) -> Vec<Movement> {
     let mut moves: Vec<Movement> = vec![];
     let current_ticks = time::precise_time_ns();
-    let last_move = stats.time_last_move.get(&movement);
+    let last_move = time_last_move.get(&movement);
     if last_move.is_none() ||
         (last_move.unwrap() + every_ns) < current_ticks {
             moves.push(movement);
@@ -197,19 +213,21 @@ fn main() {
                                     FILL_COLOR);
 
     let mut player1 = Player::new("Player 1", &figure_list);
-    let player1_key_map = PlayerKeys{step_left: Some(Keycode::Left),
-                                     step_right: Some(Keycode::Right),
-                                     step_down: Some(Keycode::Down),
-                                     rot_cw: Some(Keycode::Up),
-                                     rot_ccw: None};
+    let mut player1_ctx =
+        PlayerContext::new(PlayerKeys{
+            step_left: Some(Keycode::Left),
+            step_right: Some(Keycode::Right),
+            step_down: Some(Keycode::Down),
+            rot_cw: Some(Keycode::Up),
+            rot_ccw: None
+        });
 
+    let mut player2 = Player::new("Player 1", &figure_list);
     let mut pf1 = Playfield::new("Playfield 1",
                                  PF_WIDTH as usize, PF_HEIGHT as usize);
 
-    player1.place_next_figure(&mut pf1);
 
-    let mut player1_stats = PlayerStats{line_count: 0,
-                                        time_last_move: HashMap::new()};
+    player1.place_next_figure(&mut pf1);
     let mut pause = false;
 
     let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
@@ -248,12 +266,15 @@ fn main() {
             continue;
         }
 
-        let mut moves = handle_player_input(&player1_key_map, &mut pressed_keys);
-        moves.append(&mut move_every(&mut player1_stats,
+        let mut moves = handle_player_input(&player1_ctx.key_map,
+                                            &mut pressed_keys);
+        moves.append(&mut move_every(&mut player1_ctx.time_last_move,
                                      Movement::MoveDown,
                                      500000000 /* ns */));
-        handle_player_moves(&mut player1_stats, &mut pf1,
+
+        handle_player_moves(&mut player1_ctx, &mut pf1,
                             &mut player1, moves);
+
         /* Render graphics */
         draw.clear(BG_COLOR);
         draw.draw_playfield(&pf1);
