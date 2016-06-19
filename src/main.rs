@@ -39,6 +39,7 @@ struct PlayerStats {
 struct PlayerContext {
     key_map: PlayerKeys,
     stats: PlayerStats,
+    game_over: bool,
     time_last_move: HashMap<Movement, u64>,
 }
 
@@ -49,6 +50,7 @@ impl PlayerContext {
                           line_count: 0,
                       },
                       time_last_move: HashMap::new(),
+                      game_over: false,
         }
     }
 }
@@ -136,7 +138,8 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
 
             // Place new figure in playfield
             if !player.place_next_figure(pf) {
-                println!("Game over!");
+                player_ctx.game_over = true;
+                println!("{}: Game over!", player.get_name());
             }
         }
     }
@@ -266,15 +269,16 @@ fn main() {
             continue;
         }
 
-        let mut moves = handle_player_input(&player1_ctx.key_map,
-                                            &mut pressed_keys);
-        moves.append(&mut move_every(&mut player1_ctx.time_last_move,
-                                     Movement::MoveDown,
-                                     500000000 /* ns */));
+        if !player1_ctx.game_over {
+            let mut moves = handle_player_input(&player1_ctx.key_map,
+                                                &mut pressed_keys);
+            moves.append(&mut move_every(&mut player1_ctx.time_last_move,
+                                         Movement::MoveDown,
+                                         500000000 /* ns */));
 
-        handle_player_moves(&mut player1_ctx, &mut pf1,
-                            &mut player1, moves);
-
+            handle_player_moves(&mut player1_ctx, &mut pf1,
+                                &mut player1, moves);
+        }
         /* Render graphics */
         draw.clear(BG_COLOR);
         draw.draw_playfield(&pf1);

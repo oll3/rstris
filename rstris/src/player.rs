@@ -23,7 +23,9 @@ impl <'a> Player<'a> {
                next_figure: Player::get_rand_figure(figures),
         }
     }
-
+    pub fn get_name(&self) -> &String {
+        &self.player_name
+    }
     //
     // Get a random figure from array of figures
     //
@@ -52,6 +54,8 @@ impl <'a> Player<'a> {
 
         let figure = self.current_figure.clone().unwrap();
         if !figure.test(pf, &self.current_pos) {
+            /* Place it anyway to mark the failure */
+            figure.place(pf, &self.current_pos);
             return false;
         } else {
             self.next_figure.place(pf, &self.current_pos);
