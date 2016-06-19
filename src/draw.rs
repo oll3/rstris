@@ -42,16 +42,25 @@ impl <'a>DrawContext<'a> {
     }
 
     fn get_block_color(block: &Block) -> Color {
-        match block.id {
+        let mut color = match block.id {
             1 => Color::RGB(50, 180, 50),
             2 => Color::RGB(180, 50, 50),
             3 => Color::RGB(50, 50, 180),
-            4 => Color::RGB(120, 120, 120),
-            5 => Color::RGB(20, 80, 80),
+            4 => Color::RGB(160, 160, 100),
+            5 => Color::RGB(20, 100, 100),
             6 => Color::RGB(120, 150, 0),
             7 => Color::RGB(220, 50, 140),
             _ => Color::RGB(0, 0, 0),
+        };
+        if block.locked {
+            let (r, g, b) = color.rgb();
+            let grey = (r as u32 + g as u32 + b as u32) / 3;
+            color = Color::RGB(grey as u8, grey as u8, grey as u8);
+            /*((r as f32) * 0.5) as u8,
+                               ((g as f32) * 0.5) as u8,
+                               ((b as f32) * 0.5) as u8);*/
         }
+        return color;
     }
 
     pub fn draw_playfield(&mut self, playfield: &Playfield) {
