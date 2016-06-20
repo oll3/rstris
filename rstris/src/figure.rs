@@ -59,9 +59,9 @@ impl Figure {
     pub fn add_dir_face(&mut self, dir_blocks: Vec<Vec<u8>>) {
         self.dir.push(FigureDir::new(dir_blocks));
     }
-    pub fn get_fig_dir(&self, dir_index: usize) -> FigureDir {
+    pub fn get_fig_dir(&self, dir_index: usize) -> &FigureDir {
         let dir_index = dir_index % self.dir.len();
-        return self.dir[dir_index].clone();
+        return &self.dir[dir_index];
     }
 
     //
@@ -75,7 +75,8 @@ impl Figure {
                 let b = fig_dir.get_block(col, row);
                 let pos_x = pos.get_x() + col as i32;
                 if b.is_set() && pf.contains(pos_x, pos_y) {
-                    pf.set_block(pos_x as usize, pos_y as usize, b);
+                    pf.set_block(pos_x as usize, pos_y as usize,
+                                 b.clone());
                 }
             }
         }
@@ -89,6 +90,7 @@ impl Figure {
                 let mut b = fig_dir.get_block(col, row);
                 let pos_x = pos.get_x() + col as i32;
                 if b.is_set() && pf.contains(pos_x, pos_y) {
+                    let mut b = b.clone();
                     b.locked = true;
                     pf.set_block(pos_x as usize, pos_y as usize, b);
                 }
@@ -107,7 +109,7 @@ impl Figure {
                 let b = fig_dir.get_block(col, row);
                 let pos_x = pos.get_x() + col as i32;
                 if b.is_set() && pf.contains(pos_x, pos_y) {
-                    pf.set_block(pos_x as usize, pos_y as usize, Block::new(0));
+                    pf.clear_block(pos_x as usize, pos_y as usize);
                 }
             }
         }
