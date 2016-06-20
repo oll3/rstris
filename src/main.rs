@@ -24,6 +24,7 @@ static BLOCK_SPACING: u32 = 1;
 static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
 static BG_COLOR: Color = Color::RGB(101, 208, 246);
+static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;
 
 struct PlayerKeys {
     step_left: Option<Keycode>,
@@ -45,6 +46,7 @@ struct PlayerContext {
     avail_figures: Vec<Figure>,
     next_figure: Figure,
     player: Player,
+    delay_first_step_down: u64,
 }
 
 struct PlayfieldContext {
@@ -67,6 +69,7 @@ impl PlayerContext {
             next_figure: PlayerContext::get_rand_figure(&figures).clone(),
             avail_figures: figures,
             player: player,
+            delay_first_step_down: 0,
         }
     }
     fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
@@ -168,14 +171,19 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
             return false;
         }
         if figure.collide_blocked(pf, &figure_pos) {
-            // Couldn't place figure over another figure - wait
+            println!("{}: Couldn't place new figure now - Try again soon",
+                     player_ctx.name);
             return true;
         }
         player_ctx.gen_next_figure();
         player_ctx.player.place_figure(pf, figure, figure_pos);
+        player_ctx.delay_first_step_down =
+            current_ticks + DELAY_FIRST_STEP_DOWN;
         return true;
     }
     for fig_move in moves {
+        player_ctx.delay_first_step_down = 0;
+
         player_ctx.time_last_move.insert(fig_move.clone(), current_ticks);
         if !player_ctx.player.move_figure(pf, fig_move) {
 
@@ -193,7 +201,6 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
                 println!("Removed {} lines. Total: {}",
                          num_full_lines, player_ctx.stats.line_count);
             }
-
         }
     }
     return true;
@@ -258,7 +265,6 @@ fn main() {
     let window_width: u32 = (PF_WIDTH + 2 + figure_max_width + 3) *
         (BLOCK_SIZE + BLOCK_SPACING);
     let window_height: u32 = (PF_HEIGHT + 1) * (BLOCK_SIZE + BLOCK_SPACING);
-
     let window = video_subsystem.window("rust-sdl2 demo: Video",
                                         window_width, window_height)
         .position_centered()
@@ -277,7 +283,6 @@ fn main() {
         rot_ccw: None
     };
 
-
     let pf1 = Playfield::new("Playfield 1",
                              PF_WIDTH as usize, PF_HEIGHT as usize);
     let mut pf_ctx = PlayfieldContext::new(pf1);
@@ -285,7 +290,6 @@ fn main() {
                                          Player::new(),
                                          player1_key_map,
                                          figure_list));
-
 
     let mut pause = false;
 
@@ -325,13 +329,15 @@ fn main() {
             continue;
         }
 
-        for player in &mut pf_ctx.player_ctx {
-            let mut moves = handle_player_input(&player.key_map,
+        for pl_ctx in &mut pf_ctx.player_ctx {
+            let mut moves = handle_player_input(&pl_ctx.key_map,
                                                 &mut pressed_keys);
-            moves.append(&mut move_every(&mut player.time_last_move,
-                                         Movement::MoveDown,
-                                         500000000 /* ns */));
-            if !handle_player_moves(player, &mut pf_ctx.pf, moves) {
+            if current_ticks > pl_ctx.delay_first_step_down {
+                moves.append(&mut move_every(&mut pl_ctx.time_last_move,
+                                             Movement::MoveDown,
+                                             500000000 /* ns */));
+            }
+            if !handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves) {
                 pf_ctx.game_over = true;
             }
         }
