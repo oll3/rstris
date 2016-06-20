@@ -17,7 +17,6 @@ impl FigureDir {
                 v[row][col] = Block::new(dir_block_ids[row][col]);
             }
         }
-        println!("Created Figure dir {:?}", v);
         return FigureDir{height: v.len(),
                          width: v[0].len(),
                          blocks: v};
