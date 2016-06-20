@@ -116,42 +116,48 @@ impl Figure {
     }
 
     //
-    // Test if figure can be placed in playfield at position
-    // Returns false if not, true if it can be placed.
+    // Test if figure will collide with any locked block if placed
+    // at the given position
     //
-    pub fn test(&self, pf: &Playfield, pos: &Position) -> bool {
+    pub fn collide_locked(&self, pf: &Playfield, pos: &Position) -> bool {
+
+        // First test for collision with a locked block
         let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
         for row in 0..fig_dir.blocks.len() {
             let offs_y = pos.get_y() + row as i32;
             for col in 0..fig_dir.blocks[row].len() {
                 let offs_x = pos.get_x() + col as i32;
-                let b = fig_dir.get_block(col, row);
-                if b.is_set() {
-                    if !pf.contains(offs_x, offs_y) {
-                        return false;
-                    }
-                    else if pf.block_is_set(offs_x as usize, offs_y as usize) {
-                        return false;
-                    }
+                if fig_dir.get_block(col, row).is_set() &&
+                    (!pf.contains(offs_x, offs_y) ||
+                     pf.block_is_locked(offs_x as usize, offs_y as usize))
+                {
+                    // Outside playfield is seen as a locked
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     //
-    // Move a figure in playfield from position to position.
-    // Remove from current position, if the new position is valid then
-    // place figure there, else put it back on previous position.
+    // Test if figure will collide with any block if placed at the given
+    // position.
     //
-    pub fn move_fig(&self, pf: &mut Playfield, current_pos: &Position,
-                    new_pos: &Position) -> bool {
-        self.remove(pf, current_pos);
-        if self.test(pf, new_pos) {
-            self.place(pf, new_pos);
-            return true;
+    pub fn collide_blocked(&self, pf: &Playfield, pos: &Position) -> bool {
+        // ...then test for collision with any block
+        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
+        for row in 0..fig_dir.blocks.len() {
+            let offs_y = pos.get_y() + row as i32;
+            for col in 0..fig_dir.blocks[row].len() {
+                let offs_x = pos.get_x() + col as i32;
+                if fig_dir.get_block(col, row).is_set() &&
+                    (!pf.contains(offs_x, offs_y) ||
+                     pf.block_is_set(offs_x as usize, offs_y as usize))
+                {
+                    return true;
+                }
+            }
         }
-        self.place(pf, current_pos);
         return false;
     }
 }

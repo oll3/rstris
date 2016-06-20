@@ -39,6 +39,9 @@ impl Playfield {
     pub fn block_is_set(&self, x: usize, y: usize) -> bool {
         self.get_block(x, y).id != 0
     }
+    pub fn block_is_locked(&self, x: usize, y: usize) -> bool {
+        self.get_block(x, y).id != 0 && self.get_block(x, y).locked
+    }
     pub fn clear_block(&mut self, x: usize, y: usize) {
         self.blocks[y][x] = Block::new(0);
     }

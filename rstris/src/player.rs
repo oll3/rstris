@@ -53,9 +53,14 @@ impl <'a> Player<'a> {
         self.current_figure = Some(self.next_figure.clone());
 
         let figure = self.current_figure.clone().unwrap();
-        if !figure.test(pf, &self.current_pos) {
+        if figure.collide_locked(pf, &self.current_pos) {
             /* Place it anyway to mark the failure */
             figure.place(pf, &self.current_pos);
+            return false;
+        } else if figure.collide_blocked(pf, &self.current_pos) {
+            // TODO: This means we tried to place a figure on top of
+            // another one. Howto handle, try again soon, test another
+            // position?
             return false;
         } else {
             self.next_figure.place(pf, &self.current_pos);
@@ -65,8 +70,8 @@ impl <'a> Player<'a> {
             self.next_figure = Player::get_rand_figure(self.avail_figures);
             println!("{}: Next figure is {}", self.player_name,
                      self.next_figure.get_name());
+            return true;
         }
-        return true;
     }
 
     //
@@ -81,18 +86,22 @@ impl <'a> Player<'a> {
         new_pos.normalize_dir(figure.dir.len());
 
         figure.remove(pf, &self.current_pos);
-        if figure.test(pf, &new_pos) {
+        let new_pos_locked = figure.collide_locked(pf, &new_pos);
+        let new_pos_blocked = figure.collide_blocked(pf, &new_pos);
+        if !new_pos_locked && !new_pos_blocked {
             self.current_pos = new_pos;
             figure.place(pf, &self.current_pos);
             return true;
-        } else if movement != Movement::MoveDown {
-            figure.place(pf, &self.current_pos);
-            return true;
-        } else {
-            /* Figure couldn't be moved down - Mark figure blocks
-            as locked in its current position */
+        } else if movement == Movement::MoveDown && new_pos_locked {
+            // Figure couldn't be moved down further because of collision with
+            // locked block(s) - Mark figure blocks as locked in its current
+            // position.
             figure.lock(pf, &self.current_pos);
             return false;
+        } else {
+            // Move is not valid
+            figure.place(pf, &self.current_pos);
+            return true;
         }
     }
 }
