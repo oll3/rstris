@@ -6,6 +6,7 @@ authors = ["Olle <ollebull@gmail.com>"]
 [dependencies]
 sdl2 = "*"
 time = "0.1"
+rand = "*"
 
 [dependencies.rstris]
 path = "rstris"

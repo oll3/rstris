@@ -1,3 +1,4 @@
+extern crate rand;
 extern crate sdl2;
 extern crate time;
 extern crate rstris;
@@ -41,17 +42,39 @@ struct PlayerContext {
     stats: PlayerStats,
     game_over: bool,
     time_last_move: HashMap<Movement, u64>,
+    avail_figures: Vec<Figure>,
+    next_figure: Figure,
+    player: Player
 }
 
 impl PlayerContext {
-    pub fn new(key_map: PlayerKeys) -> Self {
-        PlayerContext{key_map: key_map,
-                      stats: PlayerStats{
-                          line_count: 0,
-                      },
-                      time_last_move: HashMap::new(),
-                      game_over: false,
+    pub fn new(player: Player, key_map: PlayerKeys,
+               figures: Vec<Figure>) -> Self {
+        PlayerContext{
+            key_map: key_map,
+            stats: PlayerStats{
+                line_count: 0,
+            },
+            time_last_move: HashMap::new(),
+            game_over: false,
+            next_figure: PlayerContext::get_rand_figure(&figures).clone(),
+            avail_figures: figures,
+            player: player,
         }
+    }
+    fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
+        let next_figure = (rand::random::<u8>() %
+                           figures.len() as u8) as usize;
+        return &figures[next_figure];
+    }
+    pub fn get_next_figure(&self) -> &Figure {
+        &self.next_figure
+    }
+    pub fn gen_next_figure(&mut self) -> Figure {
+        let figure = self.next_figure.clone();
+        self.next_figure =
+            PlayerContext::get_rand_figure(&self.avail_figures).clone();
+        return figure;
     }
 }
 
@@ -115,11 +138,21 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
 
 
 fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
-                       player: &mut Player, moves: Vec<Movement>) {
+                       moves: Vec<Movement>) {
+
     let current_ticks = time::precise_time_ns();
+
+    if !player_ctx.player.figure_in_play() {
+        // Place new figure in playfield
+        let figure = player_ctx.gen_next_figure();
+        if !player_ctx.player.place_figure(pf, figure) {
+            player_ctx.game_over = true;
+            println!("{}: Game over!", player_ctx.player.get_name());
+        }
+    }
     for fig_move in moves {
         player_ctx.time_last_move.insert(fig_move.clone(), current_ticks);
-        if !player.move_figure(pf, fig_move) {
+        if !player_ctx.player.move_figure(pf, fig_move) {
 
             // Figure couldn't be moved downwards
 
@@ -136,11 +169,6 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
                          num_full_lines, player_ctx.stats.line_count);
             }
 
-            // Place new figure in playfield
-            if !player.place_next_figure(pf) {
-                player_ctx.game_over = true;
-                println!("{}: Game over!", player.get_name());
-            }
         }
     }
 }
@@ -215,22 +243,19 @@ fn main() {
                                     BLOCK_SPACING, FRAME_COLOR,
                                     FILL_COLOR);
 
-    let mut player1 = Player::new("Player 1", &figure_list);
+    let player1 = Player::new("Player 1");
     let mut player1_ctx =
-        PlayerContext::new(PlayerKeys{
+        PlayerContext::new(player1, PlayerKeys{
             step_left: Some(Keycode::Left),
             step_right: Some(Keycode::Right),
             step_down: Some(Keycode::Down),
             rot_cw: Some(Keycode::Up),
             rot_ccw: None
-        });
+        }, figure_list);
 
-    let mut player2 = Player::new("Player 1", &figure_list);
     let mut pf1 = Playfield::new("Playfield 1",
                                  PF_WIDTH as usize, PF_HEIGHT as usize);
 
-
-    player1.place_next_figure(&mut pf1);
     let mut pause = false;
 
     let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
@@ -276,13 +301,12 @@ fn main() {
                                          Movement::MoveDown,
                                          500000000 /* ns */));
 
-            handle_player_moves(&mut player1_ctx, &mut pf1,
-                                &mut player1, moves);
+            handle_player_moves(&mut player1_ctx, &mut pf1, moves);
         }
         /* Render graphics */
         draw.clear(BG_COLOR);
         draw.draw_playfield(&pf1);
-        draw.draw_next_figure(&player1.get_next_figure(), PF_WIDTH + 3, 0,
+        draw.draw_next_figure(player1_ctx.get_next_figure(), PF_WIDTH + 3, 0,
                               figure_max_width, figure_max_height);
         draw.present();
     }
