@@ -1,4 +1,3 @@
-use block::*;
 use figure_dir::*;
 use playfield::*;
 use position::*;
@@ -87,7 +86,7 @@ impl Figure {
         for row in 0..fig_dir.blocks.len() {
             let pos_y = pos.get_y() + row as i32;
             for col in 0..fig_dir.blocks[row].len() {
-                let mut b = fig_dir.get_block(col, row);
+                let b = fig_dir.get_block(col, row);
                 let pos_x = pos.get_x() + col as i32;
                 if b.is_set() && pf.contains(pos_x, pos_y) {
                     let mut b = b.clone();
