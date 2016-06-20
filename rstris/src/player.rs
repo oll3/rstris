@@ -4,24 +4,19 @@ use playfield::*;
 
 #[derive(Debug)]
 pub struct Player {
-    player_name: String,
     current_pos: Position,
     current_figure: Option<Figure>,
 }
 
 
 impl Player {
-    pub fn new(name: &str) -> Self {
-        Player{player_name: name.to_owned(),
-               current_pos: Position::new(-1, -1, -1),
+    pub fn new() -> Self {
+        Player{current_pos: Position::new(-1, -1, -1),
                current_figure: None,
         }
     }
-    pub fn get_name(&self) -> &String {
-        &self.player_name
-    }
-    pub fn get_current_pos(&self) -> Position {
-        return self.current_pos.clone();
+    pub fn get_current_pos(&self) -> &Position {
+        return &self.current_pos;
     }
     pub fn figure_in_play(&self) -> bool {
         self.current_figure.is_some()
@@ -31,24 +26,12 @@ impl Player {
     // Game is over if this function returns false.
     //
     pub fn place_figure(&mut self, pf: &mut Playfield,
-                        figure: Figure) -> bool {
-        self.current_pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
-        if figure.collide_locked(pf, &self.current_pos) {
-            /* Place it anyway to mark the failure */
-            figure.place(pf, &self.current_pos);
-            return false;
-        } else if figure.collide_blocked(pf, &self.current_pos) {
-            // TODO: This means we tried to place a figure on top of
-            // another one. Howto handle, try again soon, test another
-            // position?
-            return false;
-        } else {
-            figure.place(pf, &self.current_pos);
-            println!("{}: Placed figure {} in playfield",
-                     self.player_name, figure.get_name());
-            self.current_figure = Some(figure);
-            return true;
-        }
+                        figure: Figure, position: Position) {
+        self.current_pos = position;
+        figure.place(pf, &self.current_pos);
+        println!("Placed figure {} in playfield",
+                 figure.get_name());
+        self.current_figure = Some(figure);
     }
 
     //
