@@ -50,6 +50,7 @@ impl <'a>DrawContext<'a> {
             5 => Color::RGB(20, 100, 100),
             6 => Color::RGB(120, 150, 0),
             7 => Color::RGB(220, 50, 140),
+            10 => Color::RGB(0, 0, 0),
             _ => Color::RGB(0, 0, 0),
         };
         if block.locked {

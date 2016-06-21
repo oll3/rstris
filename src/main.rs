@@ -6,6 +6,7 @@ extern crate rstris;
 mod draw;
 
 use draw::*;
+use rstris::block::*;
 use rstris::playfield::*;
 use rstris::player::*;
 use rstris::figure::*;
@@ -375,8 +376,10 @@ fn main() {
 
             if pl_ctx.player.figure_in_play() {
                 // Player has a figure in game
-                pf_ctx.lines_to_throw.append(
-                    &mut handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves));
+                let mut lines =
+                    handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves);
+                pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
+                pf_ctx.lines_to_throw.append(&mut lines);
 
             } else if pf_ctx.lines_to_throw.len() == 0 {
                 if !place_new_figure(pl_ctx, &mut pf_ctx.pf) {
