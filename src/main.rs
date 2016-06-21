@@ -212,25 +212,41 @@ fn handle_player_input(key_map: &PlayerKeys, pressed_keys:
     let mut moves: Vec<Movement> = vec![];
     let keys = pressed_keys.clone();
     for (key, (time, this_delay)) in keys {
+
         if time <= current_ticks {
+
             let next_delay = (this_delay * 2) / 5 + 20000000;
-            pressed_keys.insert(key, (current_ticks + this_delay,
-                                      next_delay));
+            let delay = current_ticks + this_delay;
+
             if !key_map.step_left.is_none() &&
-                key == key_map.step_left.unwrap() {
+                key == key_map.step_left.unwrap()
+            {
                 moves.push(Movement::MoveLeft);
-            } else if !key_map.step_right.is_none() &&
-                key == key_map.step_right.unwrap() {
+                pressed_keys.insert(key, (delay, next_delay));
+            }
+            else if !key_map.step_right.is_none() &&
+                key == key_map.step_right.unwrap()
+            {
                 moves.push(Movement::MoveRight);
-            } else if !key_map.step_down.is_none() &&
-                key == key_map.step_down.unwrap() {
-                    moves.push(Movement::MoveDown);
-                } else if !key_map.rot_cw.is_none() &&
-                key == key_map.rot_cw.unwrap() {
-                    moves.push(Movement::RotateCW);
-                } else if !key_map.rot_ccw.is_none() &&
-                key == key_map.rot_ccw.unwrap() {
-                    moves.push(Movement::RotateCCW);
+                pressed_keys.insert(key, (delay, next_delay));
+            }
+            else if !key_map.step_down.is_none() &&
+                key == key_map.step_down.unwrap()
+            {
+                moves.push(Movement::MoveDown);
+                pressed_keys.insert(key, (delay, next_delay));
+            }
+            else if !key_map.rot_cw.is_none() &&
+                key == key_map.rot_cw.unwrap()
+            {
+                moves.push(Movement::RotateCW);
+                pressed_keys.insert(key, (delay, next_delay));
+            }
+            else if !key_map.rot_ccw.is_none() &&
+                key == key_map.rot_ccw.unwrap()
+            {
+                moves.push(Movement::RotateCCW);
+                pressed_keys.insert(key, (delay, next_delay));
             }
         }
     }
