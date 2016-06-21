@@ -53,6 +53,7 @@ struct PlayfieldContext {
     pf: Playfield,
     player_ctx: Vec<PlayerContext>,
     game_over: bool,
+    lines_to_throw: Vec<usize>,
 }
 
 
@@ -90,11 +91,22 @@ impl PlayfieldContext {
     pub fn new(pf: Playfield) -> Self {
         PlayfieldContext{pf: pf,
                          player_ctx: Vec::new(),
-                         game_over: false}
+                         game_over: false,
+                         lines_to_throw: Vec::new()}
     }
 
     pub fn add_player(&mut self, player: PlayerContext) {
         self.player_ctx.push(player);
+    }
+
+    // Test if there are figures currently being played
+    pub fn figures_in_play(&self) -> bool {
+        for player in &self.player_ctx {
+            if player.player.figure_in_play() {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -157,53 +169,55 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
 }
 
 
-fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
-                       moves: Vec<Movement>) -> bool {
+//
+// Try to place a new figure in playfield
+//
+fn place_new_figure(player_ctx: &mut PlayerContext,
+                    pf: &mut Playfield) -> bool {
 
     let current_ticks = time::precise_time_ns();
-
-    if !player_ctx.player.figure_in_play() {
-        // Place new figure in playfield
-        let figure = player_ctx.get_next_figure().clone();
-        let figure_pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
-        if figure.collide_locked(pf, &figure_pos) {
-            println!("{}: Game over!", player_ctx.name);
-            return false;
-        }
-        if figure.collide_blocked(pf, &figure_pos) {
-            println!("{}: Couldn't place new figure now - Try again soon",
-                     player_ctx.name);
-            return true;
-        }
-        player_ctx.gen_next_figure();
-        player_ctx.player.place_figure(pf, figure, figure_pos);
-        player_ctx.delay_first_step_down =
-            current_ticks + DELAY_FIRST_STEP_DOWN;
+    // Place new figure in playfield
+    let figure = player_ctx.get_next_figure().clone();
+    let figure_pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
+    if figure.collide_locked(pf, &figure_pos) {
+        println!("{}: Game over!", player_ctx.name);
+        return false;
+    }
+    if figure.collide_blocked(pf, &figure_pos) {
         return true;
     }
+    player_ctx.gen_next_figure();
+    player_ctx.player.place_figure(pf, figure, figure_pos);
+    player_ctx.delay_first_step_down =
+        current_ticks + DELAY_FIRST_STEP_DOWN;
+    return true;
+}
+
+//
+// Move player current figure according to the given movements.
+// If movement caused full lines being created then return those
+// line indexes.
+//
+fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
+                       moves: Vec<Movement>) -> Vec<usize> {
+
+    let current_ticks = time::precise_time_ns();
     for fig_move in moves {
         player_ctx.delay_first_step_down = 0;
 
         player_ctx.time_last_move.insert(fig_move.clone(), current_ticks);
         if !player_ctx.player.move_figure(pf, fig_move) {
 
-            // Figure couldn't be moved downwards
+            // Figure couldn't be moved downwards -
+            // Test for full lines and return them if there are
+            // any.
 
-            // Check for full lines in playfield and throw them away
             let full_lines = pf.find_full_lines();
-            let num_full_lines = full_lines.len();
-            for line in full_lines {
-                pf.throw_line(line);
-            }
-
-            if num_full_lines > 0 {
-                player_ctx.stats.line_count += num_full_lines;
-                println!("Removed {} lines. Total: {}",
-                         num_full_lines, player_ctx.stats.line_count);
-            }
+            player_ctx.stats.line_count += full_lines.len();
+            return full_lines;
         }
     }
-    return true;
+    return Vec::new();
 }
 
 fn handle_player_input(key_map: &PlayerKeys, pressed_keys:
@@ -345,6 +359,8 @@ fn main() {
             continue;
         }
 
+
+        // Handle movement and figure creation
         for pl_ctx in &mut pf_ctx.player_ctx {
             let mut moves = handle_player_input(&pl_ctx.key_map,
                                                 &mut pressed_keys);
@@ -353,9 +369,26 @@ fn main() {
                                              Movement::MoveDown,
                                              500000000 /* ns */));
             }
-            if !handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves) {
-                pf_ctx.game_over = true;
+
+            if pl_ctx.player.figure_in_play() {
+                // Player has a figure in game
+                pf_ctx.lines_to_throw.append(
+                    &mut handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves));
+
+            } else if pf_ctx.lines_to_throw.len() == 0 {
+                if !place_new_figure(pl_ctx, &mut pf_ctx.pf) {
+                    pf_ctx.game_over = true;
+                }
             }
+        }
+
+        // Throw full lines (when there are no figures being played)
+        if pf_ctx.lines_to_throw.len() > 0 && !pf_ctx.figures_in_play() {
+            println!("Throw away {} lines!", pf_ctx.lines_to_throw.len());
+            for line in &pf_ctx.lines_to_throw {
+                pf_ctx.pf.throw_line(*line);
+            }
+            pf_ctx.lines_to_throw.clear();
         }
 
         /* Render graphics */
