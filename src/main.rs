@@ -187,6 +187,9 @@ fn place_new_figure(player_ctx: &mut PlayerContext,
         return true;
     }
     player_ctx.gen_next_figure();
+    println!("{}: Placed figure {} in playfield (next is {})",
+             player_ctx.name, figure.get_name(),
+             player_ctx.get_next_figure().get_name());
     player_ctx.player.place_figure(pf, figure, figure_pos);
     player_ctx.delay_first_step_down =
         current_ticks + DELAY_FIRST_STEP_DOWN;

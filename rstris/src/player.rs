@@ -29,8 +29,6 @@ impl Player {
                         figure: Figure, position: Position) {
         self.current_pos = position;
         figure.place(pf, &self.current_pos);
-        println!("Placed figure {} in playfield",
-                 figure.get_name());
         self.current_figure = Some(figure);
     }
 
