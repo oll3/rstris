@@ -52,7 +52,7 @@ impl Playfield {
     //
     // Search playfield for full lines (returned in order of top to bottom)
     //
-    pub fn find_full_lines(&self) -> Vec<usize> {
+    pub fn get_locked_lines(&self) -> Vec<usize> {
         let mut full_lines: Vec<usize> = vec![];
 
         for y in 0..self.pf_height {

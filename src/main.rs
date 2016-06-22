@@ -216,7 +216,7 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
             // Test for full lines and return them if there are
             // any.
 
-            let full_lines = pf.find_full_lines();
+            let full_lines = pf.get_locked_lines();
             player_ctx.stats.line_count += full_lines.len();
             return full_lines;
         }
