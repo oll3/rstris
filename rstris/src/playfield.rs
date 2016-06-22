@@ -58,7 +58,7 @@ impl Playfield {
         for y in 0..self.pf_height {
             let mut line_full = true;
             for x in 0..self.pf_width {
-                if !self.block_is_set(x, y) {
+                if !self.block_is_locked(x, y) {
                     line_full = false;
                     break;
                 }
