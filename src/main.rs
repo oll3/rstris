@@ -118,37 +118,37 @@ fn init_figures() -> Vec<Figure> {
     let mut figure_list: Vec<Figure> = Vec::new();
     figure_list.push(Figure::
                      new_from_face("1",
-                                   vec![vec![0, 0, 0],
-                                        vec![1, 1, 1],
-                                        vec![0, 1, 0]]));
+                                   &[&[0, 0, 0],
+                                     &[1, 1, 1],
+                                     &[0, 1, 0]]));
     figure_list.push(Figure::
                      new_from_face("2",
-                                   vec![vec![0, 0, 0],
-                                        vec![2, 2, 2],
-                                        vec![0, 0, 2]]));
+                                   &[&[0, 0, 0],
+                                     &[2, 2, 2],
+                                     &[0, 0, 2]]));
     figure_list.push(Figure::
                      new_from_face("3",
-                                   vec![vec![0, 0, 3],
-                                        vec![3, 3, 3],
-                                        vec![0, 0, 0]]));
+                                   &[&[0, 0, 3],
+                                     &[3, 3, 3],
+                                     &[0, 0, 0]]));
     figure_list.push(Figure::
                      new_from_face("4",
-                                   vec![vec![4, 4],
-                                        vec![4, 4]]));
+                                   &[&[4, 4],
+                                     &[4, 4]]));
     figure_list.push(Figure::
                      new_from_face("5",
-                                   vec![vec![0, 5, 5],
-                                        vec![5, 5, 0]]));
+                                   &[&[0, 5, 5],
+                                     &[5, 5, 0]]));
     figure_list.push(Figure::
                      new_from_face("6",
-                                   vec![vec![6, 6, 0],
-                                        vec![0, 6, 6]]));
+                                   &[&[6, 6, 0],
+                                     &[0, 6, 6]]));
     figure_list.push(Figure::
                      new_from_face("7",
-                                   vec![vec![0, 7, 0],
-                                        vec![0, 7, 0],
-                                        vec![0, 7, 0],
-                                        vec![0, 7, 0]]));
+                                   &[&[0, 7, 0],
+                                     &[0, 7, 0],
+                                     &[0, 7, 0],
+                                     &[0, 7, 0]]));
     return figure_list;
 }
 

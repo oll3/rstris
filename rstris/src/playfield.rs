@@ -70,7 +70,7 @@ impl Playfield {
         return full_lines;
     }
 
-    pub fn set_lines(&mut self, lines: &Vec<usize>, block: &Block) {
+    pub fn set_lines(&mut self, lines: &[usize], block: &Block) {
         for line in lines {
             for x in 0..self.pf_width {
                 self.blocks[*line][x] = block.clone();

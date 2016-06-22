@@ -19,7 +19,7 @@ impl Figure {
     // Build new figure by rotating the face of a figure 90 degrees
     //
     pub fn new_from_face(name: &str,
-                         face_blocks: Vec<Vec<u8>>) -> Figure {
+                         face_blocks: &[&[u8]]) -> Figure {
         let mut fig = Figure::new(name);
         let mut dir = FigureDir::new(face_blocks);
         fig.dir.push(dir.clone());
@@ -55,7 +55,7 @@ impl Figure {
         }
         return false;
     }
-    pub fn add_dir_face(&mut self, dir_blocks: Vec<Vec<u8>>) {
+    pub fn add_dir_face(&mut self, dir_blocks: &[&[u8]]) {
         self.dir.push(FigureDir::new(dir_blocks));
     }
     pub fn get_fig_dir(&self, dir_index: usize) -> &FigureDir {
@@ -170,51 +170,51 @@ mod tests {
     #[test]
     fn test_figure1() {
         let fig = Figure::new_from_face("Figure 1",
-                                        vec![vec![0, 0, 0],
-                                             vec![1, 1, 1],
-                                             vec![0, 1, 0]]);
+                                        &[&[0, 0, 0],
+                                          &[1, 1, 1],
+                                          &[0, 1, 0]]);
         assert_eq!(fig.get_num_dirs(), 4);
-        assert_eq!(fig.dir[0], FigureDir::new(vec![vec![0, 0, 0],
-                                                   vec![1, 1, 1],
-                                                   vec![0, 1, 0]]));
-        assert_eq!(fig.dir[1], FigureDir::new(vec![vec![0, 1, 0],
-                                                   vec![1, 1, 0],
-                                                   vec![0, 1, 0]]));
-        assert_eq!(fig.dir[2], FigureDir::new(vec![vec![0, 1, 0],
-                                                   vec![1, 1, 1],
-                                                   vec![0, 0, 0]]));
-        assert_eq!(fig.dir[3], FigureDir::new(vec![vec![0, 1, 0],
-                                                   vec![0, 1, 1],
-                                                   vec![0, 1, 0]]));
+        assert_eq!(fig.dir[0], FigureDir::new(&[&[0, 0, 0],
+                                                &[1, 1, 1],
+                                                &[0, 1, 0]]));
+        assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 1, 0],
+                                                &[1, 1, 0],
+                                                &[0, 1, 0]]));
+        assert_eq!(fig.dir[2], FigureDir::new(&[&[0, 1, 0],
+                                                &[1, 1, 1],
+                                                &[0, 0, 0]]));
+        assert_eq!(fig.dir[3], FigureDir::new(&[&[0, 1, 0],
+                                                &[0, 1, 1],
+                                                &[0, 1, 0]]));
     }
     #[test]
     fn test_figure2() {
         let fig = Figure::new_from_face("Figure 2",
-                                        vec![vec![0, 1, 0],
-                                             vec![0, 1, 0],
-                                             vec![0, 1, 0],
-                                             vec![0, 1, 0]]);
+                                        &[&[0, 1, 0],
+                                          &[0, 1, 0],
+                                          &[0, 1, 0],
+                                          &[0, 1, 0]]);
         assert_eq!(fig.get_num_dirs(), 2);
-        assert_eq!(fig.dir[0], FigureDir::new(vec![vec![0, 1, 0],
-                                                   vec![0, 1, 0],
-                                                   vec![0, 1, 0],
-                                                   vec![0, 1, 0]]));
-        assert_eq!(fig.dir[1], FigureDir::new(vec![vec![0, 0, 0, 0],
-                                                   vec![1, 1, 1, 1],
-                                                   vec![0, 0, 0, 0]]));
+        assert_eq!(fig.dir[0], FigureDir::new(&[&[0, 1, 0],
+                                                &[0, 1, 0],
+                                                &[0, 1, 0],
+                                                &[0, 1, 0]]));
+        assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 0, 0, 0],
+                                                &[1, 1, 1, 1],
+                                                &[0, 0, 0, 0]]));
     }
     #[test]
     fn test_figure3() {
         let fig = Figure::new_from_face("Figure 3",
-                                        vec![vec![1, 0],
-                                             vec![1, 1],
-                                             vec![0, 1]]);
+                                        &[&[1, 0],
+                                          &[1, 1],
+                                          &[0, 1]]);
         assert_eq!(fig.get_num_dirs(), 2);
-        assert_eq!(fig.dir[0], FigureDir::new(vec![vec![1, 0],
-                                                   vec![1, 1],
-                                                   vec![0, 1]]));
-        assert_eq!(fig.dir[1], FigureDir::new(vec![vec![0, 1, 1],
-                                                   vec![1, 1, 0]]));
+        assert_eq!(fig.dir[0], FigureDir::new(&[&[1, 0],
+                                                &[1, 1],
+                                                &[0, 1]]));
+        assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 1, 1],
+                                                &[1, 1, 0]]));
     }
 
 }

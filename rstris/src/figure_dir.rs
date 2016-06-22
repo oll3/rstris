@@ -8,7 +8,7 @@ pub struct FigureDir {
 }
 
 impl FigureDir {
-    pub fn new(dir_block_ids: Vec<Vec<u8>>) -> FigureDir {
+    pub fn new(dir_block_ids: &[&[u8]]) -> FigureDir {
         let mut v: Vec<Vec<Block>> = vec![vec![Block{id: 0, locked: false};
                                                dir_block_ids[0].len()];
                                           dir_block_ids.len()];
