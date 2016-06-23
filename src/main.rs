@@ -46,6 +46,7 @@ struct PlayerContext {
     time_last_move: HashMap<Movement, u64>,
     avail_figures: Vec<Figure>,
     next_figure: Figure,
+    figure_in_play: bool,
     player: Player,
     delay_first_step_down: u64,
 }
@@ -72,6 +73,7 @@ impl PlayerContext {
             avail_figures: figures,
             player: player,
             delay_first_step_down: 0,
+            figure_in_play: false,
         }
     }
     fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
@@ -103,7 +105,7 @@ impl PlayfieldContext {
     // Test if there are figures currently being played
     pub fn figures_in_play(&self) -> bool {
         for player in &self.player_ctx {
-            if player.player.figure_in_play() {
+            if player.figure_in_play {
                 return true;
             }
         }
@@ -192,6 +194,7 @@ fn place_new_figure(player_ctx: &mut PlayerContext,
              player_ctx.name, figure.get_name(),
              player_ctx.get_next_figure().get_name());
     player_ctx.player.place_figure(pf, figure, figure_pos);
+    player_ctx.figure_in_play = true;
     player_ctx.delay_first_step_down =
         current_ticks + DELAY_FIRST_STEP_DOWN;
     return true;
@@ -218,6 +221,8 @@ fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
 
             let full_lines = pf.get_locked_lines();
             player_ctx.stats.line_count += full_lines.len();
+
+            player_ctx.figure_in_play = false;
             return full_lines;
         }
     }
@@ -374,7 +379,7 @@ fn main() {
                                              500000000 /* ns */));
             }
 
-            if pl_ctx.player.figure_in_play() {
+            if pl_ctx.figure_in_play {
                 // Player has a figure in game
                 let mut lines =
                     handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves);

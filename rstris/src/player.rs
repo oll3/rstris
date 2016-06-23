@@ -18,9 +18,6 @@ impl Player {
     pub fn get_current_pos(&self) -> &Position {
         return &self.current_pos;
     }
-    pub fn figure_in_play(&self) -> bool {
-        self.current_figure.is_some()
-    }
     //
     // Place the next figure in playfield.
     // Game is over if this function returns false.
@@ -55,7 +52,6 @@ impl Player {
             // locked block(s) - Mark figure blocks as locked in its current
             // position.
             figure.lock(pf, &self.current_pos);
-            self.current_figure = None;
             return false;
         } else {
             // Move is not valid
