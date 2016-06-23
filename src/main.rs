@@ -8,8 +8,8 @@ mod draw;
 use draw::*;
 use rstris::block::*;
 use rstris::playfield::*;
-use rstris::player::*;
 use rstris::figure::*;
+use rstris::figure_pos::*;
 use rstris::position::*;
 
 use sdl2::pixels::Color;
@@ -46,8 +46,7 @@ struct PlayerContext {
     time_last_move: HashMap<Movement, u64>,
     avail_figures: Vec<Figure>,
     next_figure: Figure,
-    figure_in_play: bool,
-    player: Player,
+    figure_in_play: Option<FigurePos>,
     delay_first_step_down: u64,
 }
 
@@ -60,7 +59,7 @@ struct PlayfieldContext {
 
 
 impl PlayerContext {
-    pub fn new(name: &str, player: Player, key_map: PlayerKeys,
+    pub fn new(name: &str, key_map: PlayerKeys,
                figures: Vec<Figure>) -> Self {
         PlayerContext{
             name: name.to_owned(),
@@ -71,9 +70,8 @@ impl PlayerContext {
             time_last_move: HashMap::new(),
             next_figure: PlayerContext::get_rand_figure(&figures).clone(),
             avail_figures: figures,
-            player: player,
             delay_first_step_down: 0,
-            figure_in_play: false,
+            figure_in_play: None,
         }
     }
     fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
@@ -105,7 +103,7 @@ impl PlayfieldContext {
     // Test if there are figures currently being played
     pub fn figures_in_play(&self) -> bool {
         for player in &self.player_ctx {
-            if player.figure_in_play {
+            if player.figure_in_play.is_some() {
                 return true;
             }
         }
@@ -175,27 +173,28 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
 //
 // Try to place a new figure in playfield
 //
-fn place_new_figure(player_ctx: &mut PlayerContext,
+fn place_new_figure(pl_ctx: &mut PlayerContext,
                     pf: &mut Playfield) -> bool {
 
     let current_ticks = time::precise_time_ns();
     // Place new figure in playfield
-    let figure = player_ctx.get_next_figure().clone();
-    let figure_pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
-    if figure.collide_locked(pf, &figure_pos) {
-        println!("{}: Game over!", player_ctx.name);
+    let figure = pl_ctx.get_next_figure().clone();
+    let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
+    if figure.collide_locked(pf, &pos) {
+        println!("{}: Game over!", pl_ctx.name);
         return false;
     }
-    if figure.collide_blocked(pf, &figure_pos) {
+    if figure.collide_blocked(pf, &pos) {
         return true;
     }
-    player_ctx.gen_next_figure();
+    pl_ctx.gen_next_figure();
     println!("{}: Placed figure {} in playfield (next is {})",
-             player_ctx.name, figure.get_name(),
-             player_ctx.get_next_figure().get_name());
-    player_ctx.player.place_figure(pf, figure, figure_pos);
-    player_ctx.figure_in_play = true;
-    player_ctx.delay_first_step_down =
+             pl_ctx.name, figure.get_name(),
+             pl_ctx.get_next_figure().get_name());
+    let fig_pos = FigurePos::new(figure, pos);
+    fig_pos.place(pf);
+    pl_ctx.figure_in_play = Some(fig_pos);
+    pl_ctx.delay_first_step_down =
         current_ticks + DELAY_FIRST_STEP_DOWN;
     return true;
 }
@@ -205,28 +204,58 @@ fn place_new_figure(player_ctx: &mut PlayerContext,
 // If movement caused full lines being created then return those
 // line indexes.
 //
-fn handle_player_moves(player_ctx: &mut PlayerContext, pf: &mut Playfield,
+fn handle_player_moves(pl_ctx: &mut PlayerContext, pf: &mut Playfield,
                        moves: Vec<Movement>) -> Vec<usize> {
 
+    let mut lock_figure = false;
     let current_ticks = time::precise_time_ns();
+    let mut fig_pos = pl_ctx.figure_in_play.clone().unwrap();
+    let mut new_pos = fig_pos.get_position().clone();
+    fig_pos.remove(pf);
+
     for fig_move in moves {
-        player_ctx.delay_first_step_down = 0;
-
-        player_ctx.time_last_move.insert(fig_move.clone(), current_ticks);
-        if !player_ctx.player.move_figure(pf, fig_move) {
-
-            // Figure couldn't be moved downwards -
-            // Test for full lines and return them if there are
-            // any.
-
-            let full_lines = pf.get_locked_lines();
-            player_ctx.stats.line_count += full_lines.len();
-
-            player_ctx.figure_in_play = false;
-            return full_lines;
+        pl_ctx.time_last_move.insert(fig_move.clone(), current_ticks);
+        pl_ctx.delay_first_step_down = 0;
+        let fig = fig_pos.get_figure();
+        let test_pos = Position::apply_move(fig_pos.get_position(), &fig_move);
+        let test_pos_locked = fig.collide_locked(pf, &test_pos);
+        let test_pos_blocked = fig.collide_blocked(pf, &test_pos);
+        if !test_pos_locked && !test_pos_blocked {
+            new_pos = test_pos;
+        } else if fig_move == Movement::MoveDown && test_pos_locked {
+            // Figure couldn't be moved down further because of collision
+            // with locked block(s) - Mark figure blocks as locked in its
+            // current position.
+            lock_figure = true;
+            break;
+        } else {
+            // Move is not valid so the rest of the
+            // moves are not valid either.
+            break;
         }
     }
-    return Vec::new();
+    fig_pos.set_position(&new_pos);
+
+    if lock_figure {
+        fig_pos.lock(pf);
+        let fig_dir = fig_pos.get_figure_dir();
+        let mut lines_to_test: Vec<usize> = Vec::new();
+        for l in fig_dir.get_row_with_blocks() {
+            lines_to_test.push(l + fig_pos.get_position().get_y() as usize);
+        }
+        println!("{}: Test for locked lines at: {:?}...",
+                 pl_ctx.name, lines_to_test);
+        let locked_lines = pf.get_locked_lines(&lines_to_test);
+        println!("{}: Found locked lines at: {:?}",
+                 pl_ctx.name, locked_lines);
+        pl_ctx.stats.line_count += locked_lines.len();
+        pl_ctx.figure_in_play = None;
+        return locked_lines;
+    } else {
+        fig_pos.place(pf);
+        pl_ctx.figure_in_play = Some(fig_pos);
+    }
+    return vec![];
 }
 
 fn handle_player_input(key_map: &PlayerKeys, pressed_keys:
@@ -379,12 +408,14 @@ fn main() {
                                              500000000 /* ns */));
             }
 
-            if pl_ctx.figure_in_play {
+            if pl_ctx.figure_in_play.is_some() {
                 // Player has a figure in game
-                let mut lines =
-                    handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves);
-                pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
-                pf_ctx.lines_to_throw.append(&mut lines);
+                if moves.len() > 0 {
+                    let mut lines =
+                        handle_player_moves(pl_ctx, &mut pf_ctx.pf, moves);
+                    pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
+                    pf_ctx.lines_to_throw.append(&mut lines);
+                }
 
             } else if pf_ctx.lines_to_throw.len() == 0 {
                 if !place_new_figure(pl_ctx, &mut pf_ctx.pf) {
@@ -395,7 +426,9 @@ fn main() {
 
         // Throw full lines (when there are no figures being played)
         if pf_ctx.lines_to_throw.len() > 0 && !pf_ctx.figures_in_play() {
-            println!("Throw away {} lines!", pf_ctx.lines_to_throw.len());
+            pf_ctx.lines_to_throw.sort();
+            pf_ctx.lines_to_throw.dedup();
+            println!("Throw away lines: {:?}", pf_ctx.lines_to_throw);
             for line in &pf_ctx.lines_to_throw {
                 pf_ctx.pf.throw_line(*line);
             }

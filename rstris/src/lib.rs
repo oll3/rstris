@@ -3,5 +3,5 @@ pub mod position;
 pub mod playfield;
 pub mod figure_dir;
 pub mod figure;
-pub mod player;
+pub mod figure_pos;
 pub mod find;
