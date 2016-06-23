@@ -26,6 +26,21 @@ impl FigureDir {
                   blocks: vec![vec![Block::new(0); *blocks_width];
                                *blocks_height]}
     }
+    //
+    // Returns a list of row index which contains at least one block
+    //
+    pub fn get_row_with_blocks(&self) -> Vec<usize> {
+        let mut rows_with_blocks: Vec<usize> = Vec::new();
+        for y in 0..self.get_height() {
+            for x in 0..self.get_width() {
+                if self.blocks[y][x].is_set() {
+                    rows_with_blocks.push(y);
+                    break;
+                }
+            }
+        }
+        return rows_with_blocks;
+    }
     pub fn get_width(&self) -> usize {
         self.width
     }

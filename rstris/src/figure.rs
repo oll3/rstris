@@ -177,15 +177,19 @@ mod tests {
         assert_eq!(fig.dir[0], FigureDir::new(&[&[0, 0, 0],
                                                 &[1, 1, 1],
                                                 &[0, 1, 0]]));
+        assert_eq!(fig.dir[0].get_row_with_blocks(), [1, 2]);
         assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 1, 0],
                                                 &[1, 1, 0],
                                                 &[0, 1, 0]]));
+        assert_eq!(fig.dir[1].get_row_with_blocks(), [0, 1, 2]);
         assert_eq!(fig.dir[2], FigureDir::new(&[&[0, 1, 0],
                                                 &[1, 1, 1],
                                                 &[0, 0, 0]]));
+        assert_eq!(fig.dir[2].get_row_with_blocks(), [0, 1]);
         assert_eq!(fig.dir[3], FigureDir::new(&[&[0, 1, 0],
                                                 &[0, 1, 1],
                                                 &[0, 1, 0]]));
+        assert_eq!(fig.dir[3].get_row_with_blocks(), [0, 1, 2]);
     }
     #[test]
     fn test_figure2() {
@@ -199,9 +203,11 @@ mod tests {
                                                 &[0, 1, 0],
                                                 &[0, 1, 0],
                                                 &[0, 1, 0]]));
+        assert_eq!(fig.dir[0].get_row_with_blocks(), [0, 1, 2, 3]);
         assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 0, 0, 0],
                                                 &[1, 1, 1, 1],
                                                 &[0, 0, 0, 0]]));
+        assert_eq!(fig.dir[1].get_row_with_blocks(), [1]);
     }
     #[test]
     fn test_figure3() {
@@ -213,8 +219,10 @@ mod tests {
         assert_eq!(fig.dir[0], FigureDir::new(&[&[1, 0],
                                                 &[1, 1],
                                                 &[0, 1]]));
+        assert_eq!(fig.dir[0].get_row_with_blocks(), [0, 1, 2]);
         assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 1, 1],
                                                 &[1, 1, 0]]));
+        assert_eq!(fig.dir[1].get_row_with_blocks(), [0, 1]);
     }
 
 }
