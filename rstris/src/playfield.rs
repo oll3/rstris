@@ -95,3 +95,39 @@ impl Playfield {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use block::*;
+
+    #[test]
+    fn block_types() {
+        // Fill playfiled with locked blocks.
+        let pf_height = 22;
+        let mut pf = Playfield::new("pf1", 12, pf_height);
+        let all_lines = (0..pf_height).collect::<Vec<usize>>();
+        pf.set_lines(&all_lines, &Block::new_locked(1));
+        assert_eq!(pf.get_locked_lines(&all_lines).len(), pf_height);
+        pf.set_lines(&[0], &Block::new(0));
+        assert_eq!(pf.get_locked_lines(&all_lines)[0], 1);
+        pf.set_lines(&all_lines, &Block::new(1));
+        assert_eq!(pf.get_locked_lines(&all_lines).len(), 0);
+    }
+    #[test]
+    fn throw_lines() {
+        // Fill playfiled with locked blocks.
+        // Throw away two lines, the top and the bottom
+        // and check that the number of locked lines are as
+        // expected.
+        let pf_height = 22;
+        let mut pf = Playfield::new("pf1", 12, pf_height);
+        let all_lines = (0..pf_height).collect::<Vec<usize>>();
+        pf.set_lines(&all_lines, &Block::new_locked(1));
+        pf.throw_line(0);
+        pf.throw_line(pf_height - 1);
+        assert_eq!(pf.get_locked_lines(&all_lines).len(), pf_height - 2);
+        // first locked line is now 2
+        assert_eq!(pf.get_locked_lines(&all_lines)[0], 2);
+    }
+}
