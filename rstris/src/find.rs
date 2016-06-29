@@ -2,8 +2,8 @@ extern crate time;
 
 use std::collections::LinkedList;
 use std::collections::HashSet;
+use figure_pos::*;
 use position::*;
-use figure::*;
 use playfield::*;
 
 
@@ -12,13 +12,15 @@ use playfield::*;
 // playfield. All positions returned should be possible to
 // reach from the starting point.
 //
-pub fn find_placing(pf: &Playfield, fig: &Figure,
-                    start_pos: Position) -> Vec<Position> {
+pub fn get_valid_placing(pf: &Playfield,
+                         fig_pos: &FigurePos) -> Vec<Position> {
     let current_ticks = time::precise_time_ns();
     let mut placements: Vec<Position> = Vec::new();
     let mut moves: LinkedList<Position> = LinkedList::new();
     let mut visited: HashSet<Position> = HashSet::new();
     let mut it_cnt = 0;
+    let start_pos = fig_pos.get_position().clone();
+    let fig = fig_pos.get_figure();
 
     println!("Find valid placements for figure {} (starting at {:?})",
              fig.get_name(), start_pos);
