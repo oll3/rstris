@@ -2,10 +2,17 @@ extern crate rand;
 extern crate sdl2;
 extern crate time;
 extern crate rstris;
+extern crate rustc_serialize;
 
 mod draw;
 
+use std::io;
+use std::fs::File;
+use std::io::prelude::*;
+use rustc_serialize::json;
+
 use draw::*;
+use rstris::find::*;
 use rstris::block::*;
 use rstris::playfield::*;
 use rstris::figure::*;
@@ -169,6 +176,16 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
     return (max_width, max_height);
 }
 
+fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
+    let mut buffer = try!(File::create(file_name));
+    match json::encode(&pf) {
+        Ok(j) => {
+            try!(buffer.write_all(j.as_bytes()));
+        },
+        Err(_) => {},
+    }
+    return Ok(());
+}
 
 //
 // Try to place a new figure in playfield

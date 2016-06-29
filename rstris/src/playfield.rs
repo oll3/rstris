@@ -1,6 +1,6 @@
 use block::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Playfield {
     pf_name: String,
     pf_width: usize,

@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, RustcDecodable, RustcEncodable)]
 pub struct Block {
     pub id: u8,
     pub locked: bool,

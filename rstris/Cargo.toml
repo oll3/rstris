@@ -5,3 +5,4 @@ authors = ["Olle <ollebull@gmail.com>"]
 
 [dependencies]
 time = "*"
+rustc-serialize = "*"

@@ -1,3 +1,5 @@
+extern crate rustc_serialize;
+
 pub mod block;
 pub mod position;
 pub mod playfield;
