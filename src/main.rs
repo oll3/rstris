@@ -372,7 +372,6 @@ fn main() {
                              PF_WIDTH as usize, PF_HEIGHT as usize);
     let mut pf_ctx = PlayfieldContext::new(pf1);
     pf_ctx.add_player(PlayerContext::new("Player 1",
-                                         Player::new(),
                                          player1_key_map,
                                          figure_list));
 
