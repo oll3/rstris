@@ -34,7 +34,7 @@ static FILL_COLOR: Color = Color::RGB(98, 204, 244);
 static BG_COLOR: Color = Color::RGB(101, 208, 246);
 static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;
 
-struct PlayerKeys {
+struct KeyMap {
     step_left: Option<Keycode>,
     step_right: Option<Keycode>,
     step_down: Option<Keycode>,
@@ -48,7 +48,7 @@ struct PlayerStats {
 
 struct PlayerContext {
     name: String,
-    key_map: PlayerKeys,
+    key_map: KeyMap,
     stats: PlayerStats,
     time_last_move: HashMap<Movement, u64>,
     avail_figures: Vec<Figure>,
@@ -66,7 +66,7 @@ struct PlayfieldContext {
 
 
 impl PlayerContext {
-    pub fn new(name: &str, key_map: PlayerKeys,
+    pub fn new(name: &str, key_map: KeyMap,
                figures: Vec<Figure>) -> Self {
         PlayerContext{
             name: name.to_owned(),
@@ -275,58 +275,64 @@ fn handle_player_moves(pl_ctx: &mut PlayerContext, pf: &mut Playfield,
     return vec![];
 }
 
-fn handle_player_input(key_map: &PlayerKeys, pressed_keys:
-                       &mut HashMap<Keycode, (u64, u64)>) -> Vec<Movement> {
-    let current_ticks = time::precise_time_ns();
+fn key_to_movement(key_map: &KeyMap, key: Keycode) -> Option<Movement> {
+    if !key_map.step_left.is_none() &&
+        key == key_map.step_left.unwrap()
+    {
+        return Some(Movement::MoveLeft);
+    } else if !key_map.step_right.is_none() &&
+        key == key_map.step_right.unwrap()
+    {
+        return Some(Movement::MoveRight);
+    } else if !key_map.step_down.is_none() &&
+        key == key_map.step_down.unwrap()
+    {
+        return Some(Movement::MoveDown);
+    } else if !key_map.rot_cw.is_none() &&
+        key == key_map.rot_cw.unwrap()
+    {
+        return Some(Movement::RotateCW);
+    }
+    else if !key_map.rot_ccw.is_none() &&
+        key == key_map.rot_ccw.unwrap()
+    {
+        return Some(Movement::RotateCCW);
+    }
+    return None;
+}
+
+fn handle_player_input(current_ticks: u64,
+                       pl_ctx: &mut PlayerContext,
+                       pressed_keys: &mut HashMap<Keycode, u64>)
+                       -> Vec<Movement> {
     let mut moves: Vec<Movement> = vec![];
     let keys = pressed_keys.clone();
-    for (key, (time, this_delay)) in keys {
-
-        if time <= current_ticks {
-
-            let next_delay = (this_delay * 2) / 5 + 20000000;
-            let delay = current_ticks + this_delay;
-
-            if !key_map.step_left.is_none() &&
-                key == key_map.step_left.unwrap()
-            {
-                moves.push(Movement::MoveLeft);
-                pressed_keys.insert(key, (delay, next_delay));
+    for (key, pressed_at) in keys {
+        match key_to_movement(&pl_ctx.key_map, key) {
+            Some(movement) => {
+                let last_move = match pl_ctx.time_last_move.get(&movement) {
+                    Some(t) => *t,
+                    None => 0
+                };
+                if current_ticks <= pressed_at {
+                    moves.push(movement);
+                }
+                else if (current_ticks - last_move) > 200000000 {
+                    moves.push(movement);
+                }
             }
-            else if !key_map.step_right.is_none() &&
-                key == key_map.step_right.unwrap()
-            {
-                moves.push(Movement::MoveRight);
-                pressed_keys.insert(key, (delay, next_delay));
-            }
-            else if !key_map.step_down.is_none() &&
-                key == key_map.step_down.unwrap()
-            {
-                moves.push(Movement::MoveDown);
-                pressed_keys.insert(key, (delay, next_delay));
-            }
-            else if !key_map.rot_cw.is_none() &&
-                key == key_map.rot_cw.unwrap()
-            {
-                moves.push(Movement::RotateCW);
-                pressed_keys.insert(key, (delay, next_delay));
-            }
-            else if !key_map.rot_ccw.is_none() &&
-                key == key_map.rot_ccw.unwrap()
-            {
-                moves.push(Movement::RotateCCW);
-                pressed_keys.insert(key, (delay, next_delay));
-            }
+            None => {}
         }
     }
     return moves;
 }
 
 
-fn move_every(time_last_move: &HashMap<Movement, u64>, movement: Movement,
+fn move_every(current_ticks: u64,
+              time_last_move: &HashMap<Movement, u64>,
+              movement: Movement,
               every_ns: u64) -> Vec<Movement> {
     let mut moves: Vec<Movement> = vec![];
-    let current_ticks = time::precise_time_ns();
     let last_move = time_last_move.get(&movement);
     if last_move.is_none() ||
         (last_move.unwrap() + every_ns) < current_ticks {
@@ -360,7 +366,7 @@ fn main() {
                                     BLOCK_SPACING, FRAME_COLOR,
                                     FILL_COLOR);
 
-    let player1_key_map = PlayerKeys {
+    let player1_key_map = KeyMap {
         step_left: Some(Keycode::Left),
         step_right: Some(Keycode::Right),
         step_down: Some(Keycode::Down),
@@ -377,7 +383,7 @@ fn main() {
 
     let mut pause = false;
 
-    let mut pressed_keys: HashMap<Keycode, (u64, u64)> = HashMap::new();
+    let mut pressed_keys: HashMap<Keycode, u64> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
     'running: loop {
         let current_ticks = time::precise_time_ns();
@@ -396,7 +402,7 @@ fn main() {
                 },Event::KeyDown {
                     keycode: Some(key), .. } => {
                     if !pressed_keys.contains_key(&key) {
-                        pressed_keys.insert(key, (current_ticks, 140000000));
+                        pressed_keys.insert(key, current_ticks);
                     }
                 },Event::KeyUp {
                     keycode: Some(key), .. } => {
@@ -416,10 +422,12 @@ fn main() {
 
         // Handle movement and figure creation
         for pl_ctx in &mut pf_ctx.player_ctx {
-            let mut moves = handle_player_input(&pl_ctx.key_map,
+            let mut moves = handle_player_input(current_ticks,
+                                                pl_ctx,
                                                 &mut pressed_keys);
             if current_ticks > pl_ctx.delay_first_step_down {
-                moves.append(&mut move_every(&mut pl_ctx.time_last_move,
+                moves.append(&mut move_every(current_ticks,
+                                             &mut pl_ctx.time_last_move,
                                              Movement::MoveDown,
                                              500000000 /* ns */));
             }
