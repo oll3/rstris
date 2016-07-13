@@ -362,8 +362,10 @@ fn main() {
         .opengl()
         .build()
         .unwrap();
-    let mut draw = DrawContext::new(window, BLOCK_SIZE,
-                                    BLOCK_SPACING, FRAME_COLOR,
+    let mut renderer = window.renderer().build().unwrap();
+    let mut draw = DrawContext::new(BLOCK_SIZE,
+                                    BLOCK_SPACING,
+                                    FRAME_COLOR,
                                     FILL_COLOR);
 
     let player1_key_map = KeyMap {
@@ -382,7 +384,8 @@ fn main() {
                                          figure_list));
 
     let mut pause = false;
-
+    let mut frame_cnt_sec = 0;
+    let mut sec_timer = time::precise_time_ns();
     let mut pressed_keys: HashMap<Keycode, u64> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
     'running: loop {
@@ -460,16 +463,29 @@ fn main() {
         }
 
         /* Render graphics */
-        draw.clear(BG_COLOR);
-        draw.draw_playfield(&pf_ctx.pf);
+        draw.clear(&mut renderer, BG_COLOR);
+        draw.draw_playfield(&mut renderer, &pf_ctx.pf);
         let mut pi = 0;
         for player in &mut pf_ctx.player_ctx {
-            draw.draw_next_figure(&player.get_next_figure(), PF_WIDTH + 3,
-                                  (figure_max_height + 2) * pi,
+            draw.draw_next_figure(&mut renderer, &player.get_next_figure(),
+                                  PF_WIDTH + 3,
+                                  (figure_max_height + 1) * pi,
                                   figure_max_width, figure_max_height);
 
             pi += 1;
         }
-        draw.present();
+        draw.present(&mut renderer);
+
+        /* Write FPS in window title */
+        frame_cnt_sec += 1;
+        if (current_ticks - sec_timer) >= 1000000000 {
+            let title = format!("RSTris (fps: {})", frame_cnt_sec);
+            let mut window = renderer.window_mut().unwrap();
+
+            frame_cnt_sec = 0;
+            sec_timer = current_ticks;
+            window.set_title(&title).unwrap();
+        }
+        std::thread::sleep(std::time::Duration::new(0, 10000000));
     }
 }
