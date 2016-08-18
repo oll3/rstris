@@ -29,7 +29,10 @@ pub trait Player {
     fn common_mut(&mut self) -> &mut PlayerCommon;
     fn handle_input(&mut self, current_ticks: u64,
                     pressed_keys: &mut HashMap<Keycode, u64>)
-                    -> Vec<(Movement, u64)>;
+                    -> Vec<(Movement, u64)> {
+        // Implement if needed
+        vec![]
+    }
 }
 
 impl PlayerCommon {

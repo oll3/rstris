@@ -13,18 +13,20 @@ pub struct KeyMap {
 }
 
 pub struct HumanPlayer {
-    player: PlayerCommon,
+    common: PlayerCommon,
     key_map: KeyMap,
 }
 
 impl Player for HumanPlayer {
+
     fn common(&self) -> &PlayerCommon {
-        &self.player
+        &self.common
     }
 
     fn common_mut(&mut self) -> &mut PlayerCommon {
-        &mut self.player
+        &mut self.common
     }
+
     fn handle_input(&mut self, current_ticks: u64,
                     pressed_keys: &mut HashMap<Keycode, u64>)
                     -> Vec<(Movement, u64)> {
@@ -34,7 +36,7 @@ impl Player for HumanPlayer {
             match self.key_to_movement(key) {
                 Some(movement) => {
                     let time_last_move = current_ticks -
-                        match self.player.time_last_move.get(&movement) {
+                        match self.common.time_last_move.get(&movement) {
                             Some(t) => *t,
                             None => 0
                         };
@@ -55,9 +57,9 @@ impl Player for HumanPlayer {
 }
 
 impl HumanPlayer {
-    pub fn new(player: PlayerCommon, key_map: KeyMap) -> Self {
+    pub fn new(common: PlayerCommon, key_map: KeyMap) -> Self {
         HumanPlayer {
-            player: player,
+            common: common,
             key_map: key_map,
         }
     }
