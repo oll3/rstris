@@ -5,6 +5,7 @@ extern crate rustc_serialize;
 
 mod draw;
 mod player;
+mod human_player;
 
 use std::io;
 use std::fs::File;
@@ -12,12 +13,11 @@ use std::io::prelude::*;
 use rustc_serialize::json;
 
 use player::*;
+use human_player::*;
 use draw::*;
-use rstris::find::*;
 use rstris::block::*;
 use rstris::playfield::*;
 use rstris::figure::*;
-use rstris::figure_pos::*;
 use rstris::position::*;
 
 use sdl2::pixels::Color;
@@ -26,73 +26,13 @@ use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
 
 
-static PF_WIDTH: u32 = 10;
-static PF_HEIGHT: u32 = 20;
-static BLOCK_SIZE: u32 = 20;
+static PF_WIDTH: u32 = 16;
+static PF_HEIGHT: u32 = 30;
+static BLOCK_SIZE: u32 = 2;
 static BLOCK_SPACING: u32 = 1;
 static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
 static BG_COLOR: Color = Color::RGB(101, 208, 246);
-static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;
-
-struct KeyMap {
-    step_left: Option<Keycode>,
-    step_right: Option<Keycode>,
-    step_down: Option<Keycode>,
-    rot_cw: Option<Keycode>,
-    rot_ccw: Option<Keycode>,
-}
-
-struct HumanPlayer {
-    player: PlayerCommon,
-    key_map: KeyMap,
-}
-
-impl Player for HumanPlayer {
-    fn common(&self) -> &PlayerCommon {
-        &self.player
-    }
-    fn common_mut(&mut self) -> &mut PlayerCommon {
-        &mut self.player
-    }
-    fn handle_input(&mut self, current_ticks: u64,
-                    pressed_keys: &mut HashMap<Keycode, u64>)
-                    -> Vec<(Movement, u64)> {
-        let mut moves: Vec<(Movement, u64)> = vec![];
-        let keys = pressed_keys.clone();
-        for (key, pressed_at) in keys {
-            match key_to_movement(&self.key_map, key) {
-                Some(movement) => {
-                    let time_last_move = current_ticks -
-                        match self.player.time_last_move.get(&movement) {
-                            Some(t) => *t,
-                            None => 0
-                        };
-                    let time_pressed = current_ticks - pressed_at;
-                    if current_ticks <= pressed_at {
-                        moves.push((movement, current_ticks));
-                    } else if time_pressed > 200000000 &&
-                        time_last_move > 50000000
-                    {
-                        moves.push((movement, current_ticks));
-                    }
-                }
-                None => {}
-            }
-        }
-        return moves;
-    }
-}
-
-impl HumanPlayer {
-    pub fn new(player: PlayerCommon, key_map: KeyMap) -> Self {
-        HumanPlayer {
-            player: player,
-            key_map: key_map,
-        }
-    }
-}
-
 
 struct PlayfieldContext<'a> {
     pf: Playfield,
@@ -192,32 +132,6 @@ fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
         Err(_) => {},
     }
     return Ok(());
-}
-
-fn key_to_movement(key_map: &KeyMap, key: Keycode) -> Option<Movement> {
-    if !key_map.step_left.is_none() &&
-        key == key_map.step_left.unwrap()
-    {
-        return Some(Movement::MoveLeft);
-    } else if !key_map.step_right.is_none() &&
-        key == key_map.step_right.unwrap()
-    {
-        return Some(Movement::MoveRight);
-    } else if !key_map.step_down.is_none() &&
-        key == key_map.step_down.unwrap()
-    {
-        return Some(Movement::MoveDown);
-    } else if !key_map.rot_cw.is_none() &&
-        key == key_map.rot_cw.unwrap()
-    {
-        return Some(Movement::RotateCW);
-    }
-    else if !key_map.rot_ccw.is_none() &&
-        key == key_map.rot_ccw.unwrap()
-    {
-        return Some(Movement::RotateCCW);
-    }
-    return None;
 }
 
 

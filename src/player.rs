@@ -3,8 +3,6 @@ extern crate rand;
 use std::collections::HashMap;
 use sdl2::keyboard::Keycode;
 
-use rstris::find::*;
-use rstris::block::*;
 use rstris::playfield::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
