@@ -44,15 +44,15 @@ struct KeyMap {
 }
 
 struct HumanPlayer {
-    player: PlayerData,
+    player: PlayerCommon,
     key_map: KeyMap,
 }
 
 impl Player for HumanPlayer {
-    fn get_player_data(&self) -> &PlayerData {
+    fn common(&self) -> &PlayerCommon {
         &self.player
     }
-    fn get_player_data_mut(&mut self) -> &mut PlayerData {
+    fn common_mut(&mut self) -> &mut PlayerCommon {
         &mut self.player
     }
     fn handle_input(&mut self, current_ticks: u64,
@@ -85,7 +85,7 @@ impl Player for HumanPlayer {
 }
 
 impl HumanPlayer {
-    pub fn new(player: PlayerData, key_map: KeyMap) -> Self {
+    pub fn new(player: PlayerCommon, key_map: KeyMap) -> Self {
         HumanPlayer {
             player: player,
             key_map: key_map,
@@ -117,7 +117,7 @@ impl <'a>PlayfieldContext<'a> {
     // Test if there are figures currently being played
     pub fn figures_in_play(&self) -> bool {
         for player in &self.players {
-            if player.get_player_data().figure_is_in_play() {
+            if player.common().figure_is_in_play() {
                 return true;
             }
         }
@@ -202,7 +202,7 @@ fn place_new_figure(player: &mut Player,
 
     let current_ticks = time::precise_time_ns();
     // Place new figure in playfield
-    let player_data = player.get_player_data_mut();
+    let player_data = player.common_mut();
     let figure = player_data.get_next_figure().clone();
     let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
     if figure.collide_locked(pf, &pos) {
@@ -223,67 +223,6 @@ fn place_new_figure(player: &mut Player,
         current_ticks + DELAY_FIRST_STEP_DOWN;
     return true;
 }
-
-//
-// Move player current figure according to the given movements.
-// If movement caused full lines being created then return those
-// line indexes.
-//
-/*
-fn handle_player_moves(player: &mut Player, pf: &mut Playfield,
-                       moves: Vec<Movement>) -> Vec<usize> {
-
-    let mut lock_figure = false;
-    let current_ticks = time::precise_time_ns();
-    let player_data = player.get_player_data_mut();
-    let mut fig_pos = player_data.get_figure().unwrap();
-    let mut new_pos = fig_pos.get_position().clone();
-    fig_pos.remove(pf);
-
-    for fig_move in moves {
-        player_data.set_time_of_move(fig_move.clone(), current_ticks);
-        player_data.delay_first_step_down = 0;
-        let fig = fig_pos.get_figure();
-        let test_pos = Position::apply_move(fig_pos.get_position(), &fig_move);
-        let test_pos_locked = fig.collide_locked(pf, &test_pos);
-        let test_pos_blocked = fig.collide_blocked(pf, &test_pos);
-        if !test_pos_locked && !test_pos_blocked {
-            new_pos = test_pos;
-        } else if fig_move == Movement::MoveDown && test_pos_locked {
-            // Figure couldn't be moved down further because of collision
-            // with locked block(s) - Mark figure blocks as locked in its
-            // current position.
-            lock_figure = true;
-            break;
-        } else {
-            // Move is not valid so the rest of the
-            // moves are not valid either.
-            break;
-        }
-    }
-    fig_pos.set_position(&new_pos);
-
-    if lock_figure {
-        fig_pos.lock(pf);
-        let fig_dir = fig_pos.get_figure_dir();
-        let mut lines_to_test: Vec<usize> = Vec::new();
-        for l in fig_dir.get_row_with_blocks() {
-            lines_to_test.push(l + fig_pos.get_position().get_y() as usize);
-        }
-        println!("{}: Test for locked lines at: {:?}...",
-                 player_data.get_name(), lines_to_test);
-        let locked_lines = pf.get_locked_lines(&lines_to_test);
-        println!("{}: Found locked lines at: {:?}",
-                 player_data.get_name(), locked_lines);
-        player_data.stats.line_count += locked_lines.len();
-        player_data.set_figure(None);
-        return locked_lines;
-    } else {
-        fig_pos.place(pf);
-        player_data.set_figure(Some(fig_pos));
-    }
-    return vec![];
-}*/
 
 fn key_to_movement(key_map: &KeyMap, key: Keycode) -> Option<Movement> {
     if !key_map.step_left.is_none() &&
@@ -354,11 +293,11 @@ fn main() {
         rot_ccw: None
     };
     let mut player1 = HumanPlayer::new(
-        PlayerData::new("Human 1", figure_list.clone()),
+        PlayerCommon::new("Human 1", figure_list.clone()),
         player1_key_map
     );
     let mut player2 = HumanPlayer::new(
-        PlayerData::new("Human 2", figure_list.clone()),
+        PlayerCommon::new("Human 2", figure_list.clone()),
         player2_key_map
     );
 
@@ -416,18 +355,18 @@ fn main() {
 
             moves.append(&mut player.handle_input(current_ticks,
                                                   &mut pressed_keys));
-            moves.append(&mut player.get_player_data_mut().move_every(
+            moves.append(&mut player.common_mut().move_every(
                 current_ticks,
                 Movement::MoveDown,
                 500000000 /* ns */
             )
             );
 
-            if player.get_player_data_mut().figure_in_play.is_some() {
+            if player.common_mut().figure_in_play.is_some() {
                 // Player has a figure in game
                 if moves.len() > 0 {
                     let mut lines =
-                        player.get_player_data_mut().
+                        player.common_mut().
                         handle_moves(&mut pf_ctx.pf, moves);
                     pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
                     pf_ctx.lines_to_throw.append(&mut lines);
@@ -455,7 +394,7 @@ fn main() {
         draw.draw_playfield(&mut renderer, &pf_ctx.pf);
         let mut pi = 0;
         for player in &mut pf_ctx.players {
-            let player_data = player.get_player_data();
+            let player_data = player.common();
             draw.draw_next_figure(&mut renderer,
                                   &player_data.get_next_figure(),
                                   PF_WIDTH + 3,
