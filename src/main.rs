@@ -194,36 +194,6 @@ fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
     return Ok(());
 }
 
-//
-// Try to place a new figure in playfield
-//
-fn place_new_figure(player: &mut Player,
-                    pf: &mut Playfield) -> bool {
-
-    let current_ticks = time::precise_time_ns();
-    // Place new figure in playfield
-    let player_data = player.common_mut();
-    let figure = player_data.get_next_figure().clone();
-    let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
-    if figure.collide_locked(pf, &pos) {
-        println!("{}: Game over!", player_data.get_name());
-        return false;
-    }
-    if figure.collide_blocked(pf, &pos) {
-        return true;
-    }
-    player_data.gen_next_figure();
-    println!("{}: Placed figure {} in playfield (next is {})",
-             player_data.get_name(), figure.get_name(),
-             player_data.get_next_figure().get_name());
-    let fig_pos = FigurePos::new(figure, pos);
-    fig_pos.place(pf);
-    player_data.set_figure(Some(fig_pos));
-    player_data.delay_first_step_down =
-        current_ticks + DELAY_FIRST_STEP_DOWN;
-    return true;
-}
-
 fn key_to_movement(key_map: &KeyMap, key: Keycode) -> Option<Movement> {
     if !key_map.step_left.is_none() &&
         key == key_map.step_left.unwrap()
@@ -362,7 +332,7 @@ fn main() {
             )
             );
 
-            if player.common_mut().figure_in_play.is_some() {
+            if player.common().figure_in_play() {
                 // Player has a figure in game
                 if moves.len() > 0 {
                     let mut lines =
@@ -372,7 +342,8 @@ fn main() {
                     pf_ctx.lines_to_throw.append(&mut lines);
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
-                if !place_new_figure(*player, &mut pf_ctx.pf) {
+                if !player.common_mut().
+                    place_new_figure(current_ticks, &mut pf_ctx.pf) {
                     pf_ctx.game_over = true;
                 }
             }
@@ -394,9 +365,8 @@ fn main() {
         draw.draw_playfield(&mut renderer, &pf_ctx.pf);
         let mut pi = 0;
         for player in &mut pf_ctx.players {
-            let player_data = player.common();
             draw.draw_next_figure(&mut renderer,
-                                  &player_data.get_next_figure(),
+                                  &player.common().get_next_figure(),
                                   PF_WIDTH + 3,
                                   (figure_max_height + 1) * pi,
                                   figure_max_width, figure_max_height);
