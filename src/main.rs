@@ -57,7 +57,7 @@ impl <'a>PlayfieldContext<'a> {
     // Test if there are figures currently being played
     pub fn figures_in_play(&self) -> bool {
         for player in &self.players {
-            if player.common().figure_is_in_play() {
+            if player.figure_in_play() {
                 return true;
             }
         }
@@ -239,25 +239,23 @@ fn main() {
 
             moves.append(&mut player.handle_input(current_ticks,
                                                   &mut pressed_keys));
-            moves.append(&mut player.common_mut().move_every(
+            moves.append(&mut player.move_every(
                 current_ticks,
                 Movement::MoveDown,
                 500000000 /* ns */
             )
             );
 
-            if player.common().figure_in_play() {
+            if player.figure_in_play() {
                 // Player has a figure in game
                 if moves.len() > 0 {
                     let mut lines =
-                        player.common_mut().
-                        handle_moves(&mut pf_ctx.pf, moves);
+                        player.handle_moves(&mut pf_ctx.pf, moves);
                     pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
                     pf_ctx.lines_to_throw.append(&mut lines);
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
-                if !player.common_mut().
-                    place_new_figure(current_ticks, &mut pf_ctx.pf) {
+                if !player.place_new_figure(current_ticks, &mut pf_ctx.pf) {
                     pf_ctx.game_over = true;
                 }
             }
@@ -280,7 +278,7 @@ fn main() {
         let mut pi = 0;
         for player in &mut pf_ctx.players {
             draw.draw_next_figure(&mut renderer,
-                                  &player.common().get_next_figure(),
+                                  &player.next_figure(),
                                   PF_WIDTH + 3,
                                   (figure_max_height + 1) * pi,
                                   figure_max_width, figure_max_height);

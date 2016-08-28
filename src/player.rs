@@ -27,15 +27,41 @@ pub struct PlayerCommon {
 pub trait Player {
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
-    fn handle_input(&mut self, current_ticks: u64,
-                    pressed_keys: &mut HashMap<Keycode, u64>)
+
+    fn handle_input(&mut self, _: u64,
+                    _: &mut HashMap<Keycode, u64>)
                     -> Vec<(Movement, u64)> {
         // Implement if needed
         vec![]
     }
+
+    fn handle_moves(&mut self, pf: &mut Playfield,
+                    moves: Vec<(Movement, u64)>) -> Vec<usize> {
+        self.common_mut().handle_moves(pf, moves)
+    }
+
+    fn place_new_figure(&mut self, current_ticks: u64,
+                        pf: &mut Playfield) -> bool {
+        self.common_mut().place_new_figure(current_ticks, pf)
+    }
+
+    fn next_figure(&self) -> &Figure {
+        self.common().next_figure()
+    }
+
+    fn move_every(&self, current_ticks: u64,
+                  movement: Movement,
+                  every_ns: u64) -> Vec<(Movement, u64)> {
+        self.common().move_every(current_ticks, movement, every_ns)
+    }
+
+    fn figure_in_play(&self) -> bool {
+        self.common().figure_in_play()
+    }
 }
 
 impl PlayerCommon {
+
     pub fn new(name: &str, figures: Vec<Figure>) -> Self {
         PlayerCommon {
             name: name.to_owned(),
@@ -49,35 +75,39 @@ impl PlayerCommon {
             figure_in_play: None,
         }
     }
+
     fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
         let next_figure = (rand::random::<u8>() %
                            figures.len() as u8) as usize;
         return &figures[next_figure];
     }
-    pub fn get_next_figure(&self) -> &Figure {
+
+    fn next_figure(&self) -> &Figure {
         &self.next_figure
     }
-    pub fn gen_next_figure(&mut self) {
+
+    fn gen_next_figure(&mut self) {
         self.next_figure =
             PlayerCommon::get_rand_figure(&self.avail_figures).clone();
     }
+
     pub fn get_name(&self) -> &String {
         &self.name
     }
-    pub fn set_figure(&mut self, figure: Option<FigurePos>) {
+
+    fn set_figure(&mut self, figure: Option<FigurePos>) {
         self.figure_in_play = figure;
     }
-    pub fn get_figure(&self) -> Option<FigurePos> {
+
+    fn get_figure(&self) -> Option<FigurePos> {
         self.figure_in_play.clone()
     }
-    pub fn figure_is_in_play(&self) -> bool {
-        self.figure_in_play.is_some()
-    }
-    pub fn set_time_of_move(&mut self, fig_move: Movement, time: u64) {
+
+    fn set_time_of_move(&mut self, fig_move: Movement, time: u64) {
         self.time_last_move.insert(fig_move, time);
     }
 
-    pub fn figure_in_play(&self) -> bool {
+    fn figure_in_play(&self) -> bool {
         self.figure_in_play.is_some()
     }
 
@@ -86,7 +116,7 @@ impl PlayerCommon {
     // If movement caused full lines being created then return those
     // line indexes.
     //
-    pub fn handle_moves(&mut self, pf: &mut Playfield,
+    fn handle_moves(&mut self, pf: &mut Playfield,
                         moves: Vec<(Movement, u64)>) -> Vec<usize> {
 
         let mut lock_figure = false;
@@ -140,11 +170,11 @@ impl PlayerCommon {
         return vec![];
     }
 
-    pub fn place_new_figure(&mut self, current_ticks: u64,
-                            pf: &mut Playfield) -> bool {
+    fn place_new_figure(&mut self, current_ticks: u64,
+                        pf: &mut Playfield) -> bool {
 
         // Place new figure in playfield
-        let figure = self.get_next_figure().clone();
+        let figure = self.next_figure().clone();
         let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
         if figure.collide_locked(pf, &pos) {
             println!("{}: Game over!", self.get_name());
@@ -156,7 +186,7 @@ impl PlayerCommon {
         self.gen_next_figure();
         println!("{}: Placed figure {} in playfield (next is {})",
                  self.get_name(), figure.get_name(),
-                 self.get_next_figure().get_name());
+                 self.next_figure().get_name());
         let fig_pos = FigurePos::new(figure, pos);
         fig_pos.place(pf);
         self.set_figure(Some(fig_pos));
@@ -165,10 +195,9 @@ impl PlayerCommon {
         return true;
     }
 
-
-    pub fn move_every(&self, current_ticks: u64,
-                      movement: Movement,
-                      every_ns: u64) -> Vec<(Movement, u64)> {
+    fn move_every(&self, current_ticks: u64,
+                  movement: Movement,
+                  every_ns: u64) -> Vec<(Movement, u64)> {
         let mut moves: Vec<(Movement, u64)> = vec![];
         if current_ticks > self.delay_first_step_down {
             let last_move = self.time_last_move.get(&movement);
