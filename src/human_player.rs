@@ -27,10 +27,9 @@ impl Player for HumanPlayer {
         &mut self.common
     }
 
-    fn handle_input(&mut self, current_ticks: u64,
-                    pressed_keys: &mut HashMap<Keycode, u64>)
-                    -> Vec<(Movement, u64)> {
-        let mut moves: Vec<(Movement, u64)> = vec![];
+    fn handle_input(&mut self, moves: &mut Vec<(Movement, u64)>,
+                    current_ticks: u64,
+                    pressed_keys: &mut HashMap<Keycode, u64>) {
         let keys = pressed_keys.clone();
         for (key, pressed_at) in keys {
             match self.key_to_movement(key) {
@@ -52,7 +51,6 @@ impl Player for HumanPlayer {
                 None => {}
             }
         }
-        return moves;
     }
 }
 

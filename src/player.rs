@@ -25,14 +25,17 @@ pub struct PlayerCommon {
 }
 
 pub trait Player {
+
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
-
-    fn handle_input(&mut self, _: u64,
-                    _: &mut HashMap<Keycode, u64>)
-                    -> Vec<(Movement, u64)> {
+    fn update(&mut self, _: u64,
+              _: &Playfield) {
         // Implement if needed
-        vec![]
+    }
+
+    fn handle_input(&mut self, _: &mut Vec<(Movement, u64)>,
+                    _: u64, _: &mut HashMap<Keycode, u64>) {
+        // Implement if needed
     }
 
     fn handle_moves(&mut self, pf: &mut Playfield,
@@ -49,10 +52,11 @@ pub trait Player {
         self.common().next_figure()
     }
 
-    fn move_every(&self, current_ticks: u64,
+    fn move_every(&self, moves: &mut Vec<(Movement, u64)>,
+                  current_ticks: u64,
                   movement: Movement,
-                  every_ns: u64) -> Vec<(Movement, u64)> {
-        self.common().move_every(current_ticks, movement, every_ns)
+                  every_ns: u64) {
+        self.common().move_every(moves, current_ticks, movement, every_ns);
     }
 
     fn figure_in_play(&self) -> bool {
@@ -195,10 +199,9 @@ impl PlayerCommon {
         return true;
     }
 
-    fn move_every(&self, current_ticks: u64,
-                  movement: Movement,
-                  every_ns: u64) -> Vec<(Movement, u64)> {
-        let mut moves: Vec<(Movement, u64)> = vec![];
+    fn move_every(&self, moves: &mut Vec<(Movement, u64)>,
+                  current_ticks: u64, movement: Movement,
+                  every_ns: u64) {
         if current_ticks > self.delay_first_step_down {
             let last_move = self.time_last_move.get(&movement);
             if last_move.is_none() ||
@@ -207,6 +210,5 @@ impl PlayerCommon {
                 moves.push((movement, current_ticks));
             }
         }
-        return moves;
     }
 }

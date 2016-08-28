@@ -237,14 +237,9 @@ fn main() {
         for player in & mut pf_ctx.players {
             let mut moves: Vec<(Movement, u64)> = Vec::new();
 
-            moves.append(&mut player.handle_input(current_ticks,
-                                                  &mut pressed_keys));
-            moves.append(&mut player.move_every(
-                current_ticks,
-                Movement::MoveDown,
-                500000000 /* ns */
-            )
-            );
+            player.handle_input(&mut moves, current_ticks, &mut pressed_keys);
+            player.move_every(&mut moves, current_ticks, Movement::MoveDown,
+                              500000000 /* ns */);
 
             if player.figure_in_play() {
                 // Player has a figure in game
