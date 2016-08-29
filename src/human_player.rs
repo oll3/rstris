@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use sdl2::keyboard::Keycode;
 
 use player::*;
+use rstris::playfield::*;
 use rstris::position::*;
 
 pub struct KeyMap {
@@ -15,6 +16,7 @@ pub struct KeyMap {
 pub struct HumanPlayer {
     common: PlayerCommon,
     key_map: KeyMap,
+    moves: Vec<(Movement, u64)>,
 }
 
 impl Player for HumanPlayer {
@@ -27,7 +29,13 @@ impl Player for HumanPlayer {
         &mut self.common
     }
 
-    fn handle_input(&mut self, moves: &mut Vec<(Movement, u64)>,
+    fn get_moves(&mut self, current_ticks: u64) -> Vec<(Movement, u64)> {
+        let moves = self.moves.clone();
+        self.moves.clear();
+        return moves;
+    }
+
+    fn handle_input(&mut self,
                     current_ticks: u64,
                     pressed_keys: &mut HashMap<Keycode, u64>) {
         let keys = pressed_keys.clone();
@@ -41,11 +49,11 @@ impl Player for HumanPlayer {
                         };
                     let time_pressed = current_ticks - pressed_at;
                     if current_ticks <= pressed_at {
-                        moves.push((movement, current_ticks));
+                        self.moves.push((movement, current_ticks));
                     } else if time_pressed > 200000000 &&
                         time_last_move > 50000000
                     {
-                        moves.push((movement, current_ticks));
+                        self.moves.push((movement, current_ticks));
                     }
                 }
                 None => {}
@@ -59,6 +67,7 @@ impl HumanPlayer {
         HumanPlayer {
             common: common,
             key_map: key_map,
+            moves: Vec::new(),
         }
     }
     fn key_to_movement(&self, key: Keycode) -> Option<Movement> {

@@ -28,13 +28,13 @@ pub trait Player {
 
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
+    fn get_moves(&mut self, current_ticks: u64) ->  Vec<(Movement, u64)>;
     fn update(&mut self, _: u64,
               _: &Playfield) {
         // Implement if needed
     }
 
-    fn handle_input(&mut self, _: &mut Vec<(Movement, u64)>,
-                    _: u64, _: &mut HashMap<Keycode, u64>) {
+    fn handle_input(&mut self, _: u64, _: &mut HashMap<Keycode, u64>) {
         // Implement if needed
     }
 
@@ -103,7 +103,7 @@ impl PlayerCommon {
         self.figure_in_play = figure;
     }
 
-    fn get_figure(&self) -> Option<FigurePos> {
+    pub fn get_figure(&self) -> Option<FigurePos> {
         self.figure_in_play.clone()
     }
 

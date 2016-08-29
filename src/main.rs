@@ -235,9 +235,11 @@ fn main() {
 
         // Handle movement and figure creation
         for player in & mut pf_ctx.players {
-            let mut moves: Vec<(Movement, u64)> = Vec::new();
 
-            player.handle_input(&mut moves, current_ticks, &mut pressed_keys);
+            player.update(current_ticks, &pf_ctx.pf);
+            player.handle_input(current_ticks, &mut pressed_keys);
+
+            let mut moves = player.get_moves(current_ticks);
             player.move_every(&mut moves, current_ticks, Movement::MoveDown,
                               500000000 /* ns */);
 
