@@ -6,6 +6,7 @@ extern crate rustc_serialize;
 mod draw;
 mod player;
 mod human_player;
+mod computer_player;
 
 use std::io;
 use std::fs::File;
@@ -14,6 +15,7 @@ use rustc_serialize::json;
 
 use player::*;
 use human_player::*;
+use computer_player::*;
 use draw::*;
 use rstris::block::*;
 use rstris::playfield::*;
@@ -183,6 +185,10 @@ fn main() {
     let mut player2 = HumanPlayer::new(
         PlayerCommon::new("Human 2", figure_list.clone()),
         player2_key_map
+    );
+
+    let mut com1 = ComputerPlayer::new(
+        PlayerCommon::new("Computer 1", figure_list.clone())
     );
 
     let pf1 = Playfield::new("Playfield 1",
