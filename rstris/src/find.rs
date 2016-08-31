@@ -2,6 +2,8 @@ extern crate time;
 
 use std::collections::LinkedList;
 use std::collections::HashSet;
+use std::collections::HashMap;
+use figure::*;
 use figure_pos::*;
 use position::*;
 use playfield::*;
@@ -77,4 +79,42 @@ pub fn get_valid_placing(pf: &Playfield,
              placements.len(), fig.get_name(), it_cnt,
              (time::precise_time_ns() - current_ticks) as f64 / 1000000.0);
     return placements;
+}
+
+
+pub fn cost_estimate(start: &Position, end: &Position) -> u32
+{
+    ((start.get_x() - end.get_x()).abs() +
+     (start.get_y() - end.get_y()).abs() +
+     (start.get_dir() - end.get_dir()).abs()) as u32
+}
+
+fn get_score(pos: &Position, pos_score: &HashMap<Position, u32>) -> u32
+{
+    match pos_score.get(pos) {
+        Some(score) => *score,
+        None => 1000,
+    }
+}
+
+pub fn find_path_astar(pf: &Playfield, fig: &Figure,
+                       start_pos: &Position, end_pos: &Position)
+{
+    let mut closed_set: HashSet<Position> = HashSet::new();
+    let mut open_set: Vec<Position> = Vec::new();
+    open_set.push(start_pos.clone());
+    let mut cost_to_pos: HashMap<Position, u32> = HashMap::new();
+    let mut pos_score: HashMap<Position, u32> = HashMap::new();
+    cost_to_pos.insert(start_pos.clone(), 0);
+    pos_score.insert(start_pos.clone(),
+                     cost_estimate(&start_pos, &end_pos));
+
+    while open_set.len() > 0 {
+        if open_set.len() > 1 {
+            open_set.sort_by(|a, b|
+                             get_score(&a, &pos_score).
+                             cmp(&get_score(&b, &pos_score)))
+        }
+
+    }
 }
