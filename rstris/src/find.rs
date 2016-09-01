@@ -2,7 +2,6 @@ extern crate time;
 
 use std::collections::LinkedList;
 use std::collections::HashSet;
-use std::collections::HashMap;
 use figure::*;
 use figure_pos::*;
 use position::*;
@@ -82,39 +81,87 @@ pub fn get_valid_placing(pf: &Playfield,
 }
 
 
-pub fn cost_estimate(start: &Position, end: &Position) -> u32
+fn distance(start: &Position, end: &Position) -> u32
 {
     ((start.get_x() - end.get_x()).abs() +
      (start.get_y() - end.get_y()).abs() +
      (start.get_dir() - end.get_dir()).abs()) as u32
 }
 
-fn get_score(pos: &Position, pos_score: &HashMap<Position, u32>) -> u32
-{
-    match pos_score.get(pos) {
-        Some(score) => *score,
-        None => 1000,
+#[derive(Clone, Debug)]
+struct Node {
+    id: usize,
+    parent: usize,
+    pos: Position,
+    f: u32,
+    g: u32,
+    h: u32,
+}
+
+impl Node {
+    fn new(node_list: &mut Vec<Node>, parent:  usize,
+           pos: &Position, g: u32, h: u32)
+           -> Node {
+        let node = Node{id: node_list.len(),
+                        parent: parent,
+                        pos: pos.clone(),
+                        g: g, h: h, f: g + h};
+        node_list.push(node.clone());
+        return node;
     }
 }
 
-pub fn find_path_astar(pf: &Playfield, fig: &Figure,
-                       start_pos: &Position, end_pos: &Position)
+pub fn find_path(pf: &Playfield, fig: &Figure,
+                 start_pos: &Position, end_pos: &Position) -> Vec<Position>
 {
-    let mut closed_set: HashSet<Position> = HashSet::new();
-    let mut open_set: Vec<Position> = Vec::new();
-    open_set.push(start_pos.clone());
-    let mut cost_to_pos: HashMap<Position, u32> = HashMap::new();
-    let mut pos_score: HashMap<Position, u32> = HashMap::new();
-    cost_to_pos.insert(start_pos.clone(), 0);
-    pos_score.insert(start_pos.clone(),
-                     cost_estimate(&start_pos, &end_pos));
+    let mut all: Vec<Node> = Vec::new();
+    let mut open_set: Vec<Node> = Vec::new();
+    let mut closed_set: Vec<Node> = Vec::new();
+    let start_node = Node::new(&mut all, 0, start_pos, 0, 0);
+    open_set.push(start_node);
 
-    while open_set.len() > 0 {
-        if open_set.len() > 1 {
-            open_set.sort_by(|a, b|
-                             get_score(&a, &pos_score).
-                             cmp(&get_score(&b, &pos_score)))
+    while open_set.len() > 0 && all.len() < 10000 {
+        open_set.sort_by(|a, b| b.f.cmp(&a.f));
+        let q = open_set.pop().unwrap();
+
+        // Find all possible movements from q (left,right,down,rotate)
+        let mut successors: Vec<Node> = Vec::new();
+        for movement in &[Movement::MoveLeft,
+                          Movement::MoveRight,
+                          Movement::MoveDown,
+                          Movement::RotateCW] {
+
+            let mut fig_pos = Position::apply_move(&q.pos, movement);
+            fig_pos.normalize_dir(fig.get_num_dirs());
+            if !fig.collide_blocked(pf, &fig_pos) {
+                let succs = Node::new(&mut all, q.id, &fig_pos,
+                                      q.g + distance(&q.pos, &fig_pos),
+                                      distance(&fig_pos, end_pos));
+                successors.push(succs);
+            }
         }
 
+        for s in successors {
+            if s.pos == *end_pos {
+                println!("Found path (from {:?} to {:?}):", start_pos, end_pos);
+                let mut p = s;
+                let mut path: Vec<Position> = Vec::new();
+                path.push(p.pos.clone());
+                while p.id != 0 {
+                    p = all[p.parent].clone();
+                    path.insert(0, p.pos.clone());
+                }
+                println!("Path: {:?}", path);
+                return path;
+            }
+            if open_set.iter().find(
+                |&n| n.pos == s.pos && n.f < s.f).is_none() &&
+                closed_set.iter().find(
+                    |&n| n.pos == s.pos && n.f < s.f).is_none() {
+                open_set.push(s);
+            }
+        }
+        closed_set.push(q);
     }
+    return vec![];
 }
