@@ -34,6 +34,11 @@ pub trait Player {
         // Implement if needed
     }
 
+    fn handle_new_figure(&mut self, current_ticks: u64,
+                         pf: &Playfield, fig_pos: &FigurePos) {
+        // Implement if needed
+    }
+
     fn handle_input(&mut self, _: u64, _: &mut HashMap<Keycode, u64>) {
         // Implement if needed
     }
@@ -45,7 +50,19 @@ pub trait Player {
 
     fn place_new_figure(&mut self, current_ticks: u64,
                         pf: &mut Playfield) -> bool {
-        self.common_mut().place_new_figure(current_ticks, pf)
+
+        // Place new figure in playfield
+        let figure = self.common().next_figure().clone();
+        let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
+        if figure.collide_locked(pf, &pos) {
+            return false;
+        } else if figure.collide_blocked(pf, &pos) {
+            return true;
+        }
+        let fig_pos = FigurePos::new(figure, pos);
+        self.common_mut().gen_next_figure();
+        self.handle_new_figure(current_ticks, pf, &fig_pos);
+        return self.common_mut().place_new_figure(current_ticks, pf, fig_pos);
     }
 
     fn next_figure(&self) -> &Figure {
@@ -175,23 +192,11 @@ impl PlayerCommon {
     }
 
     fn place_new_figure(&mut self, current_ticks: u64,
-                        pf: &mut Playfield) -> bool {
+                        pf: &mut Playfield, fig_pos: FigurePos) -> bool {
 
-        // Place new figure in playfield
-        let figure = self.next_figure().clone();
-        let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
-        if figure.collide_locked(pf, &pos) {
-            println!("{}: Game over!", self.get_name());
-            return false;
-        }
-        if figure.collide_blocked(pf, &pos) {
-            return true;
-        }
-        self.gen_next_figure();
         println!("{}: Placed figure {} in playfield (next is {})",
-                 self.get_name(), figure.get_name(),
+                 self.get_name(), fig_pos.get_figure().get_name(),
                  self.next_figure().get_name());
-        let fig_pos = FigurePos::new(figure, pos);
         fig_pos.place(pf);
         self.set_figure(Some(fig_pos));
         self.delay_first_step_down =

@@ -31,18 +31,15 @@ impl Player for ComputerPlayer {
         &mut self.common
     }
 
+    fn handle_new_figure(&mut self, current_ticks: u64,
+                         pf: &Playfield, fig_pos: &FigurePos) {
+        self.handle_new_figure(pf, fig_pos);
+        self.last_path_update = current_ticks;
+    }
+
     fn update(&mut self, current_ticks: u64, pf: &Playfield) {
         match self.common.get_figure() {
-            Some(ref fig_pos) => {
-                let fig = fig_pos.get_figure();
-                if self.last_fig != *fig.get_name() {
-                    self.last_fig = fig.get_name().clone();
-                    self.handle_new_figure(fig_pos, pf);
-                    self.last_path_update = current_ticks;
-                }
-
-                self.update_moves(current_ticks);
-            }
+            Some(ref fig_pos) => self.update_moves(current_ticks),
             None => {}
         }
     }
@@ -68,7 +65,7 @@ impl ComputerPlayer {
         }
     }
 
-    fn handle_new_figure(&mut self, fig_pos: &FigurePos, pf: &Playfield) {
+    fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos) {
         let mut tmp_pf = pf.clone();
         fig_pos.remove(&mut tmp_pf);
         self.avail_pos =
@@ -76,7 +73,8 @@ impl ComputerPlayer {
         println!("New figure ({}) - {} available placings",
                  self.last_fig, self.avail_pos.len());
 
-        let sel_end = rand::random::<usize>() % self.avail_pos.len();
+        self.avail_pos.sort_by(|a, b| b.get_y().cmp(&a.get_y()));
+        let sel_end = 0;
         self.path = find_path(&tmp_pf,
                               &fig_pos.get_figure(),
                               &fig_pos.get_position(),
