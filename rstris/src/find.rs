@@ -81,11 +81,11 @@ pub fn get_valid_placing(pf: &Playfield,
 }
 
 
-fn distance(start: &Position, end: &Position) -> u32
+fn distance(start: &Position, end: &Position) -> f64
 {
-    ((start.get_x() - end.get_x()).abs() +
-     (start.get_y() - end.get_y()).abs() +
-     (start.get_dir() - end.get_dir()).abs()) as u32
+    ((start.get_x() as f64 - end.get_x() as f64).powi(2) +
+     (start.get_y() as f64 - end.get_y() as f64).powi(2) +
+     (start.get_dir() as f64 - end.get_dir() as f64).powi(2)).sqrt()
 }
 
 #[derive(Clone, Debug)]
@@ -93,15 +93,15 @@ struct Node {
     id: usize,
     parent: usize,
     pos: Position,
-    f: u32,
-    g: u32,
-    h: u32,
+    f: f64,
+    g: f64,
+    h: f64,
     movement: Option<Movement>,
 }
 
 impl Node {
     fn new(node_list: &mut Vec<Node>, parent:  usize,
-           pos: &Position, g: u32, h: u32,
+           pos: &Position, g: f64, h: f64,
            movement: Option<Movement>)
            -> Node {
         let node = Node{id: node_list.len(),
@@ -114,19 +114,41 @@ impl Node {
     }
 }
 
+use std::cmp::*;
+use std::hash::*;
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.pos == other.pos && self.parent == other.parent
+    }
+}
+impl Eq for Node {}
+impl Hash for Node {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.pos.hash(state);
+        self.parent.hash(state);
+    }
+}
+
 pub fn find_path(pf: &Playfield, fig: &Figure,
                  start_pos: &Position, end_pos: &Position) -> Vec<Movement>
 {
     let mut all: Vec<Node> = Vec::new();
+    let mut id: HashSet<Node> = HashSet::new();
     let mut open_set: Vec<Node> = Vec::new();
     let mut closed_set: Vec<Node> = Vec::new();
-    let start_node = Node::new(&mut all, 0, start_pos, 0, 0, None);
+    let start_node = Node::new(&mut all, 0, start_pos, 0.0, 0.0, None);
+    id.insert(start_node.clone());
     open_set.push(start_node);
 
-    println!("Searching for path ({:?} to {:?})...", start_pos, end_pos);
-    while open_set.len() > 0 && all.len() < 10000 {
-        open_set.sort_by(|a, b| b.f.cmp(&a.f));
+    println!("Searching for path ({:?} to {:?} (distance: {})...",
+             start_pos, end_pos, distance(start_pos, end_pos));
+    while open_set.len() > 0 && all.len() < 20000 {
+        open_set.sort_by(|a, b| b.f.partial_cmp(&a.f).unwrap());
         let q = open_set.pop().unwrap();
+
+        println!("Id: {}, parent: {}, pos: {:?}, f: {}, real: {}",
+                 q.id, q.parent, q.pos, q.f, q.g);
 
         // Find all possible movements from q (left,right,down,rotate)
         let mut successors: Vec<Node> = Vec::new();
@@ -148,24 +170,34 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
 
         for s in successors {
             if s.pos == *end_pos {
+                // End was found
                 let mut p = s;
                 let mut path: Vec<Movement> = Vec::new();
                 while p.id != 0 {
-                    path.insert(0, p.movement.unwrap().clone());
+                    path.push(p.movement.unwrap().clone());
                     p = all[p.parent].clone();
                 }
-                println!("Path ({}): {:?}", path.len(), path);
+                println!("Tested {} - Found path ({}): {:?}",
+                         all.len(), path.len(), path);
                 return path;
             }
-            if open_set.iter().find(
-                |&n| n.pos == s.pos && n.f < s.f).is_none() &&
+            else if open_set.iter().find(
+                |&n| n.pos == s.pos && n.f <= s.f).is_none() &&
                 closed_set.iter().find(
-                    |&n| n.pos == s.pos && n.f < s.f).is_none() {
-                open_set.push(s);
+                    |&n| n.pos == s.pos && n.f <= s.f).is_none() {
+
+                    if id.contains(&s) {
+                        println!("Already walked ({:?})?!", s);
+                        return vec![];
+                    }
+                    id.insert(s.clone());
+                    open_set.push(s);
             }
         }
         closed_set.push(q);
     }
-    println!("No path found?!");
+    println!("No path found for {} ({:?} to {:?} (distance: {})!",
+             fig.get_name(), start_pos, end_pos,
+             distance(start_pos, end_pos));
     return vec![];
 }
