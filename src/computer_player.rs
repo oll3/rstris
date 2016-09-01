@@ -66,19 +66,17 @@ impl ComputerPlayer {
     }
 
     fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos) {
-        let mut tmp_pf = pf.clone();
-        fig_pos.remove(&mut tmp_pf);
-        self.avail_pos =
-            get_valid_placing(&tmp_pf, fig_pos);
+        self.avail_pos = get_valid_placing(&pf, fig_pos);
         println!("New figure ({}) - {} available placings",
                  self.last_fig, self.avail_pos.len());
 
         self.avail_pos.sort_by(|a, b| b.get_y().cmp(&a.get_y()));
         let sel_end = 0;
-        self.path = find_path(&tmp_pf,
+        self.path = find_path(&pf,
                               &fig_pos.get_figure(),
                               &fig_pos.get_position(),
                               &self.avail_pos[sel_end]);
+        self.path.insert(0, Movement::MoveDown);
     }
 
     fn rand_move() -> Movement {
@@ -99,7 +97,7 @@ impl ComputerPlayer {
     }
 
     fn update_moves(&mut self, current_ticks: u64) {
-        if self.time_next_move + 100000000 < current_ticks {
+        if self.time_next_move + self.common.force_down_time < current_ticks {
             self.time_next_move = current_ticks;
             match self.com_type {
                 ComputerType::RandomStupid => self.update_random(current_ticks),

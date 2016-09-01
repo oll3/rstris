@@ -8,7 +8,6 @@ use rstris::figure::*;
 use rstris::figure_pos::*;
 use rstris::position::*;
 
-static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;
 
 pub struct PlayerStats {
     pub line_count: usize,
@@ -21,7 +20,7 @@ pub struct PlayerCommon {
     next_figure: Figure,
     figure_in_play: Option<FigurePos>,
     pub stats: PlayerStats,
-    delay_first_step_down: u64,
+    pub force_down_time: u64,
 }
 
 pub trait Player {
@@ -29,10 +28,7 @@ pub trait Player {
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
     fn get_moves(&mut self, current_ticks: u64) ->  Vec<(Movement, u64)>;
-    fn update(&mut self, _: u64,
-              _: &Playfield) {
-        // Implement if needed
-    }
+    fn update(&mut self, _: u64, _: &Playfield);
 
     fn handle_new_figure(&mut self, current_ticks: u64,
                          pf: &Playfield, fig_pos: &FigurePos) {
@@ -55,8 +51,10 @@ pub trait Player {
         let figure = self.common().next_figure().clone();
         let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
         if figure.collide_locked(pf, &pos) {
+            println!("Figure collided with locked block");
             return false;
         } else if figure.collide_blocked(pf, &pos) {
+            println!("Figure collided with blocking block");
             return true;
         }
         let fig_pos = FigurePos::new(figure, pos);
@@ -69,13 +67,6 @@ pub trait Player {
         self.common().next_figure()
     }
 
-    fn move_every(&self, moves: &mut Vec<(Movement, u64)>,
-                  current_ticks: u64,
-                  movement: Movement,
-                  every_ns: u64) {
-        self.common().move_every(moves, current_ticks, movement, every_ns);
-    }
-
     fn figure_in_play(&self) -> bool {
         self.common().figure_in_play()
     }
@@ -83,7 +74,8 @@ pub trait Player {
 
 impl PlayerCommon {
 
-    pub fn new(name: &str, figures: Vec<Figure>) -> Self {
+    pub fn new(name: &str, force_down_time: u64,
+               figures: Vec<Figure>) -> Self {
         PlayerCommon {
             name: name.to_owned(),
             stats: PlayerStats {
@@ -92,8 +84,8 @@ impl PlayerCommon {
             time_last_move: HashMap::new(),
             next_figure: PlayerCommon::get_rand_figure(&figures).clone(),
             avail_figures: figures,
-            delay_first_step_down: 0,
             figure_in_play: None,
+            force_down_time: force_down_time,
         }
     }
 
@@ -147,7 +139,6 @@ impl PlayerCommon {
 
         for (fig_move, move_time) in moves {
             self.set_time_of_move(fig_move.clone(), move_time);
-            self.delay_first_step_down = 0;
             let fig = fig_pos.get_figure();
             let test_pos =
                 Position::apply_move(fig_pos.get_position(), &fig_move);
@@ -199,21 +190,6 @@ impl PlayerCommon {
                  self.next_figure().get_name());
         fig_pos.place(pf);
         self.set_figure(Some(fig_pos));
-        self.delay_first_step_down =
-            current_ticks + DELAY_FIRST_STEP_DOWN;
         return true;
-    }
-
-    fn move_every(&self, moves: &mut Vec<(Movement, u64)>,
-                  current_ticks: u64, movement: Movement,
-                  every_ns: u64) {
-        if current_ticks > self.delay_first_step_down {
-            let last_move = self.time_last_move.get(&movement);
-            if last_move.is_none() ||
-                (last_move.unwrap() + every_ns) < current_ticks
-            {
-                moves.push((movement, current_ticks));
-            }
-        }
     }
 }

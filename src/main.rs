@@ -179,16 +179,21 @@ fn main() {
         rot_ccw: None
     };
     let mut player1 = HumanPlayer::new(
-        PlayerCommon::new("Human 1", figure_list.clone()),
+        PlayerCommon::new("Human 1", 500000000, figure_list.clone()),
         player1_key_map
     );
     let mut player2 = HumanPlayer::new(
-        PlayerCommon::new("Human 2", figure_list.clone()),
+        PlayerCommon::new("Human 2", 500000000, figure_list.clone()),
         player2_key_map
     );
 
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", figure_list.clone())
+        PlayerCommon::new("Computer 1", 100000000, figure_list.clone()),
+        ComputerType::RandomStupid
+    );
+    let mut com2 = ComputerPlayer::new(
+        PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
+        ComputerType::RandomStupid
     );
 
     let pf1 = Playfield::new("Playfield 1",
@@ -196,8 +201,10 @@ fn main() {
     let mut pf_ctx = PlayfieldContext::new(pf1);
 
 
-    pf_ctx.add_player(&mut player1);
-    pf_ctx.add_player(&mut player2);
+//    pf_ctx.add_player(&mut player1);
+//    pf_ctx.add_player(&mut player2);
+    pf_ctx.add_player(&mut com1);
+//    pf_ctx.add_player(&mut com2);
 
     let mut pause = false;
     let mut frame_cnt_sec = 0;
@@ -246,9 +253,6 @@ fn main() {
             player.handle_input(current_ticks, &mut pressed_keys);
 
             let mut moves = player.get_moves(current_ticks);
-            player.move_every(&mut moves, current_ticks, Movement::MoveDown,
-                              500000000 /* ns */);
-
             if player.figure_in_play() {
                 // Player has a figure in game
                 if moves.len() > 0 {

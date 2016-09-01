@@ -4,6 +4,9 @@ use sdl2::keyboard::Keycode;
 use player::*;
 use rstris::playfield::*;
 use rstris::position::*;
+use rstris::figure_pos::*;
+
+static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;
 
 pub struct KeyMap {
     pub step_left: Option<Keycode>,
@@ -17,6 +20,8 @@ pub struct HumanPlayer {
     common: PlayerCommon,
     key_map: KeyMap,
     moves: Vec<(Movement, u64)>,
+    last_forced_down_time: u64,
+    delay_first_step_down: u64,
 }
 
 impl Player for HumanPlayer {
@@ -34,6 +39,24 @@ impl Player for HumanPlayer {
         self.moves.clear();
         return moves;
     }
+
+    fn update(&mut self, current_ticks: u64, pf: &Playfield) {
+        if current_ticks > self.delay_first_step_down {
+            let last_move = self.common.time_last_move.get(&Movement::MoveDown);
+            if last_move.is_none() ||
+                (last_move.unwrap() +
+                 self.common.force_down_time) < current_ticks
+            {
+                self.moves.push((Movement::MoveDown, current_ticks));
+            }
+        }
+    }
+
+    fn handle_new_figure(&mut self, current_ticks: u64,
+                         pf: &Playfield, fig_pos: &FigurePos) {
+        self.delay_first_step_down = current_ticks + DELAY_FIRST_STEP_DOWN;
+    }
+
 
     fn handle_input(&mut self,
                     current_ticks: u64,
@@ -68,6 +91,8 @@ impl HumanPlayer {
             common: common,
             key_map: key_map,
             moves: Vec::new(),
+            last_forced_down_time: 0,
+            delay_first_step_down: 0,
         }
     }
     fn key_to_movement(&self, key: Keycode) -> Option<Movement> {
