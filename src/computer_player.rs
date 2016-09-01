@@ -19,6 +19,7 @@ pub struct ComputerPlayer {
     last_path_update: u64,
     time_next_move: u64,
     com_type: ComputerType,
+    path: Vec<Movement>
 }
 
 impl Player for ComputerPlayer {
@@ -63,6 +64,7 @@ impl ComputerPlayer {
             moves: Vec::new(),
             time_next_move: 0,
             com_type: com_type,
+            path: Vec::new(),
         }
     }
 
@@ -73,6 +75,12 @@ impl ComputerPlayer {
             get_valid_placing(&tmp_pf, fig_pos);
         println!("New figure ({}) - {} available placings",
                  self.last_fig, self.avail_pos.len());
+
+        let sel_end = rand::random::<usize>() % self.avail_pos.len();
+        self.path = find_path(&tmp_pf,
+                              &fig_pos.get_figure(),
+                              &fig_pos.get_position(),
+                              &self.avail_pos[sel_end]);
     }
 
     fn rand_move() -> Movement {
@@ -87,7 +95,9 @@ impl ComputerPlayer {
     }
 
     fn update_random(&mut self, current_ticks: u64) {
-        self.moves.push((Self::rand_move(), current_ticks));
+        if self.path.len() > 0 {
+            self.moves.push((self.path.pop().unwrap(), current_ticks));
+        }
     }
 
     fn update_moves(&mut self, current_ticks: u64) {
