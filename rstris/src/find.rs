@@ -96,30 +96,34 @@ struct Node {
     f: u32,
     g: u32,
     h: u32,
+    movement: Option<Movement>,
 }
 
 impl Node {
     fn new(node_list: &mut Vec<Node>, parent:  usize,
-           pos: &Position, g: u32, h: u32)
+           pos: &Position, g: u32, h: u32,
+           movement: Option<Movement>)
            -> Node {
         let node = Node{id: node_list.len(),
                         parent: parent,
                         pos: pos.clone(),
-                        g: g, h: h, f: g + h};
+                        g: g, h: h, f: g + h,
+                        movement: movement};
         node_list.push(node.clone());
         return node;
     }
 }
 
 pub fn find_path(pf: &Playfield, fig: &Figure,
-                 start_pos: &Position, end_pos: &Position) -> Vec<Position>
+                 start_pos: &Position, end_pos: &Position) -> Vec<Movement>
 {
     let mut all: Vec<Node> = Vec::new();
     let mut open_set: Vec<Node> = Vec::new();
     let mut closed_set: Vec<Node> = Vec::new();
-    let start_node = Node::new(&mut all, 0, start_pos, 0, 0);
+    let start_node = Node::new(&mut all, 0, start_pos, 0, 0, None);
     open_set.push(start_node);
 
+    println!("Searching for path ({:?} to {:?})...", start_pos, end_pos);
     while open_set.len() > 0 && all.len() < 10000 {
         open_set.sort_by(|a, b| b.f.cmp(&a.f));
         let q = open_set.pop().unwrap();
@@ -133,25 +137,24 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
 
             let mut fig_pos = Position::apply_move(&q.pos, movement);
             fig_pos.normalize_dir(fig.get_num_dirs());
-            if !fig.collide_blocked(pf, &fig_pos) {
+            if fig_pos != q.pos && !fig.collide_blocked(pf, &fig_pos) {
                 let succs = Node::new(&mut all, q.id, &fig_pos,
                                       q.g + distance(&q.pos, &fig_pos),
-                                      distance(&fig_pos, end_pos));
+                                      distance(&fig_pos, end_pos),
+                                      Some(movement.clone()));
                 successors.push(succs);
             }
         }
 
         for s in successors {
             if s.pos == *end_pos {
-                println!("Found path (from {:?} to {:?}):", start_pos, end_pos);
                 let mut p = s;
-                let mut path: Vec<Position> = Vec::new();
-                path.push(p.pos.clone());
+                let mut path: Vec<Movement> = Vec::new();
                 while p.id != 0 {
+                    path.insert(0, p.movement.unwrap().clone());
                     p = all[p.parent].clone();
-                    path.insert(0, p.pos.clone());
                 }
-                println!("Path: {:?}", path);
+                println!("Path ({}): {:?}", path.len(), path);
                 return path;
             }
             if open_set.iter().find(
@@ -163,5 +166,6 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         }
         closed_set.push(q);
     }
+    println!("No path found?!");
     return vec![];
 }
