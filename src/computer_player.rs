@@ -19,7 +19,7 @@ pub struct ComputerPlayer {
     last_path_update: u64,
     time_next_move: u64,
     com_type: ComputerType,
-    path: Vec<Movement>
+    path: Vec<(Movement, u64)>
 }
 
 impl Player for ComputerPlayer {
@@ -75,8 +75,10 @@ impl ComputerPlayer {
         self.path = find_path(&pf,
                               &fig_pos.get_figure(),
                               &fig_pos.get_position(),
-                              &self.avail_pos[sel_end]);
-        self.path.insert(0, Movement::MoveDown);
+                              &self.avail_pos[sel_end],
+                              self.common.force_down_time/2,
+                              self.common.force_down_time);
+        self.path.insert(0, (Movement::MoveDown, 0));
     }
 
     fn rand_move() -> Movement {
@@ -90,19 +92,12 @@ impl ComputerPlayer {
         }
     }
 
-    fn update_random(&mut self, current_ticks: u64) {
-        if self.path.len() > 0 {
-            self.moves.push((self.path.pop().unwrap(), current_ticks));
-        }
-    }
-
     fn update_moves(&mut self, current_ticks: u64) {
-        if self.time_next_move + self.common.force_down_time < current_ticks {
-            self.time_next_move = current_ticks;
-            match self.com_type {
-                ComputerType::RandomStupid => self.update_random(current_ticks),
+        if self.path.len() > 0 {
+            let (movement, time) = self.path[self.path.len()-1].clone();
+            if (current_ticks - self.last_path_update) > time {
+                self.moves.push(self.path.pop().unwrap());
             }
         }
     }
-
 }
