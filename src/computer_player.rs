@@ -17,7 +17,7 @@ pub struct ComputerPlayer {
     last_fig: String,
     avail_pos: Vec<Position>,
     last_path_update: u64,
-    time_next_move: u64,
+    move_time: u64,
     com_type: ComputerType,
     path: Vec<(Movement, u64)>
 }
@@ -52,14 +52,15 @@ impl Player for ComputerPlayer {
 }
 
 impl ComputerPlayer {
-    pub fn new(common: PlayerCommon, com_type: ComputerType) -> Self {
+    pub fn new(common: PlayerCommon, move_time: u64,
+               com_type: ComputerType) -> Self {
         ComputerPlayer {
             common: common,
             avail_pos: Vec::new(),
             last_fig: "".to_string(),
             last_path_update: 0,
             moves: Vec::new(),
-            time_next_move: 0,
+            move_time: move_time,
             com_type: com_type,
             path: Vec::new(),
         }
@@ -76,7 +77,7 @@ impl ComputerPlayer {
                               &fig_pos.get_figure(),
                               &fig_pos.get_position(),
                               &self.avail_pos[sel_end],
-                              self.common.force_down_time/2,
+                              self.move_time,
                               self.common.force_down_time);
         self.path.insert(0, (Movement::MoveDown, 0));
     }

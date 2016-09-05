@@ -81,11 +81,11 @@ pub fn get_valid_placing(pf: &Playfield,
 }
 
 
-fn distance(start: &Position, end: &Position) -> f64
+fn distance(start: &Position, end: &Position) -> u64
 {
-    ((start.get_x() as f64 - end.get_x() as f64).powi(2) +
-     (start.get_y() as f64 - end.get_y() as f64).powi(2) +
-     (start.get_dir() as f64 - end.get_dir() as f64).powi(2)).sqrt()
+    ((start.get_x() - end.get_x()).abs() +
+     (start.get_y() - end.get_y()).abs() +
+     (start.get_dir() - end.get_dir()).abs()) as u64
 }
 
 #[derive(Clone, Debug)]
@@ -93,25 +93,29 @@ struct Node {
     id: usize,
     parent: usize,
     pos: Position,
-    f: f64,
-    g: f64,
-    h: f64,
-    movement: Option<(Movement, u64)>,
-    last_down_time: u64,
+    f: u64,
+    g: u64,
+    h: u64,
+    movement: Option<Movement>,
+    total_time: u64,
+    last_time_down: u64,
 }
 
 impl Node {
     fn new(node_list: &mut Vec<Node>, parent:  usize,
-           pos: &Position, g: f64, h: f64,
-           movement: Option<(Movement, u64)>,
-           last_down_time: u64)
+           pos: &Position, g: u64, h: u64,
+           movement: Option<Movement>,
+           total_time: u64,
+           last_time_down: u64)
            -> Node {
         let node = Node{id: node_list.len(),
                         parent: parent,
                         pos: pos.clone(),
                         g: g, h: h, f: g + h,
                         movement: movement,
-                        last_down_time: last_down_time};
+                        total_time: total_time,
+                        last_time_down: last_time_down,
+        };
         node_list.push(node.clone());
         return node;
     }
@@ -134,39 +138,42 @@ impl Hash for Node {
 }
 
 pub fn find_path(pf: &Playfield, fig: &Figure,
-                 start_pos: &Position, end_pos: &Position,
-                 move_time: u64, force_down_time: u64) -> Vec<(Movement, u64)>
+                 start_pos: &Position,
+                 end_pos: &Position,
+                 move_time: u64,
+                 force_down_time: u64) -> Vec<(Movement, u64)>
 {
     let mut all: Vec<Node> = Vec::new();
     let mut id: HashSet<Node> = HashSet::new();
     let mut open_set: Vec<Node> = Vec::new();
     let mut closed_set: Vec<Node> = Vec::new();
-    let start_node = Node::new(&mut all, 0, start_pos, 0.0, 0.0, None, 0);
+    let start_node = Node::new(&mut all, 0, start_pos, 0, 0, None, 0, 0);
     id.insert(start_node.clone());
     open_set.push(start_node);
 
     println!("Searching for path ({:?} to {:?} (distance: {})...",
              start_pos, end_pos, distance(start_pos, end_pos));
-    while open_set.len() > 0 && all.len() < 20000 {
+    while open_set.len() > 0 && all.len() < 200000 {
         open_set.sort_by(|a, b| b.f.partial_cmp(&a.f).unwrap());
         let q = open_set.pop().unwrap();
-
-        let current_time = match q.movement {Some((_,time)) => time, _ => 0};
-        let mut next_time = move_time + current_time;
-        let mut last_down_time = q.last_down_time + move_time;
-
-        println!("Id: {}, parent: {}, pos: {:?}, f: {}, real: {}",
-                 q.id, q.parent, q.pos, q.f, q.g);
 
         let mut movements = vec![Movement::MoveLeft,
                                  Movement::MoveRight,
                                  Movement::MoveDown,
                                  Movement::RotateCW];
-        if last_down_time > force_down_time {
+
+        let forced_move = (q.total_time - q.last_time_down) >= force_down_time;
+        let mut succ_total_time = q.total_time + move_time;
+        let mut last_time_down = q.last_time_down;
+
+        println!("Id: {}, p: {}, pos: {:?}, time: {}, last down: {}, force: {}",
+                 q.id, q.parent, q.pos, q.total_time,
+                 q.last_time_down, forced_move);
+
+/*        if forced_move {
+            succ_total_time = q.total_time + force_down_time;
             movements = vec![Movement::MoveDown];
-            next_time = current_time + (last_down_time - force_down_time);
-            last_down_time = 0;
-        }
+        }*/
 
         // Find all possible movements from q (left,right,down,rotate)
         let mut successors: Vec<Node> = Vec::new();
@@ -175,11 +182,17 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
             let mut fig_pos = Position::apply_move(&q.pos, &movement);
             fig_pos.normalize_dir(fig.get_num_dirs());
             if fig_pos != q.pos && !fig.collide_blocked(pf, &fig_pos) {
+                let mut tmp = last_time_down;
+                if movement == Movement::MoveDown {
+                    println!("Increase next forced move time!");
+                    tmp = succ_total_time;
+                }
                 let succs = Node::new(&mut all, q.id, &fig_pos,
                                       q.g + distance(&q.pos, &fig_pos),
                                       distance(&fig_pos, end_pos),
-                                      Some((movement.clone(), next_time)),
-                                      last_down_time);
+                                      Some(movement.clone()),
+                                      succ_total_time,
+                                      tmp);
                 successors.push(succs);
             }
         }
@@ -190,7 +203,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 let mut p = s;
                 let mut path: Vec<(Movement, u64)> = Vec::new();
                 while p.id != 0 {
-                    path.push(p.movement.unwrap().clone());
+                    path.push((p.movement.unwrap().clone(), p.total_time));
                     p = all[p.parent].clone();
                 }
                 println!("Tested {} - Found path ({}): {:?}",

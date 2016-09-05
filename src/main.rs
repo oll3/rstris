@@ -30,7 +30,7 @@ use std::collections::HashMap;
 
 static PF_WIDTH: u32 = 16;
 static PF_HEIGHT: u32 = 30;
-static BLOCK_SIZE: u32 = 2;
+static BLOCK_SIZE: u32 = 20;
 static BLOCK_SPACING: u32 = 1;
 static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
 static FILL_COLOR: Color = Color::RGB(98, 204, 244);
@@ -189,10 +189,12 @@ fn main() {
 
     let mut com1 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 100000000, figure_list.clone()),
+        250000000,
         ComputerType::RandomStupid
     );
     let mut com2 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
+        5000000,
         ComputerType::RandomStupid
     );
 
@@ -205,6 +207,7 @@ fn main() {
 //    pf_ctx.add_player(&mut player2);
     pf_ctx.add_player(&mut com1);
 //    pf_ctx.add_player(&mut com2);
+//    pf_ctx.add_player(&mut com3);
 
     let mut pause = false;
     let mut frame_cnt_sec = 0;
