@@ -73,12 +73,19 @@ impl ComputerPlayer {
 
         self.avail_pos.sort_by(|a, b| b.get_y().cmp(&a.get_y()));
         let sel_end = 0;
-        self.path = find_path(&pf,
-                              &fig_pos.get_figure(),
-                              &fig_pos.get_position(),
-                              &self.avail_pos[sel_end],
-                              self.move_time,
-                              self.common.force_down_time);
+        for pos in &self.avail_pos {
+            let path = find_path(&pf,
+                                 &fig_pos.get_figure(),
+                                 &fig_pos.get_position(),
+                                 pos,
+                                 self.move_time,
+                                 self.common.force_down_time);
+            if path.len() > 0 {
+                self.path = path;
+                self.path.insert(0, (Movement::MoveDown, 0));
+                break;
+            }
+        }
         self.path.insert(0, (Movement::MoveDown, 0));
     }
 
