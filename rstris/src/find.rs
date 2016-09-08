@@ -145,43 +145,40 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
     let start_node = Node::new(&mut all, None, start_pos, 0, 0, None, 0, 0);
     open_set.push(start_node);
 
-    println!("Find path ({:?} to {:?} (distance: {}, speed (move: {}, down: {}))",
+    println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
              start_pos, end_pos,
              est_distance(start_pos, end_pos, move_time, force_down_time),
-             move_time,
-             force_down_time);
+             move_time, force_down_time);
+
     while open_set.len() > 0 && all.len() < 400000 {
         open_set.sort_by(|a, b| {
             b.get_tot_est().partial_cmp(&a.get_tot_est()).unwrap()
         });
         let q = open_set.pop().unwrap();
 
-        let mut movements = vec![Movement::MoveLeft,
-                                 Movement::MoveRight,
-                                 Movement::MoveDown,
-                                 Movement::RotateCW];
-
-        let mut total_time = q.walked_distance;
-        let mut last_time_move = q.last_time_move;
-        let mut last_time_down = q.last_time_down;
-        let time_since_move = (q.walked_distance - last_time_move) as i64;
-        let time_since_down = (q.walked_distance - last_time_down) as i64;
-
+        // Decide if the next move is a forced down move or any move
+        let time_since_move = (q.walked_distance - q.last_time_move) as i64;
+        let time_since_down = (q.walked_distance - q.last_time_down) as i64;
         let time_until_move = move_time as i64 - time_since_move;
         let time_until_down = force_down_time as i64 - time_since_down;
-        let time_step = min(time_until_move, time_until_down) as u64;
-        total_time += time_step;
-        if time_until_move < time_until_down {
-            last_time_move = total_time;
+
+        let mut movements;
+        if !time_until_move < time_until_down {
+            // Regular move
+            movements = vec![Movement::MoveLeft,
+                             Movement::MoveRight,
+                             Movement::MoveDown,
+                             Movement::RotateCW];
         }
         else {
-            last_time_down = total_time;
+            // Forced down move
             movements = vec![Movement::MoveDown];
         }
 
+        /*
         println!("Id: {}, p: {:?}, pos: {:?}, walked: {}, down: {}, move: {}",
                  q.id, q.parent, q.pos, q.walked_distance,
-                 q.last_time_down, q.last_time_move);
+                 q.last_time_down, q.last_time_move); */
 
         // Find all possible movements from q (left,right,down,rotate)
         let mut successors: Vec<Node> = Vec::new();
@@ -190,18 +187,24 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
             let mut fig_pos = Position::apply_move(&q.pos, &movement);
             fig_pos.normalize_dir(fig.get_num_dirs());
             if fig_pos != q.pos && !fig.collide_blocked(pf, &fig_pos) {
-                let mut tmp = last_time_down;
+                let mut ltd = q.last_time_down;
+                let mut ltm = q.last_time_move;
+                let mut tt = q.walked_distance;
                 if movement == Movement::MoveDown {
-                    tmp = total_time;
+                    tt += max(0, time_until_down) as u64;
+                    ltd = tt;
+                }
+                else {
+                    tt += max(0, time_until_move) as u64;
+                    ltm = tt;
                 }
                 let succs =
                     Node::new(&mut all, Some(q.id), &fig_pos,
-                              total_time,
+                              tt,
                               est_distance(&fig_pos, end_pos,
                                            move_time, force_down_time),
                               Some(movement.clone()),
-                              last_time_move,
-                              tmp);
+                              ltm, ltd);
                 successors.push(succs);
             }
         }
@@ -215,8 +218,8 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                     path.push((p.movement.unwrap().clone(), p.walked_distance));
                     p = all[p.parent.unwrap()].clone();
                 }
-                println!("Tested {} - Found path ({}): {:?}",
-                         all.len(), path.len(), path);
+/*                println!("Tested {} - Found path ({}): {:?}",
+                         all.len(), path.len(), path);*/
                 return path;
             }
             else if open_set.iter().find(
