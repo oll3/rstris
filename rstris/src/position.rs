@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Position {
     x: i32,
@@ -29,6 +31,14 @@ impl Position {
     }
     pub fn get_y(&self) -> i32 {
         self.y
+    }
+}
+
+impl Add for Position {
+    type Output = Position;
+    fn add(self, other: Position) -> Position {
+        Position::new(self.x + other.x,
+                      self.y + other.y)
     }
 }
 

@@ -75,10 +75,9 @@ impl FigureFace {
             let pos_y = pos.get_y() + row as i32;
             for col in 0..self.blocks[row].len() {
                 let b = self.get_block(col, row);
-                let pos_x = pos.get_x() + col as i32;
-                if b.is_set() && pf.contains(pos_x, pos_y) {
-                    pf.set_block(pos_x as usize, pos_y as usize,
-                                 b.clone());
+                let block_pos = Position::new(pos.get_x() + col as i32, pos_y);
+                if b.is_set() && pf.contains(&block_pos) {
+                    pf.set_block(&block_pos, b.clone());
                 }
             }
         }
@@ -88,11 +87,11 @@ impl FigureFace {
             let pos_y = pos.get_y() + row as i32;
             for col in 0..self.blocks[row].len() {
                 let b = self.get_block(col, row);
-                let pos_x = pos.get_x() + col as i32;
-                if b.is_set() && pf.contains(pos_x, pos_y) {
+                let block_pos = Position::new(pos.get_x() + col as i32, pos_y);
+                if b.is_set() && pf.contains(&block_pos) {
                     let mut b = b.clone();
                     b.locked = true;
-                    pf.set_block(pos_x as usize, pos_y as usize, b);
+                    pf.set_block(&block_pos, b);
                 }
             }
         }
@@ -102,9 +101,9 @@ impl FigureFace {
             let pos_y = pos.get_y() + row as i32;
             for col in 0..self.blocks[row].len() {
                 let b = self.get_block(col, row);
-                let pos_x = pos.get_x() + col as i32;
-                if b.is_set() && pf.contains(pos_x, pos_y) {
-                    pf.clear_block(pos_x as usize, pos_y as usize);
+                let block_pos = Position::new(pos.get_x() + col as i32, pos_y);
+                if b.is_set() && pf.contains(&block_pos) {
+                    pf.clear_block(&block_pos);
                 }
             }
         }
@@ -112,12 +111,12 @@ impl FigureFace {
     pub fn collide_locked(&self, pf: &Playfield, pos: &Position) -> bool {
         // Test for collision with a locked block
         for row in 0..self.blocks.len() {
-            let offs_y = pos.get_y() + row as i32;
             for col in 0..self.blocks[row].len() {
-                let offs_x = pos.get_x() + col as i32;
+                let block_pos = Position::new(pos.get_x() + col as i32,
+                                              pos.get_y() + row as i32);
                 if self.get_block(col, row).is_set() &&
-                    (!pf.contains(offs_x, offs_y) ||
-                     pf.block_is_locked(offs_x as usize, offs_y as usize))
+                    (!pf.contains(&block_pos) ||
+                     pf.block_is_locked(&block_pos))
                 {
                     // Outside playfield is seen as a locked
                     return true;
@@ -128,12 +127,12 @@ impl FigureFace {
     }
     pub fn collide_blocked(&self, pf: &Playfield, pos: &Position) -> bool {
         for row in 0..self.blocks.len() {
-            let offs_y = pos.get_y() + row as i32;
             for col in 0..self.blocks[row].len() {
-                let offs_x = pos.get_x() + col as i32;
+                let block_pos = Position::new(pos.get_x() + col as i32,
+                                              pos.get_y() + row as i32);
                 if self.get_block(col, row).is_set() &&
-                    (!pf.contains(offs_x, offs_y) ||
-                     pf.block_is_set(offs_x as usize, offs_y as usize))
+                    (!pf.contains(&block_pos) ||
+                     pf.block_is_set(&block_pos))
                 {
                     return true;
                 }

@@ -33,21 +33,27 @@ impl Playfield {
     pub fn height(&self) -> usize {
         self.pf_height
     }
-    pub fn contains(&self, x: i32, y: i32) -> bool {
+    pub fn contains(&self, pos: &Position) -> bool {
+        let x = pos.get_x();
+        let y = pos.get_y();
         x >= 0 && x < self.pf_width as i32 &&
             y >= 0 && y < self.pf_height as i32
     }
-    pub fn block_is_set(&self, x: usize, y: usize) -> bool {
+    pub fn block_is_set(&self, pos: &Position) -> bool {
+        let x = pos.get_x() as usize;
+        let y = pos.get_y() as usize;
         self.get_block(x, y).id != 0
     }
-    pub fn block_is_locked(&self, x: usize, y: usize) -> bool {
+    pub fn block_is_locked(&self, pos: &Position) -> bool {
+        let x = pos.get_x() as usize;
+        let y = pos.get_y() as usize;
         self.get_block(x, y).id != 0 && self.get_block(x, y).locked
     }
-    pub fn clear_block(&mut self, x: usize, y: usize) {
-        self.blocks[y][x] = Block::new(0);
+    pub fn clear_block(&mut self, pos: &Position) {
+        self.blocks[pos.get_y() as usize][pos.get_x() as usize] = Block::new(0);
     }
-    pub fn set_block(&mut self, x: usize, y: usize, block: Block) {
-        self.blocks[y][x] = block;
+    pub fn set_block(&mut self, pos: &Position, block: Block) {
+        self.blocks[pos.get_y() as usize][pos.get_x() as usize] = block;
     }
 
     //
@@ -58,7 +64,8 @@ impl Playfield {
         for y in lines_to_test {
             let mut line_full = true;
             for x in 0..self.pf_width {
-                if !self.block_is_locked(x, *y) {
+                let pos = Position::new(x as i32, *y as i32);
+                if !self.block_is_locked(&pos) {
                     line_full = false;
                     break;
                 }
@@ -102,8 +109,8 @@ impl Playfield {
         let mut all_open: Vec<Position> = Vec::new();
         for y in 0..self.height() {
             for x in 0..self.width() {
-                if !self.block_is_locked(x, y) {
-                    let pos = Position::new(x as i32, y as i32);
+                let pos = Position::new(x as i32, y as i32);
+                if !self.block_is_locked(&pos) {
                     all_open.push(pos);
                 }
             }
@@ -126,10 +133,9 @@ impl Playfield {
                      Position::new(pos.get_x(), pos.get_y() - 1)];
 
                 for test_pos in test_positions.iter() {
-                    if self.contains(test_pos.get_x(), test_pos.get_y()) &&
+                    if self.contains(test_pos) &&
                         !visited.contains(test_pos) &&
-                        !self.block_is_locked(test_pos.get_x() as usize,
-                                              test_pos.get_y() as usize) {
+                        !self.block_is_locked(test_pos) {
                             visited.insert(test_pos.clone());
                             fill.push(test_pos.clone());
                         }
