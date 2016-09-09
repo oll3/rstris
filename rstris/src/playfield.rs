@@ -1,4 +1,5 @@
 use block::*;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Playfield {
@@ -8,6 +9,17 @@ pub struct Playfield {
     blocks: Vec<Vec<Block>>,
 }
 
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+struct PlayfieldPos {
+    x: usize,
+    y: usize,
+}
+
+impl PlayfieldPos {
+    fn new(x: usize, y: usize) -> Self {
+        PlayfieldPos {x: x, y: y}
+    }
+}
 
 impl Playfield {
     pub fn new(name: &str, width: usize, height: usize) -> Playfield {
@@ -93,6 +105,50 @@ impl Playfield {
             }
             y -= 1;
         }
+    }
+
+    pub fn count_voids(&self) -> u32 {
+        let mut voids = 0;
+        let mut visited: HashSet<PlayfieldPos> = HashSet::new();
+        let mut all_open: Vec<PlayfieldPos> = Vec::new();
+        for y in 0..self.height() {
+            for x in 0..self.width() {
+                if !self.block_is_locked(x, y) {
+                    let pos = PlayfieldPos::new(x, y);
+                    all_open.push(pos);
+                }
+            }
+        }
+        for pos in all_open {
+            if visited.contains(&pos) {
+                continue;
+            }
+            voids += 1;
+            visited.insert(pos.clone());
+
+            let mut fill: Vec<PlayfieldPos> = Vec::new();
+            fill.push(pos.clone());
+            while fill.len() > 0 {
+                let pos = fill.pop().unwrap();
+                let test_positions =
+                    [PlayfieldPos::new(pos.x + 1, pos.y),
+                     PlayfieldPos::new(pos.x, pos.y + 1),
+                     PlayfieldPos::new((pos.x as isize - 1).abs() as usize,
+                                       pos.y),
+                     PlayfieldPos::new(pos.x,
+                                       (pos.y as isize - 1).abs() as usize)];
+
+                for test_pos in test_positions.iter() {
+                    if self.contains(test_pos.x as i32, test_pos.y as i32) &&
+                        !visited.contains(test_pos) &&
+                        !self.block_is_locked(test_pos.x, test_pos.y) {
+                            visited.insert(test_pos.clone());
+                            fill.push(test_pos.clone());
+                        }
+                }
+            }
+        }
+        return voids;
     }
 }
 
