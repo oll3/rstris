@@ -1,4 +1,4 @@
-use figure_dir::*;
+use figure_face::*;
 use playfield::*;
 use position::*;
 
@@ -6,13 +6,13 @@ use position::*;
 #[derive(Clone, Debug)]
 pub struct Figure {
     figure_name: String,
-    pub dir: Vec<FigureDir>,
+    vfaces: Vec<FigureFace>,
 }
 
 
 impl Figure {
     pub fn new(name: &str) -> Figure {
-        Figure{figure_name: name.to_owned(), dir: vec![]}
+        Figure{figure_name: name.to_owned(), vfaces: vec![]}
     }
 
     //
@@ -21,97 +21,65 @@ impl Figure {
     pub fn new_from_face(name: &str,
                          face_blocks: &[&[u8]]) -> Figure {
         let mut fig = Figure::new(name);
-        let mut dir = FigureDir::new(face_blocks);
-        fig.dir.push(dir.clone());
+        let mut face = FigureFace::new(face_blocks);
+        fig.vfaces.push(face.clone());
         for _ in 0..3 {
-            let mut next_dir = FigureDir::new_empty(&dir.height, &dir.width);
-            for y in 0..dir.get_height() {
-                for x in 0..dir.get_width() {
-                    next_dir.blocks[x][y] =
-                        dir.blocks[dir.get_height() - y - 1][x].clone();
+            let mut next_face =
+                FigureFace::new_empty(face.get_height(), face.get_width());
+            for y in 0..face.get_height() {
+                for x in 0..face.get_width() {
+                    let b = &face.get_block(x, face.get_height() - y - 1);
+                    next_face.set_block(y, x, b);
                 }
             }
-            if !fig.test_dir_present(&next_dir) {
-                fig.dir.push(next_dir.clone());
+            if !fig.test_face_present(&next_face) {
+                fig.vfaces.push(next_face.clone());
             }
-            dir = next_dir;
+            face = next_face;
         }
-        println!("Built figure {} with {} directions",
-                 fig.get_name(), fig.get_num_dirs());
+        println!("Built figure {} with {} faces",
+                 fig.get_name(), fig.faces().len());
         fig
     }
-
-    pub fn get_name(&self) -> &String {
-        &self.figure_name
-    }
-    pub fn get_num_dirs(&self) -> usize {
-        return self.dir.len();
-    }
-    fn test_dir_present(&self, fig_dir: &FigureDir) -> bool {
-        for dir in &self.dir {
-            if *dir == *fig_dir {
+    fn test_face_present(&self, face: &FigureFace) -> bool {
+        for f in &self.vfaces {
+            if *f == *face {
                 return true;
             }
         }
         return false;
     }
-    pub fn add_dir_face(&mut self, dir_blocks: &[&[u8]]) {
-        self.dir.push(FigureDir::new(dir_blocks));
+    pub fn get_name(&self) -> &String {
+        &self.figure_name
     }
-    pub fn get_fig_dir(&self, dir_index: usize) -> &FigureDir {
-        let dir_index = dir_index % self.dir.len();
-        return &self.dir[dir_index];
+    pub fn faces(&self) -> &Vec<FigureFace> {
+        &self.vfaces
+    }
+    pub fn add_face(&mut self, blocks: &[&[u8]]) {
+        self.vfaces.push(FigureFace::new(blocks));
+    }
+    pub fn get_face(&self, face_index: usize) -> &FigureFace {
+        let face_index = face_index % self.vfaces.len();
+        return &self.vfaces[face_index];
     }
 
     //
     // Place figure in playfield
     //
     pub fn place(&self, pf: &mut Playfield, pos: &Position) {
-        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
-        for row in 0..fig_dir.blocks.len() {
-            let pos_y = pos.get_y() + row as i32;
-            for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.get_block(col, row);
-                let pos_x = pos.get_x() + col as i32;
-                if b.is_set() && pf.contains(pos_x, pos_y) {
-                    pf.set_block(pos_x as usize, pos_y as usize,
-                                 b.clone());
-                }
-            }
-        }
+        let face = self.get_face(pos.get_dir() as usize);
+        face.place(pf, pos);
     }
-
     pub fn lock(&self, pf: &mut Playfield, pos: &Position) {
-        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
-        for row in 0..fig_dir.blocks.len() {
-            let pos_y = pos.get_y() + row as i32;
-            for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.get_block(col, row);
-                let pos_x = pos.get_x() + col as i32;
-                if b.is_set() && pf.contains(pos_x, pos_y) {
-                    let mut b = b.clone();
-                    b.locked = true;
-                    pf.set_block(pos_x as usize, pos_y as usize, b);
-                }
-            }
-        }
+        let face = self.get_face(pos.get_dir() as usize);
+        face.lock(pf, pos);
     }
-
     //
     // Remove figure from playfield
     //
     pub fn remove(&self, pf: &mut Playfield, pos: &Position) {
-        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
-        for row in 0..fig_dir.blocks.len() {
-            let pos_y = pos.get_y() + row as i32;
-            for col in 0..fig_dir.blocks[row].len() {
-                let b = fig_dir.get_block(col, row);
-                let pos_x = pos.get_x() + col as i32;
-                if b.is_set() && pf.contains(pos_x, pos_y) {
-                    pf.clear_block(pos_x as usize, pos_y as usize);
-                }
-            }
-        }
+        let face = self.get_face(pos.get_dir() as usize);
+        face.remove(pf, pos);
     }
 
     //
@@ -119,23 +87,8 @@ impl Figure {
     // at the given position
     //
     pub fn collide_locked(&self, pf: &Playfield, pos: &Position) -> bool {
-
-        // First test for collision with a locked block
-        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
-        for row in 0..fig_dir.blocks.len() {
-            let offs_y = pos.get_y() + row as i32;
-            for col in 0..fig_dir.blocks[row].len() {
-                let offs_x = pos.get_x() + col as i32;
-                if fig_dir.get_block(col, row).is_set() &&
-                    (!pf.contains(offs_x, offs_y) ||
-                     pf.block_is_locked(offs_x as usize, offs_y as usize))
-                {
-                    // Outside playfield is seen as a locked
-                    return true;
-                }
-            }
-        }
-        return false;
+        let face = self.get_face(pos.get_dir() as usize);
+        return face.collide_locked(pf, pos);
     }
 
     //
@@ -144,20 +97,8 @@ impl Figure {
     //
     pub fn collide_blocked(&self, pf: &Playfield, pos: &Position) -> bool {
         // ...then test for collision with any block
-        let fig_dir = self.get_fig_dir(pos.get_dir() as usize);
-        for row in 0..fig_dir.blocks.len() {
-            let offs_y = pos.get_y() + row as i32;
-            for col in 0..fig_dir.blocks[row].len() {
-                let offs_x = pos.get_x() + col as i32;
-                if fig_dir.get_block(col, row).is_set() &&
-                    (!pf.contains(offs_x, offs_y) ||
-                     pf.block_is_set(offs_x as usize, offs_y as usize))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
+        let face = self.get_face(pos.get_dir() as usize);
+        return face.collide_blocked(pf, pos);
     }
 }
 
@@ -165,7 +106,7 @@ impl Figure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use figure_dir::*;
+    use figure_face::*;
 
     #[test]
     fn test_figure1() {
@@ -173,23 +114,23 @@ mod tests {
                                         &[&[0, 0, 0],
                                           &[1, 1, 1],
                                           &[0, 1, 0]]);
-        assert_eq!(fig.get_num_dirs(), 4);
-        assert_eq!(fig.dir[0], FigureDir::new(&[&[0, 0, 0],
-                                                &[1, 1, 1],
-                                                &[0, 1, 0]]));
-        assert_eq!(fig.dir[0].get_row_with_blocks(), [1, 2]);
-        assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 1, 0],
-                                                &[1, 1, 0],
-                                                &[0, 1, 0]]));
-        assert_eq!(fig.dir[1].get_row_with_blocks(), [0, 1, 2]);
-        assert_eq!(fig.dir[2], FigureDir::new(&[&[0, 1, 0],
-                                                &[1, 1, 1],
-                                                &[0, 0, 0]]));
-        assert_eq!(fig.dir[2].get_row_with_blocks(), [0, 1]);
-        assert_eq!(fig.dir[3], FigureDir::new(&[&[0, 1, 0],
-                                                &[0, 1, 1],
-                                                &[0, 1, 0]]));
-        assert_eq!(fig.dir[3].get_row_with_blocks(), [0, 1, 2]);
+        assert_eq!(fig.faces().len(), 4);
+        assert_eq!(*fig.get_face(0), FigureFace::new(&[&[0, 0, 0],
+                                                       &[1, 1, 1],
+                                                       &[0, 1, 0]]));
+        assert_eq!(fig.get_face(0).get_row_with_blocks(), [1, 2]);
+        assert_eq!(*fig.get_face(1), FigureFace::new(&[&[0, 1, 0],
+                                                       &[1, 1, 0],
+                                                       &[0, 1, 0]]));
+        assert_eq!(fig.get_face(1).get_row_with_blocks(), [0, 1, 2]);
+        assert_eq!(*fig.get_face(2), FigureFace::new(&[&[0, 1, 0],
+                                                       &[1, 1, 1],
+                                                       &[0, 0, 0]]));
+        assert_eq!(fig.get_face(2).get_row_with_blocks(), [0, 1]);
+        assert_eq!(*fig.get_face(3), FigureFace::new(&[&[0, 1, 0],
+                                                       &[0, 1, 1],
+                                                       &[0, 1, 0]]));
+        assert_eq!(fig.get_face(3).get_row_with_blocks(), [0, 1, 2]);
     }
     #[test]
     fn test_figure2() {
@@ -198,16 +139,16 @@ mod tests {
                                           &[0, 1, 0],
                                           &[0, 1, 0],
                                           &[0, 1, 0]]);
-        assert_eq!(fig.get_num_dirs(), 2);
-        assert_eq!(fig.dir[0], FigureDir::new(&[&[0, 1, 0],
-                                                &[0, 1, 0],
-                                                &[0, 1, 0],
-                                                &[0, 1, 0]]));
-        assert_eq!(fig.dir[0].get_row_with_blocks(), [0, 1, 2, 3]);
-        assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 0, 0, 0],
-                                                &[1, 1, 1, 1],
-                                                &[0, 0, 0, 0]]));
-        assert_eq!(fig.dir[1].get_row_with_blocks(), [1]);
+        assert_eq!(fig.faces().len(), 2);
+        assert_eq!(*fig.get_face(0), FigureFace::new(&[&[0, 1, 0],
+                                                       &[0, 1, 0],
+                                                       &[0, 1, 0],
+                                                       &[0, 1, 0]]));
+        assert_eq!(fig.get_face(0).get_row_with_blocks(), [0, 1, 2, 3]);
+        assert_eq!(*fig.get_face(1), FigureFace::new(&[&[0, 0, 0, 0],
+                                                       &[1, 1, 1, 1],
+                                                       &[0, 0, 0, 0]]));
+        assert_eq!(fig.get_face(1).get_row_with_blocks(), [1]);
     }
     #[test]
     fn test_figure3() {
@@ -215,14 +156,13 @@ mod tests {
                                         &[&[1, 0],
                                           &[1, 1],
                                           &[0, 1]]);
-        assert_eq!(fig.get_num_dirs(), 2);
-        assert_eq!(fig.dir[0], FigureDir::new(&[&[1, 0],
-                                                &[1, 1],
-                                                &[0, 1]]));
-        assert_eq!(fig.dir[0].get_row_with_blocks(), [0, 1, 2]);
-        assert_eq!(fig.dir[1], FigureDir::new(&[&[0, 1, 1],
-                                                &[1, 1, 0]]));
-        assert_eq!(fig.dir[1].get_row_with_blocks(), [0, 1]);
+        assert_eq!(fig.faces().len(), 2);
+        assert_eq!(*fig.get_face(0), FigureFace::new(&[&[1, 0],
+                                                       &[1, 1],
+                                                       &[0, 1]]));
+        assert_eq!(fig.get_face(0).get_row_with_blocks(), [0, 1, 2]);
+        assert_eq!(*fig.get_face(1), FigureFace::new(&[&[0, 1, 1],
+                                                       &[1, 1, 0]]));
+        assert_eq!(fig.get_face(1).get_row_with_blocks(), [0, 1]);
     }
-
 }

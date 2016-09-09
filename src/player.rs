@@ -162,9 +162,9 @@ impl PlayerCommon {
 
         if lock_figure {
             fig_pos.lock(pf);
-            let fig_dir = fig_pos.get_figure_dir();
+            let face = fig_pos.get_face();
             let mut lines_to_test: Vec<usize> = Vec::new();
-            for l in fig_dir.get_row_with_blocks() {
+            for l in face.get_row_with_blocks() {
                 lines_to_test.push(l + fig_pos.get_position().get_y() as usize);
             }
             println!("{}: Test for locked lines at: {:?}...",

@@ -113,12 +113,12 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
     let mut max_width: u32 = 0;
     let mut max_height: u32 = 0;
     for fig in figure_list {
-        for dir in fig.dir.clone() {
-            if dir.get_width() as u32 > max_width {
-                max_width = dir.get_width() as u32;
+        for face in fig.faces() {
+            if face.get_width() as u32 > max_width {
+                max_width = face.get_width() as u32;
             }
-            if dir.get_height() as u32 > max_height {
-                max_height = dir.get_height() as u32;
+            if face.get_height() as u32 > max_height {
+                max_height = face.get_height() as u32;
             }
         }
     }

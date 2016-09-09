@@ -53,7 +53,7 @@ pub fn get_valid_placing(pf: &Playfield,
         }
         let tmp_pos = Position::apply_move(&current_pos,
                                            &Movement::RotateCW);
-        if tmp_pos.get_dir() < fig.get_num_dirs() as i32 &&
+        if tmp_pos.get_dir() < fig.faces().len() as i32 &&
             !visited.contains(&tmp_pos) &&
             !fig.collide_locked(&pf, &tmp_pos) {
                 visited.insert(tmp_pos.clone());
@@ -162,7 +162,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         let time_until_move = move_time as i64 - time_since_move;
         let time_until_down = force_down_time as i64 - time_since_down;
 
-        let mut movements;
+        let movements;
         if !time_until_move < time_until_down {
             // Regular move
             movements = vec![Movement::MoveLeft,
@@ -185,7 +185,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         for movement in movements {
 
             let mut fig_pos = Position::apply_move(&q.pos, &movement);
-            fig_pos.normalize_dir(fig.get_num_dirs());
+            fig_pos.normalize_dir(fig.faces().len());
             if fig_pos != q.pos && !fig.collide_blocked(pf, &fig_pos) {
                 let mut ltd = q.last_time_down;
                 let mut ltm = q.last_time_move;
