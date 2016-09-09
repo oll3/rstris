@@ -1,4 +1,5 @@
 use block::*;
+use position::Position;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
@@ -7,18 +8,6 @@ pub struct Playfield {
     pf_width: usize,
     pf_height: usize,
     blocks: Vec<Vec<Block>>,
-}
-
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
-struct PlayfieldPos {
-    x: usize,
-    y: usize,
-}
-
-impl PlayfieldPos {
-    fn new(x: usize, y: usize) -> Self {
-        PlayfieldPos {x: x, y: y}
-    }
 }
 
 impl Playfield {
@@ -109,12 +98,12 @@ impl Playfield {
 
     pub fn count_voids(&self) -> u32 {
         let mut voids = 0;
-        let mut visited: HashSet<PlayfieldPos> = HashSet::new();
-        let mut all_open: Vec<PlayfieldPos> = Vec::new();
+        let mut visited: HashSet<Position> = HashSet::new();
+        let mut all_open: Vec<Position> = Vec::new();
         for y in 0..self.height() {
             for x in 0..self.width() {
                 if !self.block_is_locked(x, y) {
-                    let pos = PlayfieldPos::new(x, y);
+                    let pos = Position::new(x as i32, y as i32);
                     all_open.push(pos);
                 }
             }
@@ -126,22 +115,21 @@ impl Playfield {
             voids += 1;
             visited.insert(pos.clone());
 
-            let mut fill: Vec<PlayfieldPos> = Vec::new();
+            let mut fill: Vec<Position> = Vec::new();
             fill.push(pos.clone());
             while fill.len() > 0 {
                 let pos = fill.pop().unwrap();
                 let test_positions =
-                    [PlayfieldPos::new(pos.x + 1, pos.y),
-                     PlayfieldPos::new(pos.x, pos.y + 1),
-                     PlayfieldPos::new((pos.x as isize - 1).abs() as usize,
-                                       pos.y),
-                     PlayfieldPos::new(pos.x,
-                                       (pos.y as isize - 1).abs() as usize)];
+                    [Position::new(pos.get_x() + 1, pos.get_y()),
+                     Position::new(pos.get_x(), pos.get_y() + 1),
+                     Position::new(pos.get_x() - 1, pos.get_y()),
+                     Position::new(pos.get_x(), pos.get_y() - 1)];
 
                 for test_pos in test_positions.iter() {
-                    if self.contains(test_pos.x as i32, test_pos.y as i32) &&
+                    if self.contains(test_pos.get_x(), test_pos.get_y()) &&
                         !visited.contains(test_pos) &&
-                        !self.block_is_locked(test_pos.x, test_pos.y) {
+                        !self.block_is_locked(test_pos.get_x() as usize,
+                                              test_pos.get_y() as usize) {
                             visited.insert(test_pos.clone());
                             fill.push(test_pos.clone());
                         }
