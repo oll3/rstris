@@ -204,23 +204,11 @@ impl ComputerType for JitterComputer {
         let mut pf = pf.clone();
         fig_pos.lock(&mut pf);
         let bottom_block = lowest_block(fig_pos);
-        // Scan playfield and measure jitter - Lower jitter better placement
-        let mut jitter = 0;
-        for x in 0..(pf.width() as i32) {
-            let mut col_jitter = 0;
-            let mut last_state = pf.block_is_locked(&Position::new(x, 0));
-            for y in 0..(pf.height() as i32) {
-                let state = pf.block_is_locked(&Position::new(x, y));
-                if last_state != state {
-                    last_state = state;
-                    col_jitter += 1;
-                }
-            }
-            jitter += col_jitter;
-        }
-        println!("Jitter for pos {:?}: {}",
-                 fig_pos.get_position(), jitter);
-        return -jitter + bottom_block;
+        // Measure playfield jitter - The lower jitter the better
+        let mut col_jitter = pf.get_col_jitter();
+        let mut row_jitter = pf.get_row_jitter();
+        let jitter = col_jitter * 3 + row_jitter;
+        return -(jitter as i32) + bottom_block;
     }
 }
 
