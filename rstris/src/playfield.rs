@@ -144,6 +144,34 @@ impl Playfield {
         }
         return voids;
     }
+    pub fn get_row_jitter(&self) -> u32 {
+        let mut jitter = 0;
+        for y in 0..(self.height() as i32) {
+            let mut last_state = self.block_is_locked(&Position::new(0, y));
+            for x in 0..(self.width() as i32) {
+                let state = self.block_is_locked(&Position::new(x, y));
+                if last_state != state {
+                    last_state = state;
+                    jitter += 1;
+                }
+            }
+        }
+        return jitter;
+    }
+    pub fn get_col_jitter(&self) -> u32 {
+        let mut jitter = 0;
+        for x in 0..(self.width() as i32) {
+            let mut last_state = self.block_is_locked(&Position::new(x, 0));
+            for y in 0..(self.height() as i32) {
+                let state = self.block_is_locked(&Position::new(x, y));
+                if last_state != state {
+                    last_state = state;
+                    jitter += 1;
+                }
+            }
+        }
+        return jitter;
+    }
 }
 
 #[cfg(test)]
