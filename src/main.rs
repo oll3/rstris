@@ -140,8 +140,57 @@ fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
 
 struct RandomComputer {}
 impl ComputerType for RandomComputer {
-    fn eval_placing(&mut self, figure_pos: &FigurePos, pf: &Playfield) -> i32 {
+    fn eval_placing(&mut self, _: &FigurePos, _: &Playfield) -> i32 {
         rand::random::<i32>()
+    }
+}
+
+fn lowest_block(fig_pos: &FigurePos) -> i32 {
+    fig_pos.get_face().get_lowest_block().get_y() +
+        fig_pos.get_position().get_y()
+}
+
+struct LowestPossibleComputer {}
+impl ComputerType for LowestPossibleComputer {
+    fn eval_placing(&mut self, fig_pos: &FigurePos, _: &Playfield) -> i32 {
+        lowest_block(fig_pos)
+    }
+}
+
+struct SmarterComputer {
+    num_voids_pre: u32,
+}
+impl SmarterComputer {
+    fn new() -> Self {
+        SmarterComputer{num_voids_pre: 0}
+    }
+}
+
+impl ComputerType for SmarterComputer {
+    fn init_eval(&mut self, pf: &Playfield, _: usize) {
+        self.num_voids_pre = pf.count_voids();
+        println!("Num voids: {}", self.num_voids_pre);
+    }
+    fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> i32 {
+        let bottom_block = lowest_block(fig_pos);
+        let mut pf = pf.clone();
+        fig_pos.lock(&mut pf);
+
+        let mut blocks_below_score = 0;
+        let fig_face = fig_pos.get_face();
+        for block_pos in fig_face.get_block_positions() {
+            let test_pos =
+                block_pos + fig_pos.get_position().get_pos().clone() +
+                Position::new(0, 1);
+            if pf.contains(&test_pos) && pf.block_is_set(&test_pos) {
+                blocks_below_score += 1;
+            }
+        }
+
+        let new_voids = pf.count_voids() as i32 - self.num_voids_pre as i32;
+//        println!("New voids: {}", new_voids);
+
+        return bottom_block - new_voids * 2 + blocks_below_score;
     }
 }
 
@@ -195,10 +244,10 @@ fn main() {
         player2_key_map
     );
 
-    let mut com_random1 = RandomComputer{};
+    let mut com_type1 = SmarterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 100000000, figure_list.clone()),
-        250000000, &mut com_random1,
+        PlayerCommon::new("Computer 1", 200000000, figure_list.clone()),
+        60000000, &mut com_type1,
     );
     let mut com_random2 = RandomComputer{};
     let mut com2 = ComputerPlayer::new(
