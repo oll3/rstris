@@ -14,11 +14,11 @@ use playfield::*;
 // reach from the starting point.
 //
 pub fn get_valid_placing(pf: &Playfield,
-                         fig_pos: &FigurePos) -> Vec<Position> {
+                         fig_pos: &FigurePos) -> Vec<PosDir> {
     let current_ticks = time::precise_time_ns();
-    let mut placements: Vec<Position> = Vec::new();
-    let mut moves: LinkedList<Position> = LinkedList::new();
-    let mut visited: HashSet<Position> = HashSet::new();
+    let mut placements: Vec<PosDir> = Vec::new();
+    let mut moves: LinkedList<PosDir> = LinkedList::new();
+    let mut visited: HashSet<PosDir> = HashSet::new();
     let mut it_cnt = 0;
     let start_pos = fig_pos.get_position().clone();
     let fig = fig_pos.get_figure();
@@ -39,20 +39,20 @@ pub fn get_valid_placing(pf: &Playfield,
 
         // Visist all the closest positions that has not been visited
         // already (one left, right, down, rotate cw).
-        let tmp_pos = Position::apply_move(&current_pos,
-                                           &Movement::MoveLeft);
+        let tmp_pos = PosDir::apply_move(&current_pos,
+                                         &Movement::MoveLeft);
         if !visited.contains(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
             visited.insert(tmp_pos.clone());
             moves.push_back(tmp_pos);
         }
-        let tmp_pos = Position::apply_move(&current_pos,
-                                           &Movement::MoveRight);
+        let tmp_pos = PosDir::apply_move(&current_pos,
+                                         &Movement::MoveRight);
         if !visited.contains(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
             visited.insert(tmp_pos.clone());
             moves.push_back(tmp_pos);
         }
-        let tmp_pos = Position::apply_move(&current_pos,
-                                           &Movement::RotateCW);
+        let tmp_pos = PosDir::apply_move(&current_pos,
+                                         &Movement::RotateCW);
         if tmp_pos.get_dir() < fig.faces().len() as i32 &&
             !visited.contains(&tmp_pos) &&
             !fig.collide_locked(&pf, &tmp_pos) {
@@ -62,8 +62,8 @@ pub fn get_valid_placing(pf: &Playfield,
 
         // Down is special. If we can't move down from current position then
         // the current position is a valid placement.
-        let tmp_pos = Position::apply_move(&current_pos,
-                                           &Movement::MoveDown);
+        let tmp_pos = PosDir::apply_move(&current_pos,
+                                         &Movement::MoveDown);
         if fig.collide_locked(&pf, &tmp_pos) {
             // Valid placement
             println!("Valid position: {:?}", tmp_pos);
@@ -81,7 +81,7 @@ pub fn get_valid_placing(pf: &Playfield,
 }
 
 
-fn est_distance(start: &Position, end: &Position,
+fn est_distance(start: &PosDir, end: &PosDir,
                 move_time: u64, down_time: u64) -> u64
 {
     ((start.get_x() - end.get_x()).abs() as u64 * down_time +
@@ -93,7 +93,7 @@ fn est_distance(start: &Position, end: &Position,
 struct Node {
     id: usize,
     parent: Option<usize>,
-    pos: Position,
+    pos: PosDir,
     walked_distance: u64, // g
     est_distance_end: u64, // h
     movement: Option<Movement>,
@@ -103,7 +103,7 @@ struct Node {
 
 impl Node {
     fn new(node_list: &mut Vec<Node>, parent: Option<usize>,
-           pos: &Position, walked_distance: u64, est_distance_end: u64,
+           pos: &PosDir, walked_distance: u64, est_distance_end: u64,
            movement: Option<Movement>,
            last_time_move: u64,
            last_time_down: u64)
@@ -134,8 +134,8 @@ impl PartialEq for Node {
 }
 
 pub fn find_path(pf: &Playfield, fig: &Figure,
-                 start_pos: &Position,
-                 end_pos: &Position,
+                 start_pos: &PosDir,
+                 end_pos: &PosDir,
                  move_time: u64,
                  force_down_time: u64) -> Vec<(Movement, u64)>
 {
@@ -184,7 +184,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         let mut successors: Vec<Node> = Vec::new();
         for movement in movements {
 
-            let mut fig_pos = Position::apply_move(&q.pos, &movement);
+            let mut fig_pos = PosDir::apply_move(&q.pos, &movement);
             fig_pos.normalize_dir(fig.faces().len());
             if fig_pos != q.pos && !fig.collide_blocked(pf, &fig_pos) {
                 let mut ltd = q.last_time_down;

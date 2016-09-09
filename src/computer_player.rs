@@ -13,7 +13,7 @@ pub trait ComputerType {
 }
 
 struct EvalPosition {
-    pos: Position,
+    pos: PosDir,
     eval: i32,
 }
 

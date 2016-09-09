@@ -1,8 +1,13 @@
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Position {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+pub struct PosDir {
+    pos: Position,
     dir: i32,
-    x_pos: i32,
-    y_pos: i32,
 }
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
@@ -16,29 +21,44 @@ pub enum Movement {
 }
 
 impl Position {
-    pub fn new(x: i32, y: i32, dirf: i32) -> Position {
-        Position{x_pos: x, y_pos: y, dir: dirf}
+    pub fn new(x: i32, y: i32) -> Position {
+        Position{x: x, y: y}
     }
-    pub fn apply_move(pos1: &Position, movement: &Movement) -> Position {
+    pub fn get_x(&self) -> i32 {
+        self.x
+    }
+    pub fn get_y(&self) -> i32 {
+        self.y
+    }
+}
+
+impl PosDir {
+    pub fn new(x: i32, y: i32, dir: i32) -> Self {
+        PosDir{pos: Position::new(x, y), dir: dir}
+    }
+    pub fn apply_move(pos1: &PosDir, movement: &Movement) -> Self {
         let mut pos = pos1.clone();
         match *movement {
-            Movement::MoveLeft => {pos.x_pos -= 1},
-            Movement::MoveRight => {pos.x_pos += 1},
-            Movement::MoveDown => {pos.y_pos += 1},
-            Movement::MoveUp => {pos.y_pos -= 1},
+            Movement::MoveLeft => {pos.pos.x -= 1},
+            Movement::MoveRight => {pos.pos.x += 1},
+            Movement::MoveDown => {pos.pos.y += 1},
+            Movement::MoveUp => {pos.pos.y -= 1},
             Movement::RotateCW => {pos.dir += 1},
             Movement::RotateCCW => {pos.dir -= 1},
         };
         pos
     }
     pub fn get_x(&self) -> i32 {
-        self.x_pos
+        self.pos.x
     }
     pub fn get_y(&self) -> i32 {
-        self.y_pos
+        self.pos.y
     }
     pub fn get_dir(&self) -> i32 {
         self.dir
+    }
+    pub fn get_pos(&self) -> &Position {
+        &self.pos
     }
     pub fn normalize_dir(&mut self, num_directions: usize) {
         if self.dir < 0 {

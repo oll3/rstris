@@ -6,16 +6,16 @@ use playfield::*;
 #[derive(Debug, Clone)]
 pub struct FigurePos {
     fig: Figure,
-    pos: Position,
+    pos: PosDir,
 }
 
 impl FigurePos {
-    pub fn new(fig: Figure, pos: Position) -> Self {
+    pub fn new(fig: Figure, pos: PosDir) -> Self {
         let mut norm_pos = pos;
         norm_pos.normalize_dir(fig.faces().len());
         return FigurePos{fig: fig, pos: norm_pos};
     }
-    pub fn get_position(&self) -> &Position {
+    pub fn get_position(&self) -> &PosDir {
         &self.pos
     }
     pub fn get_figure(&self) -> &Figure {
@@ -24,7 +24,7 @@ impl FigurePos {
     pub fn get_face(&self) -> &FigureFace {
         &self.fig.get_face(self.pos.get_dir() as usize)
     }
-    pub fn set_position(&mut self, pos: &Position) {
+    pub fn set_position(&mut self, pos: &PosDir) {
         let mut norm_pos = pos.clone();
         norm_pos.normalize_dir(self.fig.faces().len());
         self.pos = norm_pos;

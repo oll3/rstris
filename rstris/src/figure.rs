@@ -66,39 +66,39 @@ impl Figure {
     //
     // Place figure in playfield
     //
-    pub fn place(&self, pf: &mut Playfield, pos: &Position) {
+    pub fn place(&self, pf: &mut Playfield, pos: &PosDir) {
         let face = self.get_face(pos.get_dir() as usize);
-        face.place(pf, pos);
+        face.place(pf, pos.get_pos());
     }
-    pub fn lock(&self, pf: &mut Playfield, pos: &Position) {
+    pub fn lock(&self, pf: &mut Playfield, pos: &PosDir) {
         let face = self.get_face(pos.get_dir() as usize);
-        face.lock(pf, pos);
+        face.lock(pf, pos.get_pos());
     }
     //
     // Remove figure from playfield
     //
-    pub fn remove(&self, pf: &mut Playfield, pos: &Position) {
+    pub fn remove(&self, pf: &mut Playfield, pos: &PosDir) {
         let face = self.get_face(pos.get_dir() as usize);
-        face.remove(pf, pos);
+        face.remove(pf, pos.get_pos());
     }
 
     //
     // Test if figure will collide with any locked block if placed
     // at the given position
     //
-    pub fn collide_locked(&self, pf: &Playfield, pos: &Position) -> bool {
+    pub fn collide_locked(&self, pf: &Playfield, pos: &PosDir) -> bool {
         let face = self.get_face(pos.get_dir() as usize);
-        return face.collide_locked(pf, pos);
+        return face.collide_locked(pf, pos.get_pos());
     }
 
     //
     // Test if figure will collide with any block if placed at the given
     // position.
     //
-    pub fn collide_blocked(&self, pf: &Playfield, pos: &Position) -> bool {
+    pub fn collide_blocked(&self, pf: &Playfield, pos: &PosDir) -> bool {
         // ...then test for collision with any block
         let face = self.get_face(pos.get_dir() as usize);
-        return face.collide_blocked(pf, pos);
+        return face.collide_blocked(pf, pos.get_pos());
     }
 }
 

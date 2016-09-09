@@ -49,7 +49,7 @@ pub trait Player {
 
         // Place new figure in playfield
         let figure = self.common().next_figure().clone();
-        let pos = Position::new((pf.width() / 2 - 1) as i32, 0, 0);
+        let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
         if figure.collide_locked(pf, &pos) {
             println!("Figure collided with locked block");
             return false;
@@ -141,7 +141,7 @@ impl PlayerCommon {
             self.set_time_of_move(fig_move.clone(), move_time);
             let fig = fig_pos.get_figure();
             let test_pos =
-                Position::apply_move(fig_pos.get_position(), &fig_move);
+                PosDir::apply_move(fig_pos.get_position(), &fig_move);
             let test_pos_locked = fig.collide_locked(pf, &test_pos);
             let test_pos_blocked = fig.collide_blocked(pf, &test_pos);
             if !test_pos_locked && !test_pos_blocked {
