@@ -1,3 +1,4 @@
+extern crate rand;
 extern crate sdl2;
 extern crate time;
 extern crate rstris;
@@ -21,6 +22,7 @@ use rstris::block::*;
 use rstris::playfield::*;
 use rstris::figure::*;
 use rstris::position::*;
+use rstris::figure_pos::*;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
@@ -136,6 +138,12 @@ fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
     return Ok(());
 }
 
+struct RandomComputer {}
+impl ComputerType for RandomComputer {
+    fn eval_placing(&mut self, figure_pos: &FigurePos, pf: &Playfield) -> i32 {
+        rand::random::<i32>()
+    }
+}
 
 fn main() {
 
@@ -187,15 +195,15 @@ fn main() {
         player2_key_map
     );
 
+    let mut com_random1 = RandomComputer{};
     let mut com1 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 100000000, figure_list.clone()),
-        250000000,
-        ComputerType::RandomStupid
+        250000000, &mut com_random1,
     );
+    let mut com_random2 = RandomComputer{};
     let mut com2 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
-        5000000,
-        ComputerType::RandomStupid
+        5000000, &mut com_random2,
     );
 
     let pf1 = Playfield::new("Playfield 1",

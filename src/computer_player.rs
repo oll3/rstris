@@ -7,22 +7,29 @@ use rstris::find::*;
 
 use player::*;
 
-pub enum ComputerType {
-    RandomStupid,
+pub trait ComputerType {
+    fn init_eval(&mut self, pf: &Playfield, avail_placings: usize) {}
+    fn eval_placing(&mut self, figure_pos: &FigurePos, pf: &Playfield) -> i32;
 }
 
-pub struct ComputerPlayer {
+struct EvalPosition {
+    pos: Position,
+    eval: i32,
+}
+
+pub struct ComputerPlayer<'a> {
     common: PlayerCommon,
+    com_type: &'a mut ComputerType,
     moves: Vec<(Movement, u64)>,
     last_fig: String,
-    avail_pos: Vec<Position>,
+    avail_pos: Vec<EvalPosition>,
     last_path_update: u64,
     move_time: u64,
-    com_type: ComputerType,
     path: Vec<(Movement, u64)>
 }
 
-impl Player for ComputerPlayer {
+
+impl <'a>Player for ComputerPlayer<'a> {
     fn common(&self) -> &PlayerCommon {
         &self.common
     }
@@ -51,9 +58,9 @@ impl Player for ComputerPlayer {
     }
 }
 
-impl ComputerPlayer {
+impl <'a> ComputerPlayer<'a> {
     pub fn new(common: PlayerCommon, move_time: u64,
-               com_type: ComputerType) -> Self {
+               com_type: &'a mut ComputerType) -> Self {
         ComputerPlayer {
             common: common,
             avail_pos: Vec::new(),
@@ -67,17 +74,26 @@ impl ComputerPlayer {
     }
 
     fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos) {
-        self.avail_pos = get_valid_placing(&pf, fig_pos);
+        let avail_placing = get_valid_placing(&pf, fig_pos);
         println!("New figure ({}) - {} available placings",
-                 self.last_fig, self.avail_pos.len());
-
-        self.avail_pos.sort_by(|a, b| b.get_y().cmp(&a.get_y()));
+                 self.last_fig, avail_placing.len());
+        self.com_type.init_eval(pf, self.avail_pos.len());
+        let mut eval_placing: Vec<EvalPosition> = vec![];;
+        for p in avail_placing {
+            let eval_pos =
+                FigurePos::new(fig_pos.get_figure().clone(), p.clone());
+            let eval = self.com_type.eval_placing(&eval_pos, pf);
+            let eval_pos = EvalPosition{pos: p, eval: eval};
+            eval_placing.push(eval_pos);
+        }
+        eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
+        self.avail_pos = eval_placing;
         let sel_end = 0;
-        for pos in &self.avail_pos {
+        for eval_pos in &self.avail_pos {
             let path = find_path(&pf,
                                  &fig_pos.get_figure(),
                                  &fig_pos.get_position(),
-                                 pos,
+                                 &eval_pos.pos,
                                  self.move_time,
                                  self.common.force_down_time);
             if path.len() > 0 {
