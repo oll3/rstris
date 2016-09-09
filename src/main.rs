@@ -194,6 +194,37 @@ impl ComputerType for SmarterComputer {
     }
 }
 
+
+struct JitterComputer {}
+impl JitterComputer {
+    fn new() -> Self {JitterComputer{}}
+}
+impl ComputerType for JitterComputer {
+    fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> i32 {
+        let mut pf = pf.clone();
+        fig_pos.lock(&mut pf);
+        let bottom_block = lowest_block(fig_pos);
+        // Scan playfield and measure jitter - Lower jitter better placement
+        let mut jitter = 0;
+        for x in 0..(pf.width() as i32) {
+            let mut col_jitter = 0;
+            let mut last_state = pf.block_is_locked(&Position::new(x, 0));
+            for y in 0..(pf.height() as i32) {
+                let state = pf.block_is_locked(&Position::new(x, y));
+                if last_state != state {
+                    last_state = state;
+                    col_jitter += 1;
+                }
+            }
+            jitter += col_jitter;
+        }
+        println!("Jitter for pos {:?}: {}",
+                 fig_pos.get_position(), jitter);
+        return -jitter + bottom_block;
+    }
+}
+
+
 fn main() {
 
     let sdl_context = sdl2::init().unwrap();
@@ -244,10 +275,10 @@ fn main() {
         player2_key_map
     );
 
-    let mut com_type1 = SmarterComputer::new();
+    let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 200000000, figure_list.clone()),
-        60000000, &mut com_type1,
+        PlayerCommon::new("Computer 1", 100000, figure_list.clone()),
+        100000, &mut com_type1,
     );
     let mut com_random2 = RandomComputer{};
     let mut com2 = ComputerPlayer::new(
