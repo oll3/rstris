@@ -44,6 +44,17 @@ impl FigureFace {
         }
         return rows_with_blocks;
     }
+    pub fn get_lowest_block(&self) -> Position {
+        let mut pos = Position::new(i32::min_value(), i32::min_value(), 0);
+        for y in 0..self.get_height() {
+            for x in 0..self.get_width() {
+                if self.blocks[y][x].is_set() && y as i32 > pos.get_y() {
+                    pos = Position::new(x as i32, y as i32, 0);
+                }
+            }
+        }
+        return pos;
+    }
     pub fn get_width(&self) -> usize {
         self.width
     }
