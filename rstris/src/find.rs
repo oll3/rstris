@@ -81,12 +81,11 @@ pub fn get_valid_placing(pf: &Playfield,
 }
 
 
-fn est_distance(start: &PosDir, end: &PosDir,
-                move_time: u64, down_time: u64) -> u64
+fn est_distance(start: &PosDir, end: &PosDir) -> u64
 {
-    ((start.get_x() - end.get_x()).abs() as u64 * down_time +
-     (start.get_y() - end.get_y()).abs() as u64 * move_time +
-     (start.get_dir() - end.get_dir()).abs() as u64 * move_time)
+    ((start.get_x() - end.get_x()).abs() +
+     (start.get_y() - end.get_y()).abs() +
+     (start.get_dir() - end.get_dir()).abs()) as u64
 }
 
 #[derive(Clone, Debug)]
@@ -97,6 +96,7 @@ struct Node {
     walked_distance: u64, // g
     est_distance_end: u64, // h
     movement: Option<Movement>,
+    time: u64,
     last_time_move: u64,
     last_time_down: u64,
 }
@@ -105,6 +105,7 @@ impl Node {
     fn new(node_list: &mut Vec<Node>, parent: Option<usize>,
            pos: &PosDir, walked_distance: u64, est_distance_end: u64,
            movement: Option<Movement>,
+           time: u64,
            last_time_move: u64,
            last_time_down: u64)
            -> Node {
@@ -114,6 +115,7 @@ impl Node {
                         walked_distance: walked_distance,
                         est_distance_end: est_distance_end,
                         movement: movement,
+                        time: time,
                         last_time_move: last_time_move,
                         last_time_down: last_time_down,
         };
@@ -142,28 +144,28 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
     let mut all: Vec<Node> = Vec::new();
     let mut open_set: Vec<Node> = Vec::new();
     let mut closed_set: Vec<Node> = Vec::new();
-    let start_node = Node::new(&mut all, None, start_pos, 0, 0, None, 0, 0);
+    let start_node = Node::new(&mut all, None, start_pos, 0, 0, None, 0, 0, 0);
     open_set.push(start_node);
 
     println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
              start_pos, end_pos,
-             est_distance(start_pos, end_pos, move_time, force_down_time),
+             est_distance(start_pos, end_pos),
              move_time, force_down_time);
 
-    while open_set.len() > 0 && all.len() < 400000 {
+    while open_set.len() > 0 && all.len() < 40000 {
         open_set.sort_by(|a, b| {
             b.get_tot_est().partial_cmp(&a.get_tot_est()).unwrap()
         });
         let q = open_set.pop().unwrap();
 
         // Decide if the next move is a forced down move or any move
-        let time_since_move = (q.walked_distance - q.last_time_move) as i64;
-        let time_since_down = (q.walked_distance - q.last_time_down) as i64;
+        let time_since_move = (q.time - q.last_time_move) as i64;
+        let time_since_down = (q.time - q.last_time_down) as i64;
         let time_until_move = move_time as i64 - time_since_move;
         let time_until_down = force_down_time as i64 - time_since_down;
 
         let movements;
-        if !time_until_move < time_until_down {
+        if time_until_move < time_until_down {
             // Regular move
             movements = vec![Movement::MoveLeft,
                              Movement::MoveRight,
@@ -189,7 +191,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
             if fig_pos != q.pos && !fig.collide_blocked(pf, &fig_pos) {
                 let mut ltd = q.last_time_down;
                 let mut ltm = q.last_time_move;
-                let mut tt = q.walked_distance;
+                let mut tt = q.time;
                 if movement == Movement::MoveDown {
                     tt += max(0, time_until_down) as u64;
                     ltd = tt;
@@ -200,11 +202,11 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 }
                 let succs =
                     Node::new(&mut all, Some(q.id), &fig_pos,
-                              tt,
-                              est_distance(&fig_pos, end_pos,
-                                           move_time, force_down_time),
+                              q.walked_distance +
+                              est_distance(&q.pos, &fig_pos),
+                              est_distance(&fig_pos, end_pos),
                               Some(movement.clone()),
-                              ltm, ltd);
+                              tt, ltm, ltd);
                 successors.push(succs);
             }
         }
@@ -215,7 +217,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 let mut p = s;
                 let mut path: Vec<(Movement, u64)> = Vec::new();
                 while p.id != 0 {
-                    path.push((p.movement.unwrap().clone(), p.walked_distance));
+                    path.push((p.movement.unwrap().clone(), p.time));
                     p = all[p.parent.unwrap()].clone();
                 }
 /*                println!("Tested {} - Found path ({}): {:?}",
@@ -235,7 +237,6 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
     }
     println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {})!",
              fig.get_name(), start_pos, end_pos,
-             est_distance(start_pos, end_pos, move_time,
-                          force_down_time), all.len());
+             est_distance(start_pos, end_pos), all.len());
     return vec![];
 }

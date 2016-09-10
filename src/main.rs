@@ -205,10 +205,11 @@ impl ComputerType for JitterComputer {
         fig_pos.lock(&mut pf);
         let bottom_block = lowest_block(fig_pos);
         // Measure playfield jitter - The lower jitter the better
-        let mut col_jitter = pf.get_col_jitter();
-        let mut row_jitter = pf.get_row_jitter();
+        let col_jitter = pf.get_col_jitter() as i32;
+        let row_jitter = pf.get_row_jitter() as i32;
+        let voids = pf.count_voids() as i32;
         let jitter = col_jitter * 3 + row_jitter;
-        return -(jitter as i32) + bottom_block;
+        return bottom_block * 3 - jitter - voids * 2;
     }
 }
 
@@ -265,8 +266,8 @@ fn main() {
 
     let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 100000, figure_list.clone()),
-        100000, &mut com_type1,
+        PlayerCommon::new("Computer 1", 100000000, figure_list.clone()),
+        90000000, &mut com_type1,
     );
     let mut com_random2 = RandomComputer{};
     let mut com2 = ComputerPlayer::new(
@@ -383,6 +384,6 @@ fn main() {
             sec_timer = current_ticks;
             window.set_title(&title).unwrap();
         }
-        std::thread::sleep(std::time::Duration::new(0, 10000000));
+        std::thread::sleep(std::time::Duration::new(0, 100000));
     }
 }
