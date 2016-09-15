@@ -81,13 +81,6 @@ pub fn get_valid_placing(pf: &Playfield,
 }
 
 
-fn est_distance(start: &PosDir, end: &PosDir) -> u64
-{
-    ((start.get_x() - end.get_x()).abs() +
-     (start.get_y() - end.get_y()).abs() +
-     (start.get_dir() - end.get_dir()).abs()) as u64
-}
-
 #[derive(Clone, Debug)]
 struct Node {
     id: usize,
@@ -133,6 +126,19 @@ impl PartialEq for Node {
     fn eq(&self, other: &Self) -> bool {
         self.pos == other.pos && self.parent == other.parent
     }
+}
+
+fn est_distance(start: &PosDir, end: &PosDir) -> u64
+{
+    ((start.get_x() - end.get_x()).abs() as u64 +
+     (start.get_y() - end.get_y()).abs() as u64 +
+     (start.get_dir() - end.get_dir()).abs() as u64)
+}
+
+fn no_pos_with_lower_est(set: &Vec<Node>, node: &Node) -> bool {
+    set.iter().find(|&n| {
+        n.pos == node.pos &&
+            n.get_tot_est() < node.get_tot_est()}).is_none()
 }
 
 pub fn find_path(pf: &Playfield, fig: &Figure,
@@ -220,16 +226,11 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                     path.push((p.movement.unwrap().clone(), p.time));
                     p = all[p.parent.unwrap()].clone();
                 }
-/*                println!("Tested {} - Found path ({}): {:?}",
-                         all.len(), path.len(), path);*/
                 return path;
             }
-            else if open_set.iter().find(
-                |&n| n.pos == s.pos &&
-                    n.get_tot_est() <= s.get_tot_est()).is_none() &&
-                closed_set.iter().find(
-                    |&n| n.pos == s.pos &&
-                        n.get_tot_est() <= s.get_tot_est()).is_none() {
+
+            if no_pos_with_lower_est(&open_set, &s) &&
+                no_pos_with_lower_est(&closed_set, &s) {
                     open_set.push(s);
             }
         }
