@@ -74,6 +74,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                  move_time: u64,
                  force_down_time: u64) -> Vec<(Movement, u64)>
 {
+    let start_time = time::precise_time_ns();
     let mut all: Vec<Node> = Vec::new();
     let mut open_set: Vec<Node> = Vec::new();
     let mut closed_set: Vec<Node> = Vec::new();
@@ -153,6 +154,10 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                     path.push((p.movement.unwrap().clone(), p.time));
                     p = all[p.parent.unwrap()].clone();
                 }
+                let search_time = (time::precise_time_ns() -
+                                   start_time) as f64 / 1000000.0;
+                println!("Path found for {} ({:?} to {:?} ({} ms)",
+                         fig.get_name(), start_pos, end_pos, search_time);
                 return path;
             }
 
@@ -163,8 +168,10 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         }
         closed_set.push(q);
     }
-    println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {})!",
+    let search_time = (time::precise_time_ns() -
+                       start_time) as f64 / 1000000.0;
+    println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
              fig.get_name(), start_pos, end_pos,
-             est_distance(start_pos, end_pos), all.len());
+             est_distance(start_pos, end_pos), all.len(), search_time);
     return vec![];
 }
