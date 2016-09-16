@@ -75,7 +75,7 @@ impl <'a> ComputerPlayer<'a> {
     }
 
     fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos) {
-        let avail_placing = find_placement(&pf, fig_pos);
+        let avail_placing = find_placement_quick(&pf, fig_pos);
         println!("New figure ({}) - {} available placings",
                  self.last_fig, avail_placing.len());
         self.com_type.init_eval(pf, self.avail_pos.len());
