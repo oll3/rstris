@@ -104,7 +104,8 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
             movements = vec![Movement::MoveLeft,
                              Movement::MoveRight,
                              Movement::MoveDown,
-                             Movement::RotateCW];
+                             Movement::RotateCW,
+                             Movement::RotateCCW];
         }
         else {
             // Forced down move
