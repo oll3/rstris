@@ -7,3 +7,4 @@ pub mod figure_face;
 pub mod figure;
 pub mod figure_pos;
 pub mod find;
+pub mod find_placement;
