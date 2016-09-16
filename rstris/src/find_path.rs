@@ -1,9 +1,8 @@
 extern crate time;
 
-use std::collections::LinkedList;
-use std::collections::HashSet;
+use std::cmp::Ordering;
+use std::cmp::max;
 use figure::*;
-use figure_pos::*;
 use position::*;
 use playfield::*;
 
@@ -46,12 +45,9 @@ impl Node {
     fn get_tot_est(&self) -> u64 {
         self.walked_distance + self.est_distance_end
     }
-}
 
-use std::cmp::*;
-impl PartialEq for Node {
-    fn eq(&self, other: &Self) -> bool {
-        self.pos == other.pos && self.parent == other.parent
+    fn cmp_est(n1: &Node, n2: &Node) -> Option<Ordering> {
+        n1.get_tot_est().partial_cmp(&n2.get_tot_est())
     }
 }
 
@@ -87,9 +83,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
              move_time, force_down_time);
 
     while open_set.len() > 0 && all.len() < 40000 {
-        open_set.sort_by(|a, b| {
-            b.get_tot_est().partial_cmp(&a.get_tot_est()).unwrap()
-        });
+        open_set.sort_by(|a, b| { Node::cmp_est(b, a).unwrap() });
         let q = open_set.pop().unwrap();
 
         // Decide if the next move is a forced down move or any move
