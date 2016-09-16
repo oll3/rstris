@@ -4,7 +4,7 @@ use rstris::playfield::*;
 use rstris::position::*;
 use rstris::figure_pos::*;
 use rstris::find_placement::*;
-use rstris::find::*;
+use rstris::find_path::*;
 
 use player::*;
 
