@@ -23,20 +23,20 @@ struct Node {
 impl Node {
     fn new(node_list: &mut Vec<Node>, parent: Option<usize>,
            pos: &PosDir, walked_distance: u64, est_distance_end: u64,
-           movement: Option<Movement>,
-           time: u64,
-           last_time_move: u64,
-           last_time_down: u64)
+           movement: Option<Movement>, time: u64,
+           last_time_move: u64, last_time_down: u64)
            -> Node {
-        let node = Node{id: node_list.len(),
-                        parent: parent,
-                        pos: pos.clone(),
-                        walked_distance: walked_distance,
-                        est_distance_end: est_distance_end,
-                        movement: movement,
-                        time: time,
-                        last_time_move: last_time_move,
-                        last_time_down: last_time_down,
+
+        let node = Node{
+            id: node_list.len(),
+            parent: parent,
+            pos: pos.clone(),
+            walked_distance: walked_distance,
+            movement: movement,
+            time: time,
+            last_time_move: last_time_move,
+            last_time_down: last_time_down,
+            est_distance_end: est_distance_end,
         };
         node_list.push(node.clone());
         return node;
@@ -51,17 +51,24 @@ impl Node {
     }
 }
 
-fn est_distance(start: &PosDir, end: &PosDir) -> u64
-{
+struct Timing {
+    move_time: u64,
+    down_time: u64,
+}
+
+fn est_pos_distance(start: &PosDir, end: &PosDir,
+                    timing: &Timing,
+                    time_until_down: u64) -> u64 {
     ((start.get_x() - end.get_x()).abs() as u64 +
      (start.get_y() - end.get_y()).abs() as u64 +
      (start.get_dir() - end.get_dir()).abs() as u64)
 }
 
+
 fn no_pos_with_lower_est(set: &Vec<Node>, node: &Node) -> bool {
     set.iter().find(|&n| {
         n.pos == node.pos &&
-            n.get_tot_est() < node.get_tot_est()}).is_none()
+            n.get_tot_est() <= node.get_tot_est()}).is_none()
 }
 
 pub fn find_path(pf: &Playfield, fig: &Figure,
@@ -74,12 +81,16 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
     let mut all: Vec<Node> = Vec::new();
     let mut open_set: Vec<Node> = Vec::new();
     let mut closed_set: Vec<Node> = Vec::new();
-    let start_node = Node::new(&mut all, None, start_pos, 0, 0, None, 0, 0, 0);
-    open_set.push(start_node);
+    let timing = Timing {move_time: move_time, down_time: force_down_time };
+    let start_node = Node::new(&mut all, None, start_pos, 0,
+                               est_pos_distance(start_pos, end_pos, &timing,
+                                                force_down_time),
+                               None, 0, 0, 0);
+    open_set.push(start_node.clone());
 
     println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
              start_pos, end_pos,
-             est_distance(start_pos, end_pos),
+             est_pos_distance(start_pos, end_pos, &timing, force_down_time),
              move_time, force_down_time);
 
     while open_set.len() > 0 && all.len() < 40000 {
@@ -131,9 +142,9 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 }
                 let succs =
                     Node::new(&mut all, Some(q.id), &fig_pos,
-                              q.walked_distance +
-                              est_distance(&q.pos, &fig_pos),
-                              est_distance(&fig_pos, end_pos),
+                              tt,
+                              est_pos_distance(&fig_pos, &end_pos, &timing,
+                                               max(0, time_until_down) as u64),
                               Some(movement.clone()),
                               tt, ltm, ltd);
                 successors.push(succs);
@@ -167,6 +178,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                        start_time) as f64 / 1000000.0;
     println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
              fig.get_name(), start_pos, end_pos,
-             est_distance(start_pos, end_pos), all.len(), search_time);
+             est_pos_distance(start_pos, end_pos, &timing, force_down_time),
+             all.len(), search_time);
     return vec![];
 }
