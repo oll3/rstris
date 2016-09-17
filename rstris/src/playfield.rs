@@ -8,14 +8,17 @@ pub struct Playfield {
     pf_width: usize,
     pf_height: usize,
     blocks: Vec<Vec<Block>>,
+    locked_block: Block,
 }
 
 impl Playfield {
     pub fn new(name: &str, width: usize, height: usize) -> Playfield {
-        let mut playfield = Playfield{pf_name: name.to_owned(),
-                                      pf_width: width,
-                                      pf_height: height,
-                                      blocks: vec![]};
+        let mut playfield =
+            Playfield{pf_name: name.to_owned(),
+                      pf_width: width,
+                      pf_height: height,
+                      blocks: vec![],
+                      locked_block: Block::new_locked(1)};
         for _ in 0..height {
             playfield.blocks.push(vec![Block::new(0); width as usize]);
         }
@@ -25,7 +28,10 @@ impl Playfield {
         self.blocks[y][x].id
     }
     pub fn get_block(&self, x: usize, y: usize) -> &Block {
-        &self.blocks[y][x]
+        if x >= self.pf_width || y >= self.pf_height {
+            return &self.locked_block;
+        }
+        return &self.blocks[y][x];
     }
     pub fn width(&self) -> usize {
         self.pf_width
