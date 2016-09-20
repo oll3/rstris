@@ -1,5 +1,6 @@
 extern crate time;
 
+use std::collections::HashMap;
 use std::cmp::Ordering;
 use std::cmp::max;
 use figure::*;
@@ -14,9 +15,16 @@ struct NodeContext {
     start_time: u64,
     move_time: u64,
     down_time: u64,
+
+    // Node by id contains all created nodes, indexed by id
     node_by_id: Vec<Node>,
-    open_set: Vec<Node>,
-    closed_set: Vec<Node>,
+
+    // Node by position is used to make the search for already
+    // visited positions quicker.
+    node_by_pos: HashMap<PosDir, Vec<usize>>,
+
+    open_set: Vec<usize>,
+    closed_set: Vec<usize>,
 }
 
 impl NodeContext {
@@ -32,33 +40,50 @@ impl NodeContext {
             move_time: move_time,
             down_time: down_time,
             node_by_id: Vec::new(),
+            node_by_pos: HashMap::new(),
             open_set: Vec::new(),
             closed_set: Vec::new(),
         }
     }
-    fn pop_best(&mut self) -> Node {
-        self.open_set.sort_by(|a, b| { Node::cmp_est(b, a).unwrap() });
-        return self.open_set.pop().unwrap();
+    fn get_node_from_id(&self, id: usize) -> &Node {
+        return &self.node_by_id[id];
+    }
+    fn pop_best_open(&mut self) -> Node {
+        let mut sorted_list = self.open_set.clone();
+        sorted_list.sort_by(|a, b| {
+            Node::cmp_est(self.get_node_from_id(*b),
+                          self.get_node_from_id(*a)).unwrap()
+        });
+        self.open_set = sorted_list;
+        let best_node_id = self.open_set.pop().unwrap();
+        return self.get_node_from_id(best_node_id).clone();
+    }
+    fn add_by_pos_ref(&mut self, node: &Node) {
+        let pos_list =
+            self.node_by_pos.entry(node.pos.clone()).or_insert(Vec::new());
+        pos_list.push(node.id);
     }
     fn add_node(&mut self, node: Node) {
+        self.add_by_pos_ref(&node);
         self.node_by_id.push(node);
     }
-    fn add_open(&mut self, node: Node) {
-        self.open_set.push(node);
+    fn mark_open(&mut self, node: &Node) {
+        self.open_set.push(node.id);
     }
-    fn add_closed(&mut self, node: Node) {
-        self.closed_set.push(node);
+    fn mark_closed(&mut self, node: &Node) {
+        self.closed_set.push(node.id);
     }
-}
-
-fn no_pos_with_lower_est(set: &Vec<Node>, node: &Node) -> bool {
-    for n in set {
-        if n.pos == node.pos &&
-            n.get_tot_est() <= node.get_tot_est() {
-                return false;
+    fn no_pos_with_lower_est(&self, node: &Node) -> bool {
+        if let Some(pos_list) = self.node_by_pos.get(&node.pos) {
+            for id in pos_list {
+                let n = self.get_node_from_id(*id);
+                if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
+                    return false;
+                }
             }
+        }
+        return true;
     }
-    return true;
 }
 
 
@@ -76,7 +101,6 @@ struct Node {
     walked: u64, // g
     est_end: u64, // h
     mvmnt: Option<Movement>,
-
     time: u64,
     last_time_move: u64,
     last_time_down: u64,
@@ -112,7 +136,6 @@ impl Node {
     fn cmp_est(n1: &Node, n2: &Node) -> Option<Ordering> {
         n1.get_tot_est().partial_cmp(&n2.get_tot_est())
     }
-
 
     fn time_until_move(&self, ctx: &NodeContext) -> i64 {
         let time_since_move = (self.time - self.last_time_move) as i64;
@@ -185,11 +208,10 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
     let mut ctx = NodeContext::new(move_time,
                                    force_down_time,
                                    pf, fig, end_pos);
-
     let start_node = Node::new(&mut ctx, None, start_pos, 0,
                                est_pos_distance(start_pos, end_pos),
                                None, 0, 0, 0);
-    ctx.open_set.push(start_node.clone());
+    ctx.mark_open(&start_node);
 
     println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
              start_pos, end_pos,
@@ -197,7 +219,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
              move_time, force_down_time);
 
     while ctx.open_set.len() > 0 {
-        let q = ctx.pop_best();
+        let q = ctx.pop_best_open();
 
         let possible_nodes = q.get_possible_moves(&mut ctx);
         for node in possible_nodes {
@@ -212,13 +234,12 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 return node.get_path(&ctx);
             }
             else if !fig.collide_blocked(&ctx.pf, &node.pos) &&
-                no_pos_with_lower_est(&ctx.open_set, &node) &&
-                no_pos_with_lower_est(&ctx.closed_set, &node)
+                ctx.no_pos_with_lower_est(&node)
             {
-                ctx.add_open(node);
+                ctx.mark_open(&node);
             }
         }
-        ctx.add_closed(q);
+        ctx.mark_closed(&q);
     }
     let search_time = (time::precise_time_ns() -
                        ctx.start_time) as f64 / 1000000.0;
