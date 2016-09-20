@@ -195,21 +195,37 @@ impl ComputerType for SmarterComputer {
 }
 
 
-struct JitterComputer {}
+struct JitterComputer {
+    pre_col_jitter: i32,
+    pre_row_jitter: i32,
+    pre_voids: i32,
+}
 impl JitterComputer {
-    fn new() -> Self {JitterComputer{}}
+    fn new() -> Self {
+        JitterComputer{
+            pre_col_jitter: 0,
+            pre_row_jitter: 0,
+            pre_voids: 0,
+        }
+    }
 }
 impl ComputerType for JitterComputer {
+    fn init_eval(&mut self, pf: &Playfield, _: usize) {
+        self.pre_voids = pf.count_voids() as i32;
+        self.pre_col_jitter = pf.get_col_jitter() as i32;
+        self.pre_row_jitter = pf.get_row_jitter() as i32;
+    }
+
     fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> i32 {
         let mut pf = pf.clone();
         fig_pos.lock(&mut pf);
         let bottom_block = lowest_block(fig_pos);
         // Measure playfield jitter - The lower jitter the better
-        let col_jitter = pf.get_col_jitter() as i32;
-        let row_jitter = pf.get_row_jitter() as i32;
-        let voids = pf.count_voids() as i32;
+        let col_jitter = pf.get_col_jitter() as i32 - self.pre_col_jitter;
+        let row_jitter = pf.get_row_jitter() as i32 - self.pre_row_jitter;
+        let voids = 0; //pf.count_voids() as i32;
         let jitter = col_jitter * 3 + row_jitter;
-        return bottom_block * 3 - jitter - voids * 2;
+        return bottom_block - jitter - voids * 2;
     }
 }
 
