@@ -1,11 +1,34 @@
 extern crate time;
 
 use std::collections::HashMap;
+use std::collections::BinaryHeap;
 use std::cmp::Ordering;
 use std::cmp::max;
 use figure::*;
 use position::*;
 use playfield::*;
+
+#[derive(Debug)]
+struct NodeIdAndEst {
+    id: usize,
+    est: u64,
+}
+impl Ord for NodeIdAndEst {
+    fn cmp(&self, other: &NodeIdAndEst) -> Ordering {
+        other.est.cmp(&self.est)
+    }
+}
+impl PartialOrd for NodeIdAndEst {
+    fn partial_cmp(&self, other: &NodeIdAndEst) -> Option<Ordering> {
+        other.est.partial_cmp(&self.est)
+    }
+}
+impl Eq for NodeIdAndEst {}
+impl PartialEq for NodeIdAndEst {
+    fn eq(&self, other: &NodeIdAndEst) -> bool {
+        self.est == other.est
+    }
+}
 
 #[derive(Debug)]
 struct NodeContext {
@@ -23,8 +46,7 @@ struct NodeContext {
     // visited positions quicker.
     node_by_pos: HashMap<PosDir, Vec<usize>>,
 
-    open_set: Vec<usize>,
-    closed_set: Vec<usize>,
+    open_set: BinaryHeap<NodeIdAndEst>,
 }
 
 impl NodeContext {
@@ -41,22 +63,15 @@ impl NodeContext {
             down_time: down_time,
             node_by_id: Vec::new(),
             node_by_pos: HashMap::new(),
-            open_set: Vec::new(),
-            closed_set: Vec::new(),
+            open_set: BinaryHeap::new(),
         }
     }
     fn get_node_from_id(&self, id: usize) -> &Node {
         return &self.node_by_id[id];
     }
     fn pop_best_open(&mut self) -> Node {
-        let mut sorted_list = self.open_set.clone();
-        sorted_list.sort_by(|a, b| {
-            Node::cmp_est(self.get_node_from_id(*b),
-                          self.get_node_from_id(*a)).unwrap()
-        });
-        self.open_set = sorted_list;
-        let best_node_id = self.open_set.pop().unwrap();
-        return self.get_node_from_id(best_node_id).clone();
+        let best_node = self.open_set.pop().unwrap();
+        return self.get_node_from_id(best_node.id).clone();
     }
     fn add_by_pos_ref(&mut self, node: &Node) {
         let pos_list =
@@ -68,10 +83,11 @@ impl NodeContext {
         self.node_by_id.push(node);
     }
     fn mark_open(&mut self, node: &Node) {
-        self.open_set.push(node.id);
+        let id_and_est = NodeIdAndEst{id: node.id,
+                                      est: node.get_tot_est()};
+        self.open_set.push(id_and_est);
     }
-    fn mark_closed(&mut self, node: &Node) {
-        self.closed_set.push(node.id);
+    fn mark_closed(&mut self, _: &Node) {
     }
     fn no_pos_with_lower_est(&self, node: &Node) -> bool {
         if let Some(pos_list) = self.node_by_pos.get(&node.pos) {
@@ -132,11 +148,6 @@ impl Node {
     fn get_tot_est(&self) -> u64 {
         self.walked + self.est_end
     }
-
-    fn cmp_est(n1: &Node, n2: &Node) -> Option<Ordering> {
-        n1.get_tot_est().partial_cmp(&n2.get_tot_est())
-    }
-
     fn time_until_move(&self, ctx: &NodeContext) -> i64 {
         let time_since_move = (self.time - self.last_time_move) as i64;
         return ctx.move_time as i64 - time_since_move;
@@ -145,7 +156,6 @@ impl Node {
         let time_since_down = (self.time - self.last_time_down) as i64;
         return ctx.down_time as i64 - time_since_down;
     }
-
     fn new_moved_node(&self, ctx: &mut NodeContext,
                       movement: Movement) -> Node {
         let mut fig_pos = PosDir::apply_move(&self.pos, &movement);
