@@ -19,7 +19,6 @@ struct NodeContext {
 
 fn est_pos_distance(start: &PosDir, end: &PosDir) -> u64 {
     ((start.get_x() - end.get_x()).abs() as u64 +
-     (start.get_y() - end.get_y()).abs() as u64 +
      (start.get_dir() - end.get_dir()).abs() as u64)
 }
 
@@ -175,8 +174,6 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         open_set.sort_by(|a, b| { Node::cmp_est(b, a).unwrap() });
 
         let q = open_set.pop().unwrap();
-
-//        println!("Best pos so far is {:?}", q);
 
         let possible_nodes = q.get_possible_moves(&mut ctx);
         for node in possible_nodes {
