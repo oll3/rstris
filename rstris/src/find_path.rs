@@ -44,7 +44,7 @@ struct NodeContext {
 
     // Node by position is used to make the search for already
     // visited positions quicker.
-    node_by_pos: HashMap<PosDir, Vec<usize>>,
+    node_by_pos: HashMap<PosDir, usize>,
 
     open_set: BinaryHeap<NodeIdAndEst>,
 }
@@ -73,13 +73,10 @@ impl NodeContext {
         let best_node = self.open_set.pop().unwrap();
         return self.get_node_from_id(best_node.id).clone();
     }
-    fn add_by_pos_ref(&mut self, node: &Node) {
-        let pos_list =
-            self.node_by_pos.entry(node.pos.clone()).or_insert(Vec::new());
-        pos_list.push(node.id);
+    fn mark_best_pos(&mut self, node: &Node) {
+        self.node_by_pos.insert(node.pos.clone(), node.id);
     }
     fn add_node(&mut self, node: Node) {
-        self.add_by_pos_ref(&node);
         self.node_by_id.push(node);
     }
     fn mark_open(&mut self, node: &Node) {
@@ -90,12 +87,10 @@ impl NodeContext {
     fn mark_closed(&mut self, _: &Node) {
     }
     fn no_pos_with_lower_est(&self, node: &Node) -> bool {
-        if let Some(pos_list) = self.node_by_pos.get(&node.pos) {
-            for id in pos_list {
-                let n = self.get_node_from_id(*id);
-                if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
-                    return false;
-                }
+        if let Some(best_node) = self.node_by_pos.get(&node.pos) {
+            let n = self.get_node_from_id(*best_node);
+            if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
+                return false;
             }
         }
         return true;
@@ -222,7 +217,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                                est_pos_distance(start_pos, end_pos),
                                None, 0, 0, 0);
     ctx.mark_open(&start_node);
-
+    ctx.mark_best_pos(&start_node);
     println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
              start_pos, end_pos,
              est_pos_distance(start_pos, end_pos),
@@ -247,6 +242,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 ctx.no_pos_with_lower_est(&node)
             {
                 ctx.mark_open(&node);
+                ctx.mark_best_pos(&node);
             }
         }
         ctx.mark_closed(&q);
