@@ -19,7 +19,6 @@ pub struct KeyMap {
 pub struct HumanPlayer {
     common: PlayerCommon,
     key_map: KeyMap,
-    moves: Vec<(Movement, u64)>,
     last_forced_down_time: u64,
     delay_first_step_down: u64,
 }
@@ -34,20 +33,10 @@ impl Player for HumanPlayer {
         &mut self.common
     }
 
-    fn get_moves(&mut self, ticks: u64) -> Vec<(Movement, u64)> {
-        let moves = self.moves.clone();
-        self.moves.clear();
-        return moves;
-    }
-
     fn update(&mut self, ticks: u64, pf: &Playfield) {
         if ticks > self.delay_first_step_down {
-            let last_move = self.common.time_last_move.get(&Movement::MoveDown);
-            if last_move.is_none() ||
-                (last_move.unwrap() +
-                 self.common.force_down_time) < ticks
-            {
-                self.moves.push((Movement::MoveDown, ticks));
+            if self.common.time_until_down(ticks) <= 0 {
+                self.common.add_move(Movement::MoveDown, ticks);
             }
         }
     }
@@ -72,11 +61,11 @@ impl Player for HumanPlayer {
                         };
                     let time_pressed = ticks - pressed_at;
                     if ticks <= pressed_at {
-                        self.moves.push((movement, ticks));
+                        self.common.add_move(movement, ticks);
                     } else if time_pressed > 200000000 &&
                         time_last_move > 50000000
                     {
-                        self.moves.push((movement, ticks));
+                        self.common.add_move(movement, ticks);
                     }
                 }
                 None => {}
@@ -90,7 +79,6 @@ impl HumanPlayer {
         HumanPlayer {
             common: common,
             key_map: key_map,
-            moves: Vec::new(),
             last_forced_down_time: 0,
             delay_first_step_down: 0,
         }

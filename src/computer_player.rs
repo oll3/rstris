@@ -21,7 +21,6 @@ struct EvalPosition {
 pub struct ComputerPlayer<'a> {
     common: PlayerCommon,
     com_type: &'a mut ComputerType,
-    moves: Vec<(Movement, u64)>,
     last_fig: String,
     avail_pos: Vec<EvalPosition>,
     last_path_update: u64,
@@ -41,21 +40,11 @@ impl <'a>Player for ComputerPlayer<'a> {
 
     fn handle_new_figure(&mut self, ticks: u64,
                          pf: &Playfield, fig_pos: &FigurePos) {
-        self.handle_new_figure(pf, fig_pos);
+        self.handle_new_figure(pf, fig_pos, ticks);
         self.last_path_update = ticks;
     }
 
-    fn update(&mut self, ticks: u64, pf: &Playfield) {
-        match self.common.get_figure() {
-            Some(ref fig_pos) => self.update_moves(ticks),
-            None => {}
-        }
-    }
-
-    fn get_moves(&mut self, _: u64) -> Vec<(Movement, u64)> {
-        let moves = self.moves.clone();
-        self.moves.clear();
-        return moves;
+    fn update(&mut self, _: u64, _: &Playfield) {
     }
 }
 
@@ -67,14 +56,14 @@ impl <'a> ComputerPlayer<'a> {
             avail_pos: Vec::new(),
             last_fig: "".to_string(),
             last_path_update: 0,
-            moves: Vec::new(),
             move_time: move_time,
             com_type: com_type,
             path: Vec::new(),
         }
     }
 
-    fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos) {
+    fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos,
+                         ticks: u64) {
         let avail_placing = find_placement_quick(&pf, fig_pos);
         println!("New figure ({}) - {} available placings",
                  self.last_fig, avail_placing.len());
@@ -89,7 +78,6 @@ impl <'a> ComputerPlayer<'a> {
         }
         eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
         self.avail_pos = eval_placing;
-        let sel_end = 0;
         for eval_pos in &self.avail_pos {
             let path = find_path(&pf,
                                  &fig_pos.get_figure(),
@@ -99,11 +87,16 @@ impl <'a> ComputerPlayer<'a> {
                                  self.common.force_down_time);
             if path.len() > 0 {
                 self.path = path;
-                self.path.insert(0, (Movement::MoveDown, 0));
+                let (_, last_time) = self.path[0];
+                self.path.insert(0, (Movement::MoveDown, last_time));
                 break;
             }
         }
         self.path.insert(0, (Movement::MoveDown, 0));
+        for &(ref movement, time) in &self.path {
+            self.common.add_move(movement.clone(), ticks + time);
+        }
+        self.path.clear();
     }
 
     fn rand_move() -> Movement {
@@ -114,15 +107,6 @@ impl <'a> ComputerPlayer<'a> {
             2 => Movement::MoveDown,
             3 => Movement::RotateCW,
             _ => Movement::RotateCCW,
-        }
-    }
-
-    fn update_moves(&mut self, ticks: u64) {
-        if self.path.len() > 0 {
-            let (movement, time) = self.path[self.path.len()-1].clone();
-            if (ticks - self.last_path_update) > time {
-                self.moves.push(self.path.pop().unwrap());
-            }
         }
     }
 }

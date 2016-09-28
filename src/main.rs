@@ -348,12 +348,12 @@ fn main() {
             player.update(ticks, &pf_ctx.pf);
             player.handle_input(ticks, &mut pressed_keys);
 
-            let mut moves = player.get_moves(ticks);
             if player.figure_in_play() {
                 // Player has a figure in game
-                if moves.len() > 0 {
+                let move_and_time = player.common_mut().get_next_move(ticks);
+                if let Some(move_and_time) = move_and_time {
                     let mut lines =
-                        player.handle_moves(&mut pf_ctx.pf, moves);
+                        player.handle_move(&mut pf_ctx.pf, move_and_time);
                     pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
                     pf_ctx.lines_to_throw.append(&mut lines);
                 }

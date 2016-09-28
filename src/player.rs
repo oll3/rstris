@@ -2,6 +2,8 @@ extern crate rand;
 
 use std::collections::HashMap;
 use sdl2::keyboard::Keycode;
+use std::collections::BinaryHeap;
+use std::cmp::Ordering;
 
 use rstris::playfield::*;
 use rstris::figure::*;
@@ -13,6 +15,27 @@ pub struct PlayerStats {
     pub line_count: usize,
 }
 
+#[derive(Debug)]
+struct MoveTime {
+    movement: Movement,
+    time: u64,
+}
+impl Ord for MoveTime {
+    fn cmp(&self, other: &MoveTime) -> Ordering {
+        other.time.cmp(&self.time)
+    }
+}
+impl PartialOrd for MoveTime {
+    fn partial_cmp(&self, other: &MoveTime) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Eq for MoveTime {}
+impl PartialEq for MoveTime {
+    fn eq(&self, other: &MoveTime) -> bool { self.time == other.time }
+}
+
+
 pub struct PlayerCommon {
     name: String,
     pub time_last_move: HashMap<Movement, u64>,
@@ -21,13 +44,13 @@ pub struct PlayerCommon {
     figure_in_play: Option<FigurePos>,
     pub stats: PlayerStats,
     pub force_down_time: u64,
+    move_queue: BinaryHeap<MoveTime>,
 }
 
 pub trait Player {
 
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
-    fn get_moves(&mut self, ticks: u64) ->  Vec<(Movement, u64)>;
     fn update(&mut self, _: u64, _: &Playfield);
 
     fn handle_new_figure(&mut self, ticks: u64,
@@ -39,9 +62,9 @@ pub trait Player {
         // Implement if needed
     }
 
-    fn handle_moves(&mut self, pf: &mut Playfield,
-                    moves: Vec<(Movement, u64)>) -> Vec<usize> {
-        self.common_mut().handle_moves(pf, moves)
+    fn handle_move(&mut self, pf: &mut Playfield,
+                   movement: MoveTime) -> Vec<usize> {
+        self.common_mut().handle_move(pf, movement)
     }
 
     fn place_new_figure(&mut self, ticks: u64,
@@ -59,6 +82,7 @@ pub trait Player {
         }
         let fig_pos = FigurePos::new(figure, pos);
         self.common_mut().gen_next_figure();
+        self.common_mut().move_queue.clear();
         self.handle_new_figure(ticks, pf, &fig_pos);
         return self.common_mut().place_new_figure(ticks, pf, fig_pos);
     }
@@ -86,6 +110,7 @@ impl PlayerCommon {
             avail_figures: figures,
             figure_in_play: None,
             force_down_time: force_down_time,
+            move_queue: BinaryHeap::new(),
         }
     }
 
@@ -116,8 +141,42 @@ impl PlayerCommon {
         self.figure_in_play.clone()
     }
 
+    pub fn add_move(&mut self, movement: Movement, ticks: u64) {
+        let move_time = MoveTime{movement: movement, time: ticks};
+        println!("Add move {:?}", move_time);
+        self.move_queue.push(move_time);
+    }
+
+    fn time_for_next_move(&self, ticks: u64) -> bool {
+        if let Some(move_and_time) = self.move_queue.peek() {
+            if move_and_time.time <= ticks {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    pub fn get_next_move(&mut self, ticks: u64) -> Option<MoveTime> {
+        if self.time_for_next_move(ticks) {
+            return Some(self.move_queue.pop().unwrap());
+        }
+        return None;
+    }
+
     fn set_time_of_move(&mut self, fig_move: Movement, time: u64) {
         self.time_last_move.insert(fig_move, time);
+    }
+
+    pub fn time_of_last_move(&self, movement: Movement) -> u64 {
+        if let Some(time) = self.time_last_move.get(&movement) {
+            return *time;
+        }
+        return 0;
+    }
+
+    pub fn time_until_down(&self, ticks: u64) -> i64 {
+        self.time_of_last_move(Movement::MoveDown) as i64 +
+            self.force_down_time as i64 - ticks as i64
     }
 
     fn figure_in_play(&self) -> bool {
@@ -129,16 +188,16 @@ impl PlayerCommon {
     // If movement caused full lines being created then return those
     // line indexes.
     //
-    fn handle_moves(&mut self, pf: &mut Playfield,
-                        moves: Vec<(Movement, u64)>) -> Vec<usize> {
-
+    fn handle_move(&mut self, pf: &mut Playfield,
+                   movement: MoveTime) -> Vec<usize> {
+        let (fig_move, move_time) = (movement.movement, movement.time);
         let mut lock_figure = false;
         let mut fig_pos = self.get_figure().unwrap();
         let mut new_pos = fig_pos.get_position().clone();
         fig_pos.remove(pf);
 
-        for (fig_move, move_time) in moves {
-            self.set_time_of_move(fig_move.clone(), move_time);
+        self.set_time_of_move(fig_move.clone(), move_time);
+        {
             let fig = fig_pos.get_figure();
             let test_pos =
                 PosDir::apply_move(fig_pos.get_position(), &fig_move);
@@ -151,11 +210,9 @@ impl PlayerCommon {
                 // with locked block(s) - Mark figure blocks as locked in its
                 // current position.
                 lock_figure = true;
-                break;
             } else {
                 // Move is not valid so the rest of the
                 // moves are not valid either.
-                break;
             }
         }
         fig_pos.set_position(&new_pos);
