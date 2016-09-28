@@ -34,49 +34,49 @@ impl Player for HumanPlayer {
         &mut self.common
     }
 
-    fn get_moves(&mut self, current_ticks: u64) -> Vec<(Movement, u64)> {
+    fn get_moves(&mut self, ticks: u64) -> Vec<(Movement, u64)> {
         let moves = self.moves.clone();
         self.moves.clear();
         return moves;
     }
 
-    fn update(&mut self, current_ticks: u64, pf: &Playfield) {
-        if current_ticks > self.delay_first_step_down {
+    fn update(&mut self, ticks: u64, pf: &Playfield) {
+        if ticks > self.delay_first_step_down {
             let last_move = self.common.time_last_move.get(&Movement::MoveDown);
             if last_move.is_none() ||
                 (last_move.unwrap() +
-                 self.common.force_down_time) < current_ticks
+                 self.common.force_down_time) < ticks
             {
-                self.moves.push((Movement::MoveDown, current_ticks));
+                self.moves.push((Movement::MoveDown, ticks));
             }
         }
     }
 
-    fn handle_new_figure(&mut self, current_ticks: u64,
+    fn handle_new_figure(&mut self, ticks: u64,
                          pf: &Playfield, fig_pos: &FigurePos) {
-        self.delay_first_step_down = current_ticks + DELAY_FIRST_STEP_DOWN;
+        self.delay_first_step_down = ticks + DELAY_FIRST_STEP_DOWN;
     }
 
 
     fn handle_input(&mut self,
-                    current_ticks: u64,
+                    ticks: u64,
                     pressed_keys: &mut HashMap<Keycode, u64>) {
         let keys = pressed_keys.clone();
         for (key, pressed_at) in keys {
             match self.key_to_movement(key) {
                 Some(movement) => {
-                    let time_last_move = current_ticks -
+                    let time_last_move = ticks -
                         match self.common.time_last_move.get(&movement) {
                             Some(t) => *t,
                             None => 0
                         };
-                    let time_pressed = current_ticks - pressed_at;
-                    if current_ticks <= pressed_at {
-                        self.moves.push((movement, current_ticks));
+                    let time_pressed = ticks - pressed_at;
+                    if ticks <= pressed_at {
+                        self.moves.push((movement, ticks));
                     } else if time_pressed > 200000000 &&
                         time_last_move > 50000000
                     {
-                        self.moves.push((movement, current_ticks));
+                        self.moves.push((movement, ticks));
                     }
                 }
                 None => {}

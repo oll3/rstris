@@ -39,15 +39,15 @@ impl <'a>Player for ComputerPlayer<'a> {
         &mut self.common
     }
 
-    fn handle_new_figure(&mut self, current_ticks: u64,
+    fn handle_new_figure(&mut self, ticks: u64,
                          pf: &Playfield, fig_pos: &FigurePos) {
         self.handle_new_figure(pf, fig_pos);
-        self.last_path_update = current_ticks;
+        self.last_path_update = ticks;
     }
 
-    fn update(&mut self, current_ticks: u64, pf: &Playfield) {
+    fn update(&mut self, ticks: u64, pf: &Playfield) {
         match self.common.get_figure() {
-            Some(ref fig_pos) => self.update_moves(current_ticks),
+            Some(ref fig_pos) => self.update_moves(ticks),
             None => {}
         }
     }
@@ -117,10 +117,10 @@ impl <'a> ComputerPlayer<'a> {
         }
     }
 
-    fn update_moves(&mut self, current_ticks: u64) {
+    fn update_moves(&mut self, ticks: u64) {
         if self.path.len() > 0 {
             let (movement, time) = self.path[self.path.len()-1].clone();
-            if (current_ticks - self.last_path_update) > time {
+            if (ticks - self.last_path_update) > time {
                 self.moves.push(self.path.pop().unwrap());
             }
         }

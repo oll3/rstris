@@ -27,10 +27,10 @@ pub trait Player {
 
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
-    fn get_moves(&mut self, current_ticks: u64) ->  Vec<(Movement, u64)>;
+    fn get_moves(&mut self, ticks: u64) ->  Vec<(Movement, u64)>;
     fn update(&mut self, _: u64, _: &Playfield);
 
-    fn handle_new_figure(&mut self, current_ticks: u64,
+    fn handle_new_figure(&mut self, ticks: u64,
                          pf: &Playfield, fig_pos: &FigurePos) {
         // Implement if needed
     }
@@ -44,7 +44,7 @@ pub trait Player {
         self.common_mut().handle_moves(pf, moves)
     }
 
-    fn place_new_figure(&mut self, current_ticks: u64,
+    fn place_new_figure(&mut self, ticks: u64,
                         pf: &mut Playfield) -> bool {
 
         // Place new figure in playfield
@@ -59,8 +59,8 @@ pub trait Player {
         }
         let fig_pos = FigurePos::new(figure, pos);
         self.common_mut().gen_next_figure();
-        self.handle_new_figure(current_ticks, pf, &fig_pos);
-        return self.common_mut().place_new_figure(current_ticks, pf, fig_pos);
+        self.handle_new_figure(ticks, pf, &fig_pos);
+        return self.common_mut().place_new_figure(ticks, pf, fig_pos);
     }
 
     fn next_figure(&self) -> &Figure {
@@ -182,7 +182,7 @@ impl PlayerCommon {
         return vec![];
     }
 
-    fn place_new_figure(&mut self, current_ticks: u64,
+    fn place_new_figure(&mut self, ticks: u64,
                         pf: &mut Playfield, fig_pos: FigurePos) -> bool {
 
         println!("{}: Placed figure {} in playfield (next is {})",

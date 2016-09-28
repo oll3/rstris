@@ -308,7 +308,7 @@ fn main() {
     let mut pressed_keys: HashMap<Keycode, u64> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
     'running: loop {
-        let current_ticks = time::precise_time_ns();
+        let ticks = time::precise_time_ns();
         for event in events.poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown {
@@ -324,7 +324,7 @@ fn main() {
                 },Event::KeyDown {
                     keycode: Some(key), .. } => {
                     if !pressed_keys.contains_key(&key) {
-                        pressed_keys.insert(key, current_ticks);
+                        pressed_keys.insert(key, ticks);
                     }
                 },Event::KeyUp {
                     keycode: Some(key), .. } => {
@@ -345,10 +345,10 @@ fn main() {
         // Handle movement and figure creation
         for player in & mut pf_ctx.players {
 
-            player.update(current_ticks, &pf_ctx.pf);
-            player.handle_input(current_ticks, &mut pressed_keys);
+            player.update(ticks, &pf_ctx.pf);
+            player.handle_input(ticks, &mut pressed_keys);
 
-            let mut moves = player.get_moves(current_ticks);
+            let mut moves = player.get_moves(ticks);
             if player.figure_in_play() {
                 // Player has a figure in game
                 if moves.len() > 0 {
@@ -358,7 +358,7 @@ fn main() {
                     pf_ctx.lines_to_throw.append(&mut lines);
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
-                if !player.place_new_figure(current_ticks, &mut pf_ctx.pf) {
+                if !player.place_new_figure(ticks, &mut pf_ctx.pf) {
                     pf_ctx.game_over = true;
                 }
             }
@@ -392,12 +392,12 @@ fn main() {
 
         /* Write FPS in window title */
         frame_cnt_sec += 1;
-        if (current_ticks - sec_timer) >= 1000000000 {
+        if (ticks - sec_timer) >= 1000000000 {
             let title = format!("RSTris (fps: {})", frame_cnt_sec);
             let mut window = renderer.window_mut().unwrap();
 
             frame_cnt_sec = 0;
-            sec_timer = current_ticks;
+            sec_timer = ticks;
             window.set_title(&title).unwrap();
         }
         std::thread::sleep(std::time::Duration::new(0, 100000));
