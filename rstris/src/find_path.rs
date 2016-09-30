@@ -20,7 +20,7 @@ impl Ord for NodeIdAndEst {
 }
 impl PartialOrd for NodeIdAndEst {
     fn partial_cmp(&self, other: &NodeIdAndEst) -> Option<Ordering> {
-        other.est.partial_cmp(&self.est)
+        Some(self.cmp(other))
     }
 }
 impl Eq for NodeIdAndEst {}

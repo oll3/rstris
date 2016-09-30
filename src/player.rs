@@ -32,8 +32,8 @@ pub trait Player {
     fn common_mut(&mut self) -> &mut PlayerCommon;
     fn update(&mut self, _: u64, _: &Playfield);
 
-    fn handle_new_figure(&mut self, ticks: u64,
-                         pf: &Playfield, fig_pos: &FigurePos) {
+    fn handle_new_figure(&mut self, _: u64,
+                         _: &Playfield, _: &FigurePos) {
         // Implement if needed
     }
 
@@ -200,7 +200,7 @@ impl PlayerCommon {
         return locked_lines;
     }
 
-    fn place_new_figure(&mut self, ticks: u64,
+    fn place_new_figure(&mut self, _: u64,
                         pf: &mut Playfield, fig_pos: FigurePos) -> bool {
 
         println!("{}: Placed figure {} in playfield (next is {})",

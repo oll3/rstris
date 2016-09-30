@@ -3,7 +3,6 @@ use rstris::playfield::*;
 use rstris::figure::*;
 
 use sdl2::rect::Rect;
-use sdl2::video::Window;
 use sdl2::render::Renderer;
 use sdl2::pixels::Color;
 
@@ -19,10 +18,10 @@ impl DrawContext {
 
     pub fn new(block_size: u32, block_spacing: u32,
                frame_color: Color, fill_color: Color) -> Self {
-        let mut ctx = DrawContext{block_size: block_size,
-                                  block_spacing: block_spacing,
-                                  frame_color: frame_color,
-                                  fill_color: fill_color};
+        let ctx = DrawContext{block_size: block_size,
+                              block_spacing: block_spacing,
+                              frame_color: frame_color,
+                              fill_color: fill_color};
         return ctx;
     }
 
