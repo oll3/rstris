@@ -238,7 +238,7 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                 // Reconstruct path from end node
                 return node.get_path(&ctx);
             }
-            else if !fig.collide_blocked(&ctx.pf, &node.pos) &&
+            else if !fig.collide_any(&ctx.pf, &node.pos) &&
                 ctx.no_pos_with_lower_est(&node)
             {
                 ctx.mark_open(&node);

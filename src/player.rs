@@ -3,12 +3,12 @@ extern crate rand;
 use std::collections::HashMap;
 use sdl2::keyboard::Keycode;
 use std::collections::BinaryHeap;
-use std::cmp::Ordering;
 
 use rstris::playfield::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
 use rstris::position::*;
+use rstris::block::*;
 
 
 pub struct PlayerStats {
@@ -54,7 +54,7 @@ pub trait Player {
         if figure.collide_locked(pf, &pos) {
             println!("Figure collided with locked block");
             return false;
-        } else if figure.collide_blocked(pf, &pos) {
+        } else if figure.collide_any(pf, &pos) {
             println!("Figure collided with blocking block");
             return true;
         }
@@ -167,54 +167,37 @@ impl PlayerCommon {
     // line indexes.
     //
     fn handle_move(&mut self, pf: &mut Playfield,
-                   movement: MoveAndTime) -> Vec<usize> {
-        let (fig_move, move_time) = (movement.movement, movement.time);
-        let mut lock_figure = false;
+                   move_and_time: MoveAndTime) -> Vec<usize> {
+
+        let mut locked_lines = vec![];
+        let (fig_move, move_time) = (move_and_time.movement,
+                                     move_and_time.time);
         let mut fig_pos = self.get_figure().unwrap();
-        let mut new_pos = fig_pos.get_position().clone();
         fig_pos.remove(pf);
 
         self.set_time_of_move(fig_move.clone(), move_time);
-        {
-            let fig = fig_pos.get_figure();
-            let test_pos =
-                PosDir::apply_move(fig_pos.get_position(), &fig_move);
-            let test_pos_locked = fig.collide_locked(pf, &test_pos);
-            let test_pos_blocked = fig.collide_blocked(pf, &test_pos);
-            if !test_pos_locked && !test_pos_blocked {
-                new_pos = test_pos;
-            } else if fig_move == Movement::MoveDown && test_pos_locked {
-                // Figure couldn't be moved down further because of collision
-                // with locked block(s) - Mark figure blocks as locked in its
-                // current position.
-                lock_figure = true;
-            } else {
-                // Move is not valid so the rest of the
-                // moves are not valid either.
-            }
-        }
-        fig_pos.set_position(&new_pos);
+        let test_pos = PosDir::apply_move(fig_pos.get_position(), &fig_move);
 
-        if lock_figure {
+        let collision = fig_pos.get_figure().test_collision(pf, &test_pos);
+        if collision == BlockState::Locked && fig_move == Movement::MoveDown {
             fig_pos.lock(pf);
             let face = fig_pos.get_face();
             let mut lines_to_test: Vec<usize> = Vec::new();
             for l in face.get_row_with_blocks() {
                 lines_to_test.push(l + fig_pos.get_position().get_y() as usize);
             }
-            println!("{}: Test for locked lines at: {:?}...",
-                     self.get_name(), lines_to_test);
-            let locked_lines = pf.get_locked_lines(&lines_to_test);
-            println!("{}: Found locked lines at: {:?}",
-                     self.get_name(), locked_lines);
+            locked_lines = pf.get_locked_lines(&lines_to_test);
             self.stats.line_count += locked_lines.len();
             self.set_figure(None);
-            return locked_lines;
-        } else {
+        }
+        else {
+            if collision == BlockState::NotSet {
+                fig_pos.set_position(&test_pos);
+            }
             fig_pos.place(pf);
             self.set_figure(Some(fig_pos));
         }
-        return vec![];
+        return locked_lines;
     }
 
     fn place_new_figure(&mut self, ticks: u64,

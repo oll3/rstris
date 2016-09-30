@@ -12,12 +12,17 @@ pub struct FigureFace {
 impl FigureFace {
     pub fn new(block_ids: &[&[u8]]) -> FigureFace {
         let mut v: Vec<Vec<Block>> = vec![
-            vec![Block{id: 0, locked: false};
+            vec![Block::new_not_set();
                  block_ids[0].len()];
             block_ids.len()];
         for row in 0..block_ids.len() {
             for col in 0..block_ids[0].len() {
-                v[row][col] = Block::new(block_ids[row][col]);
+                if block_ids[row][col] != 0 {
+                    v[row][col] = Block::new_in_flight(block_ids[row][col]);
+                }
+                else {
+                    v[row][col] = Block::new_not_set();
+                }
             }
         }
         return FigureFace{height: v.len(),
@@ -26,7 +31,7 @@ impl FigureFace {
     }
     pub fn new_empty(width: usize, height: usize) -> FigureFace {
         FigureFace{width: width, height: height,
-                   blocks: vec![vec![Block::new(0); width];
+                   blocks: vec![vec![Block::new_not_set(); width];
                                 height]}
     }
     //
@@ -101,7 +106,7 @@ impl FigureFace {
                 let block_pos = Position::new(pos.get_x() + col as i32, pos_y);
                 if b.is_set() && pf.contains(&block_pos) {
                     let mut b = b.clone();
-                    b.locked = true;
+                    b.state = BlockState::Locked;
                     pf.set_block(&block_pos, b);
                 }
             }
@@ -119,36 +124,22 @@ impl FigureFace {
             }
         }
     }
-    pub fn collide_locked(&self, pf: &Playfield, pos: &Position) -> bool {
-        // Test for collision with a locked block
+    pub fn test_collision(&self, pf: &Playfield, pos: &Position) -> BlockState {
+        let mut state = BlockState::NotSet;
         for row in 0..self.blocks.len() {
             for col in 0..self.blocks[row].len() {
                 let block_pos = Position::new(pos.get_x() + col as i32,
                                               pos.get_y() + row as i32);
-                if self.get_block(col, row).is_set() &&
-                    (!pf.contains(&block_pos) ||
-                     pf.block_is_locked(&block_pos))
-                {
-                    // Outside playfield is seen as a locked
-                    return true;
+                if self.get_block(col, row).is_set() {
+                    let pf_block_state = pf.block_state(&block_pos);
+                    match *pf_block_state {
+                        BlockState::Locked => return pf_block_state.clone(),
+                        BlockState::InFlight => state = pf_block_state.clone(),
+                        _ => {},
+                    }
                 }
             }
         }
-        return false;
-    }
-    pub fn collide_blocked(&self, pf: &Playfield, pos: &Position) -> bool {
-        for row in 0..self.blocks.len() {
-            for col in 0..self.blocks[row].len() {
-                let block_pos = Position::new(pos.get_x() + col as i32,
-                                              pos.get_y() + row as i32);
-                if self.get_block(col, row).is_set() &&
-                    (!pf.contains(&block_pos) ||
-                     pf.block_is_set(&block_pos))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return state;
     }
 }

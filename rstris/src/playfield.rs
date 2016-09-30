@@ -18,9 +18,10 @@ impl Playfield {
                       pf_width: width,
                       pf_height: height,
                       blocks: vec![],
-                      locked_block: Block::new_locked(1)};
+                      locked_block: Block::new_locked(0)};
         for _ in 0..height {
-            playfield.blocks.push(vec![Block::new(0); width as usize]);
+            playfield.blocks.push(vec![Block::new_not_set();
+                                       width as usize]);
         }
         playfield
     }
@@ -45,18 +46,20 @@ impl Playfield {
         x >= 0 && x < self.pf_width as i32 &&
             y >= 0 && y < self.pf_height as i32
     }
-    pub fn block_is_set(&self, pos: &Position) -> bool {
+    pub fn block_state(&self, pos: &Position) -> &BlockState {
         let x = pos.get_x() as usize;
         let y = pos.get_y() as usize;
-        self.get_block(x, y).id != 0
+        &self.get_block(x, y).state
+    }
+    pub fn block_is_set(&self, pos: &Position) -> bool {
+        *self.block_state(pos) != BlockState::NotSet
     }
     pub fn block_is_locked(&self, pos: &Position) -> bool {
-        let x = pos.get_x() as usize;
-        let y = pos.get_y() as usize;
-        self.get_block(x, y).id != 0 && self.get_block(x, y).locked
+        *self.block_state(pos) == BlockState::Locked
     }
     pub fn clear_block(&mut self, pos: &Position) {
-        self.blocks[pos.get_y() as usize][pos.get_x() as usize] = Block::new(0);
+        self.blocks[pos.get_y() as usize][pos.get_x() as usize] =
+            Block::new_not_set();
     }
     pub fn set_block(&mut self, pos: &Position, block: Block) {
         self.blocks[pos.get_y() as usize][pos.get_x() as usize] = block;
@@ -102,7 +105,7 @@ impl Playfield {
                     self.blocks[y as usize][x] =
                         self.blocks[y as usize - 1][x].clone();
                 } else {
-                    self.blocks[y as usize][x] = Block::new(0);
+                    self.blocks[y as usize][x] = Block::new_not_set();
                 }
             }
             y -= 1;
@@ -193,9 +196,9 @@ mod tests {
         let all_lines = (0..pf_height).collect::<Vec<usize>>();
         pf.set_lines(&all_lines, &Block::new_locked(1));
         assert_eq!(pf.get_locked_lines(&all_lines).len(), pf_height);
-        pf.set_lines(&[0], &Block::new(0));
+        pf.set_lines(&[0], &Block::new_not_set());
         assert_eq!(pf.get_locked_lines(&all_lines)[0], 1);
-        pf.set_lines(&all_lines, &Block::new(1));
+        pf.set_lines(&all_lines, &Block::new_in_flight(1));
         assert_eq!(pf.get_locked_lines(&all_lines).len(), 0);
     }
     #[test]

@@ -48,7 +48,7 @@ impl DrawContext {
             10 => Color::RGB(0, 0, 0),
             _ => Color::RGB(0, 0, 0),
         };
-        if block.locked {
+        if block.state == BlockState::Locked {
             let (r, g, b) = color.rgb();
             let grey = (r as u32 + g as u32 + b as u32) / 3;
             color = Color::RGB(grey as u8, grey as u8, grey as u8);

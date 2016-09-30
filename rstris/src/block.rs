@@ -1,18 +1,33 @@
 #[derive(Clone, Debug, Eq, PartialEq, Hash, RustcDecodable, RustcEncodable)]
+pub enum BlockState {
+    // Not set
+    NotSet,
+
+    // Soft might belong to a figure in flight
+    InFlight,
+
+    // Hard is all blocks that are not currently in flight
+    Locked,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash, RustcDecodable, RustcEncodable)]
 pub struct Block {
     pub id: u8,
-    pub locked: bool,
+    pub state: BlockState,
 }
 
 impl Block {
-    pub fn new(block_id: u8) -> Block {
-        Block{id: block_id, locked: false}
+    pub fn new_in_flight(block_id: u8) -> Block {
+        Block{id: block_id, state: BlockState::InFlight}
     }
     pub fn new_locked(block_id: u8) -> Block {
-        Block{id: block_id, locked: true}
+        Block{id: block_id, state: BlockState::Locked}
+    }
+    pub fn new_not_set() -> Block {
+        Block{id: 0, state: BlockState::NotSet}
     }
 
     pub fn is_set(&self) -> bool {
-        self.id != 0
+        self.state != BlockState::NotSet
     }
 }

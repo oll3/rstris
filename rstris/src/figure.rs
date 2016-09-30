@@ -1,6 +1,7 @@
 use figure_face::*;
 use playfield::*;
 use position::*;
+use block::*;
 
 
 #[derive(Clone, Debug)]
@@ -82,23 +83,25 @@ impl Figure {
         face.remove(pf, pos.get_pos());
     }
 
+    pub fn test_collision(&self, pf: &Playfield, pos: &PosDir) -> BlockState {
+        let face = self.get_face(pos.get_dir() as usize);
+        return face.test_collision(pf, pos.get_pos());
+    }
+
     //
     // Test if figure will collide with any locked block if placed
     // at the given position
     //
     pub fn collide_locked(&self, pf: &Playfield, pos: &PosDir) -> bool {
-        let face = self.get_face(pos.get_dir() as usize);
-        return face.collide_locked(pf, pos.get_pos());
+        self.test_collision(pf, pos) == BlockState::Locked
     }
 
     //
     // Test if figure will collide with any block if placed at the given
     // position.
     //
-    pub fn collide_blocked(&self, pf: &Playfield, pos: &PosDir) -> bool {
-        // ...then test for collision with any block
-        let face = self.get_face(pos.get_dir() as usize);
-        return face.collide_blocked(pf, pos.get_pos());
+    pub fn collide_any(&self, pf: &Playfield, pos: &PosDir) -> bool {
+        self.test_collision(pf, pos) != BlockState::NotSet
     }
 }
 
