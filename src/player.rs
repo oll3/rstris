@@ -15,27 +15,6 @@ pub struct PlayerStats {
     pub line_count: usize,
 }
 
-#[derive(Debug)]
-struct MoveTime {
-    movement: Movement,
-    time: u64,
-}
-impl Ord for MoveTime {
-    fn cmp(&self, other: &MoveTime) -> Ordering {
-        other.time.cmp(&self.time)
-    }
-}
-impl PartialOrd for MoveTime {
-    fn partial_cmp(&self, other: &MoveTime) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Eq for MoveTime {}
-impl PartialEq for MoveTime {
-    fn eq(&self, other: &MoveTime) -> bool { self.time == other.time }
-}
-
-
 pub struct PlayerCommon {
     name: String,
     pub time_last_move: HashMap<Movement, u64>,
@@ -44,7 +23,7 @@ pub struct PlayerCommon {
     figure_in_play: Option<FigurePos>,
     pub stats: PlayerStats,
     pub force_down_time: u64,
-    move_queue: BinaryHeap<MoveTime>,
+    move_queue: BinaryHeap<MoveAndTime>,
 }
 
 pub trait Player {
@@ -63,13 +42,12 @@ pub trait Player {
     }
 
     fn handle_move(&mut self, pf: &mut Playfield,
-                   movement: MoveTime) -> Vec<usize> {
+                   movement: MoveAndTime) -> Vec<usize> {
         self.common_mut().handle_move(pf, movement)
     }
 
     fn place_new_figure(&mut self, ticks: u64,
                         pf: &mut Playfield) -> bool {
-
         // Place new figure in playfield
         let figure = self.common().next_figure().clone();
         let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
@@ -142,7 +120,7 @@ impl PlayerCommon {
     }
 
     pub fn add_move(&mut self, movement: Movement, ticks: u64) {
-        let move_time = MoveTime{movement: movement, time: ticks};
+        let move_time = MoveAndTime{movement: movement, time: ticks};
         println!("Add move {:?}", move_time);
         self.move_queue.push(move_time);
     }
@@ -156,7 +134,7 @@ impl PlayerCommon {
         return false;
     }
 
-    pub fn get_next_move(&mut self, ticks: u64) -> Option<MoveTime> {
+    pub fn get_next_move(&mut self, ticks: u64) -> Option<MoveAndTime> {
         if self.time_for_next_move(ticks) {
             return Some(self.move_queue.pop().unwrap());
         }
@@ -189,7 +167,7 @@ impl PlayerCommon {
     // line indexes.
     //
     fn handle_move(&mut self, pf: &mut Playfield,
-                   movement: MoveTime) -> Vec<usize> {
+                   movement: MoveAndTime) -> Vec<usize> {
         let (fig_move, move_time) = (movement.movement, movement.time);
         let mut lock_figure = false;
         let mut fig_pos = self.get_figure().unwrap();
