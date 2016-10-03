@@ -40,6 +40,15 @@ impl <'a>Player for ComputerPlayer<'a> {
 
     fn figure_move_event(&mut self, ticks: u64, pf: &Playfield,
                          fig_pos: &FigurePos, movement: &Movement) {
+        let y = fig_pos.get_position().get_y() as usize;
+        if *movement == Movement::MoveDown && y < self.path_per_height.len() {
+            let moves = self.path_per_height[y].clone();
+            println!("Down movement ({}) - Enqueue moves {:?}", ticks, moves);
+            for move_and_time in &moves {
+                self.common_mut().add_move(move_and_time.movement.clone(),
+                                           move_and_time.time);
+            }
+        }
     }
 
     fn new_figure_event(&mut self, ticks: u64,
