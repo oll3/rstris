@@ -304,11 +304,12 @@ fn main() {
 
     let mut pause = false;
     let mut frame_cnt_sec = 0;
-    let mut sec_timer = time::precise_time_ns();
+    let mut sec_timer = 0;
     let mut pressed_keys: HashMap<Keycode, u64> = HashMap::new();
     let mut events = sdl_context.event_pump().unwrap();
+    let start_ticks = time::precise_time_ns();
     'running: loop {
-        let ticks = time::precise_time_ns();
+        let ticks = time::precise_time_ns() - start_ticks;
         for event in events.poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown {
@@ -392,7 +393,7 @@ fn main() {
 
         /* Write FPS in window title */
         frame_cnt_sec += 1;
-        if (ticks - sec_timer) >= 1000000000 {
+        if (ticks as i64 - sec_timer as i64) >= 1000000000 {
             let title = format!("RSTris (fps: {})", frame_cnt_sec);
             let mut window = renderer.window_mut().unwrap();
 
