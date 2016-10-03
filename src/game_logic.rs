@@ -41,7 +41,7 @@ pub fn try_place_new_figure(player: &mut Player, ticks: u64,
 pub fn execute_move(player: &mut Player, pf: &mut Playfield,
                     move_and_time: MoveAndTime) {
 
-    let fig_move = move_and_time.movement;
+    let (fig_move, move_time) = (move_and_time.movement, move_and_time.time);
     let mut fig_pos = player.common().get_figure().unwrap();
     fig_pos.remove(pf);
     let test_pos = PosDir::apply_move(fig_pos.get_position(), &fig_move);
@@ -56,6 +56,8 @@ pub fn execute_move(player: &mut Player, pf: &mut Playfield,
             fig_pos.set_position(&test_pos);
         }
         fig_pos.place(pf);
-        player.common_mut().set_figure(Some(fig_pos));
+        player.common_mut().set_figure(Some(fig_pos.clone()));
+
+        player.figure_move_event(move_time, pf, &fig_pos, &fig_move);
     }
 }

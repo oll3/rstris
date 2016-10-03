@@ -40,8 +40,8 @@ pub trait Player {
     fn new_figure_event(&mut self, _: u64,
                         _: &Playfield, _: &FigurePos);
 
-    fn figure_move_event(&mut self, pf: &Playfield,
-                         movement: Movement, time: u64);
+    fn figure_move_event(&mut self, ticks: u64, pf: &Playfield,
+                         fig_pos: &FigurePos, movement: &Movement);
 
     fn next_figure(&self) -> &Figure {
         self.common().next_figure()

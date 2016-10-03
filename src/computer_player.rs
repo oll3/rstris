@@ -38,7 +38,8 @@ impl <'a>Player for ComputerPlayer<'a> {
         &mut self.common
     }
 
-    fn figure_move_event(&mut self, _: &Playfield, _: Movement, _: u64) {
+    fn figure_move_event(&mut self, ticks: u64, pf: &Playfield,
+                         fig_pos: &FigurePos, movement: &Movement) {
     }
 
     fn new_figure_event(&mut self, ticks: u64,
