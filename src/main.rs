@@ -5,6 +5,7 @@ extern crate rstris;
 extern crate rustc_serialize;
 
 mod draw;
+mod game_logic;
 mod player;
 mod human_player;
 mod computer_player;
@@ -14,6 +15,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use rustc_serialize::json;
 
+use game_logic::*;
 use player::*;
 use human_player::*;
 use computer_player::*;
@@ -344,7 +346,7 @@ fn main() {
 
 
         // Handle movement and figure creation
-        for player in & mut pf_ctx.players {
+        for player in &mut pf_ctx.players {
 
             player.update(ticks, &pf_ctx.pf);
             player.handle_input(ticks, &mut pressed_keys);
@@ -353,7 +355,7 @@ fn main() {
                 // Player has a figure in game
                 let move_and_time = player.common_mut().get_next_move(ticks);
                 if let Some(move_and_time) = move_and_time {
-                    player.handle_move(&mut pf_ctx.pf, move_and_time);
+                    execute_move(*player, &mut pf_ctx.pf, move_and_time);
                     if !player.figure_in_play() {
                         let scan: Vec<usize> =
                             (0..pf_ctx.pf.height()).collect();
@@ -365,7 +367,7 @@ fn main() {
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
                 let placement_result =
-                    player.try_place_new_figure(ticks, &mut pf_ctx.pf);
+                    try_place_new_figure(*player, ticks, &mut pf_ctx.pf);
                 if placement_result == BlockState::Locked {
                     pf_ctx.game_over = true;
                 }
