@@ -353,10 +353,15 @@ fn main() {
                 // Player has a figure in game
                 let move_and_time = player.common_mut().get_next_move(ticks);
                 if let Some(move_and_time) = move_and_time {
-                    let mut lines =
-                        player.handle_move(&mut pf_ctx.pf, move_and_time);
-                    pf_ctx.pf.set_lines(&lines, &Block::new_locked(10));
-                    pf_ctx.lines_to_throw.append(&mut lines);
+                    player.handle_move(&mut pf_ctx.pf, move_and_time);
+                    if !player.figure_in_play() {
+                        let scan: Vec<usize> =
+                            (0..pf_ctx.pf.height()).collect();
+                        let mut locked = pf_ctx.pf.get_locked_lines(&scan);
+
+                        pf_ctx.pf.set_lines(&locked, &Block::new_locked(10));
+                        pf_ctx.lines_to_throw.append(&mut locked);
+                    }
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
                 if !player.place_new_figure(ticks, &mut pf_ctx.pf) {

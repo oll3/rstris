@@ -42,8 +42,8 @@ pub trait Player {
     }
 
     fn handle_move(&mut self, pf: &mut Playfield,
-                   movement: MoveAndTime) -> Vec<usize> {
-        self.common_mut().handle_move(pf, movement)
+                   movement: MoveAndTime) {
+        self.common_mut().handle_move(pf, movement);
     }
 
     fn place_new_figure(&mut self, ticks: u64,
@@ -167,27 +167,17 @@ impl PlayerCommon {
     // line indexes.
     //
     fn handle_move(&mut self, pf: &mut Playfield,
-                   move_and_time: MoveAndTime) -> Vec<usize> {
+                   move_and_time: MoveAndTime) {
 
-        let mut locked_lines = vec![];
         let (fig_move, move_time) = (move_and_time.movement,
                                      move_and_time.time);
         let mut fig_pos = self.get_figure().unwrap();
         fig_pos.remove(pf);
-
-        self.set_time_of_move(fig_move.clone(), move_time);
         let test_pos = PosDir::apply_move(fig_pos.get_position(), &fig_move);
 
         let collision = fig_pos.get_figure().test_collision(pf, &test_pos);
         if collision == BlockState::Locked && fig_move == Movement::MoveDown {
             fig_pos.lock(pf);
-            let face = fig_pos.get_face();
-            let mut lines_to_test: Vec<usize> = Vec::new();
-            for l in face.get_row_with_blocks() {
-                lines_to_test.push(l + fig_pos.get_position().get_y() as usize);
-            }
-            locked_lines = pf.get_locked_lines(&lines_to_test);
-            self.stats.line_count += locked_lines.len();
             self.set_figure(None);
         }
         else {
@@ -197,7 +187,6 @@ impl PlayerCommon {
             fig_pos.place(pf);
             self.set_figure(Some(fig_pos));
         }
-        return locked_lines;
     }
 
     fn place_new_figure(&mut self, _: u64,
