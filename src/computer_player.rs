@@ -25,7 +25,7 @@ pub struct ComputerPlayer<'a> {
     avail_placing: Vec<EvalPosition>,
     last_path_update: u64,
     move_time: u64,
-    path: Vec<(Movement, u64)>
+    path_per_height: Vec<Vec<MoveAndTime>>,
 }
 
 
@@ -58,7 +58,7 @@ impl <'a> ComputerPlayer<'a> {
             last_path_update: 0,
             move_time: move_time,
             com_type: com_type,
-            path: Vec::new(),
+            path_per_height: Vec::new(),
         }
     }
 
@@ -84,35 +84,45 @@ impl <'a> ComputerPlayer<'a> {
         }
         eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
         self.avail_placing = eval_placing;
+
+        // Find a path to first (and best) available placing
+        let mut path = Vec::new();
+        self.path_per_height.clear();
         for eval_pos in &self.avail_placing {
-            let path = find_path(&pf,
-                                 &fig_pos.get_figure(),
-                                 &fig_pos.get_position(),
-                                 &eval_pos.pos,
-                                 self.move_time,
-                                 self.common.force_down_time);
+            path = find_path(&pf,
+                             &fig_pos.get_figure(),
+                             &fig_pos.get_position(),
+                             &eval_pos.pos,
+                             self.move_time,
+                             self.common.force_down_time);
             if path.len() > 0 {
-                self.path = path;
-                let (_, last_time) = self.path[0];
-                self.path.insert(0, (Movement::MoveDown, last_time));
                 break;
             }
         }
-        self.path.insert(0, (Movement::MoveDown, 0));
-        for &(ref movement, time) in &self.path {
-            self.common.add_move(movement.clone(), ticks + time);
-        }
-        self.path.clear();
-    }
+        if path.len() > 0 {
+            path.reverse();
 
-    fn rand_move() -> Movement {
-        let tmp = rand::random::<u8>() % 5;
-        match tmp {
-            0 => Movement::MoveLeft,
-            1 => Movement::MoveRight,
-            2 => Movement::MoveDown,
-            3 => Movement::RotateCW,
-            _ => Movement::RotateCCW,
+            // Convert the path from being in exact Movements to
+            // describe the sideways/rotational movements per height level
+            self.path_per_height = path_to_per_height(path);
+            println!("Found path ({:?})", self.path_per_height);
         }
     }
+}
+
+fn path_to_per_height(path: Vec<(Movement, u64)>) -> Vec<Vec<MoveAndTime>> {
+    let mut moves: Vec<Vec<MoveAndTime>> = Vec::new();
+    let mut current_level: Vec<MoveAndTime> = Vec::new();
+    for &(ref movement, time) in &path {
+        if *movement == Movement::MoveDown {
+            moves.push(current_level);
+            current_level = Vec::new();
+        }
+        else {
+            current_level.push(
+                MoveAndTime{movement: movement.clone(), time: time}
+            );
+        }
+    }
+    return moves;
 }
