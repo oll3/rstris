@@ -113,8 +113,8 @@ struct Node {
     est_end: u64, // h
     mvmnt: Option<Movement>,
     time: u64,
-    last_time_move: u64,
-    last_time_down: u64,
+    last_time_move: i64,
+    last_time_down: i64,
 }
 
 impl Node {
@@ -122,7 +122,7 @@ impl Node {
            parent: Option<usize>,
            pos: &PosDir, walked: u64, est_distance_end: u64,
            mvmnt: Option<Movement>, time: u64,
-           last_time_move: u64, last_time_down: u64)
+           last_time_move: i64, last_time_down: i64)
            -> Node {
 
         let node = Node{
@@ -144,11 +144,11 @@ impl Node {
         self.walked + self.est_end
     }
     fn time_until_move(&self, ctx: &NodeContext) -> i64 {
-        let time_since_move = (self.time - self.last_time_move) as i64;
+        let time_since_move = self.time as i64 - self.last_time_move;
         return ctx.move_time as i64 - time_since_move;
     }
     fn time_until_down(&self, ctx: &NodeContext) -> i64 {
-        let time_since_down = (self.time - self.last_time_down) as i64;
+        let time_since_down = self.time as i64 - self.last_time_down;
         return ctx.down_time as i64 - time_since_down;
     }
     fn new_moved_node(&self, ctx: &mut NodeContext,
@@ -162,11 +162,11 @@ impl Node {
 
         if movement == Movement::MoveDown {
             tt += max(0, self.time_until_down(ctx)) as u64;
-            ltd = tt;
+            ltd = tt as i64;
         }
         else {
             tt += max(0, self.time_until_move(ctx)) as u64;
-            ltm = tt;
+            ltm = tt as i64;
         }
 
         let distance_to_end = est_pos_distance(&fig_pos, &ctx.end_pos);
