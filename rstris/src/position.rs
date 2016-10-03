@@ -80,7 +80,7 @@ impl PosDir {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MoveAndTime {
     pub movement: Movement,
     pub time: u64,
