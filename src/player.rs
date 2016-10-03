@@ -30,39 +30,34 @@ pub trait Player {
 
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
-    fn update(&mut self, _: u64, _: &Playfield);
-
-    fn handle_new_figure(&mut self, _: u64,
-                         _: &Playfield, _: &FigurePos) {
-        // Implement if needed
+    fn update(&mut self, ticks: u64, pf: &Playfield) {
+        self.common_mut().update(ticks, pf);
     }
 
     fn handle_input(&mut self, _: u64, _: &mut HashMap<Keycode, u64>) {
         // Implement if needed
     }
 
+    fn new_figure_event(&mut self, _: u64,
+                        _: &Playfield, _: &FigurePos);
+
+    fn figure_move_event(&mut self, pf: &Playfield,
+                         movement: Movement, time: u64);
+
+
     fn handle_move(&mut self, pf: &mut Playfield,
                    movement: MoveAndTime) {
         self.common_mut().handle_move(pf, movement);
     }
 
-    fn place_new_figure(&mut self, ticks: u64,
-                        pf: &mut Playfield) -> bool {
-        // Place new figure in playfield
-        let figure = self.common().next_figure().clone();
-        let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
-        if figure.collide_locked(pf, &pos) {
-            println!("Figure collided with locked block");
-            return false;
-        } else if figure.collide_any(pf, &pos) {
-            println!("Figure collided with blocking block");
-            return true;
+    fn try_place_new_figure(&mut self, ticks: u64,
+                            pf: &mut Playfield) -> BlockState {
+        let result = self.common_mut().try_place_new_figure(ticks, pf);
+        if result == BlockState::NotSet {
+            let fig = &self.common().figure_in_play.clone().unwrap();
+            self.new_figure_event(ticks, pf, &fig);
         }
-        let fig_pos = FigurePos::new(figure, pos);
-        self.common_mut().gen_next_figure();
-        self.common_mut().move_queue.clear();
-        self.handle_new_figure(ticks, pf, &fig_pos);
-        return self.common_mut().place_new_figure(ticks, pf, fig_pos);
+        return result;
     }
 
     fn next_figure(&self) -> &Figure {
@@ -120,6 +115,7 @@ impl PlayerCommon {
     }
 
     pub fn add_move(&mut self, movement: Movement, ticks: u64) {
+        self.set_time_of_last_move(&movement, ticks);
         let move_time = MoveAndTime{movement: movement, time: ticks};
         println!("Add move {:?}", move_time);
         self.move_queue.push(move_time);
@@ -141,24 +137,40 @@ impl PlayerCommon {
         return None;
     }
 
-    fn set_time_of_move(&mut self, fig_move: Movement, time: u64) {
-        self.time_last_move.insert(fig_move, time);
+    fn set_time_of_last_move(&mut self, movement: &Movement, time: u64) {
+        if time > self.time_last_move(movement) {
+            self.time_last_move.insert(movement.clone(), time);
+        }
     }
 
-    pub fn time_of_last_move(&self, movement: Movement) -> u64 {
-        if let Some(time) = self.time_last_move.get(&movement) {
+    pub fn time_last_move(&self, movement: &Movement) -> u64 {
+        if let Some(time) = self.time_last_move.get(movement) {
             return *time;
         }
         return 0;
     }
 
-    pub fn time_until_down(&self, ticks: u64) -> i64 {
-        self.time_of_last_move(Movement::MoveDown) as i64 +
-            self.force_down_time as i64 - ticks as i64
+    pub fn time_since_move(&self, ticks: u64, movement: &Movement) -> i64 {
+        let last_move = self.time_last_move(movement) as i64;
+        ticks as i64 - last_move
     }
 
     fn figure_in_play(&self) -> bool {
         self.figure_in_play.is_some()
+    }
+
+    fn update(&mut self, ticks: u64, pf: &Playfield) {
+        if self.figure_in_play() {
+            let time_since_down =
+                self.time_since_move(ticks, &Movement::MoveDown);
+            if time_since_down >= self.force_down_time as i64 {
+                let overdue = time_since_down - self.force_down_time as i64;
+                println!("Move down (ticks: {}, overdue: {})",
+                         ticks, overdue);
+                self.add_move(Movement::MoveDown,
+                              (ticks as i64) as u64);
+            }
+        }
     }
 
     //
@@ -189,14 +201,28 @@ impl PlayerCommon {
         }
     }
 
-    fn place_new_figure(&mut self, _: u64,
-                        pf: &mut Playfield, fig_pos: FigurePos) -> bool {
+    fn try_place_new_figure(&mut self, ticks: u64,
+                            pf: &mut Playfield) -> BlockState {
+
+        let figure = self.next_figure().clone();
+        let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
+        if figure.collide_locked(pf, &pos) {
+            println!("Figure collided with locked block");
+            return BlockState::Locked;
+        } else if figure.collide_any(pf, &pos) {
+            println!("Figure collided with blocking block");
+            return BlockState::InFlight;
+        }
+        let fig_pos = FigurePos::new(figure, pos);
+        self.gen_next_figure();
+        let next_down = ticks + self.force_down_time;
+        self.add_move(Movement::MoveDown, next_down);
 
         println!("{}: Placed figure {} in playfield (next is {})",
                  self.get_name(), fig_pos.get_figure().get_name(),
                  self.next_figure().get_name());
         fig_pos.place(pf);
         self.set_figure(Some(fig_pos));
-        return true;
+        return BlockState::NotSet;
     }
 }

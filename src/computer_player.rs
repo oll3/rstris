@@ -22,7 +22,7 @@ pub struct ComputerPlayer<'a> {
     common: PlayerCommon,
     com_type: &'a mut ComputerType,
     last_fig: String,
-    avail_pos: Vec<EvalPosition>,
+    avail_placing: Vec<EvalPosition>,
     last_path_update: u64,
     move_time: u64,
     path: Vec<(Movement, u64)>
@@ -38,13 +38,13 @@ impl <'a>Player for ComputerPlayer<'a> {
         &mut self.common
     }
 
-    fn handle_new_figure(&mut self, ticks: u64,
-                         pf: &Playfield, fig_pos: &FigurePos) {
-        self.handle_new_figure(pf, fig_pos, ticks);
-        self.last_path_update = ticks;
+    fn figure_move_event(&mut self, _: &Playfield, _: Movement, _: u64) {
     }
 
-    fn update(&mut self, _: u64, _: &Playfield) {
+    fn new_figure_event(&mut self, ticks: u64,
+                        pf: &Playfield, fig_pos: &FigurePos) {
+        self.new_figure_event(pf, fig_pos, ticks);
+        self.last_path_update = ticks;
     }
 }
 
@@ -53,7 +53,7 @@ impl <'a> ComputerPlayer<'a> {
                com_type: &'a mut ComputerType) -> Self {
         ComputerPlayer {
             common: common,
-            avail_pos: Vec::new(),
+            avail_placing: Vec::new(),
             last_fig: "".to_string(),
             last_path_update: 0,
             move_time: move_time,
@@ -62,23 +62,29 @@ impl <'a> ComputerPlayer<'a> {
         }
     }
 
-    fn handle_new_figure(&mut self, pf: &Playfield, fig_pos: &FigurePos,
-                         ticks: u64) {
+    fn new_figure_event(&mut self, pf: &Playfield, fig_pos: &FigurePos,
+                        ticks: u64) {
+        let mut pf = pf.clone();
+        fig_pos.remove(&mut pf);
+
+        // Find all possible placings
         let avail_placing = find_placement_quick(&pf, fig_pos);
         println!("New figure ({}) - {} available placings",
                  self.last_fig, avail_placing.len());
-        self.com_type.init_eval(pf, self.avail_pos.len());
+
+        // Evaluate all placings to find the best one
+        self.com_type.init_eval(&pf, self.avail_placing.len());
         let mut eval_placing: Vec<EvalPosition> = vec![];;
         for p in avail_placing {
             let eval_pos =
                 FigurePos::new(fig_pos.get_figure().clone(), p.clone());
-            let eval = self.com_type.eval_placing(&eval_pos, pf);
+            let eval = self.com_type.eval_placing(&eval_pos, &pf);
             let eval_pos = EvalPosition{pos: p, eval: eval};
             eval_placing.push(eval_pos);
         }
         eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
-        self.avail_pos = eval_placing;
-        for eval_pos in &self.avail_pos {
+        self.avail_placing = eval_placing;
+        for eval_pos in &self.avail_placing {
             let path = find_path(&pf,
                                  &fig_pos.get_figure(),
                                  &fig_pos.get_position(),

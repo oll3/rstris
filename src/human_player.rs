@@ -33,16 +33,12 @@ impl Player for HumanPlayer {
         &mut self.common
     }
 
-    fn update(&mut self, ticks: u64, pf: &Playfield) {
-        if ticks > self.delay_first_step_down {
-            if self.common.time_until_down(ticks) <= 0 {
-                self.common.add_move(Movement::MoveDown, ticks);
-            }
-        }
+    fn figure_move_event(&mut self, _: &Playfield, _: Movement, _: u64) {
     }
 
-    fn handle_new_figure(&mut self, ticks: u64,
-                         pf: &Playfield, fig_pos: &FigurePos) {
+
+    fn new_figure_event(&mut self, ticks: u64,
+                        pf: &Playfield, fig_pos: &FigurePos) {
         self.delay_first_step_down = ticks + DELAY_FIRST_STEP_DOWN;
     }
 
@@ -54,11 +50,8 @@ impl Player for HumanPlayer {
         for (key, pressed_at) in keys {
             match self.key_to_movement(key) {
                 Some(movement) => {
-                    let time_last_move = ticks -
-                        match self.common.time_last_move.get(&movement) {
-                            Some(t) => *t,
-                            None => 0
-                        };
+                    let time_last_move =
+                        self.common.time_since_move(ticks, &movement);
                     let time_pressed = ticks - pressed_at;
                     if ticks <= pressed_at {
                         self.common.add_move(movement, ticks);

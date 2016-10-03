@@ -364,7 +364,9 @@ fn main() {
                     }
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
-                if !player.place_new_figure(ticks, &mut pf_ctx.pf) {
+                let placement_result =
+                    player.try_place_new_figure(ticks, &mut pf_ctx.pf);
+                if placement_result == BlockState::Locked {
                     pf_ctx.game_over = true;
                 }
             }
