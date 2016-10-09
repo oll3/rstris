@@ -152,48 +152,57 @@ fn lowest_block(fig_pos: &FigurePos) -> i32 {
         fig_pos.get_position().get_y()
 }
 
-struct LowestPossibleComputer {}
-impl ComputerType for LowestPossibleComputer {
-    fn eval_placing(&mut self, fig_pos: &FigurePos, _: &Playfield) -> i32 {
-        lowest_block(fig_pos)
-    }
-}
-
-struct SmarterComputer {
-    num_voids_pre: u32,
-}
-impl SmarterComputer {
-    fn new() -> Self {
-        SmarterComputer{num_voids_pre: 0}
-    }
-}
-
-impl ComputerType for SmarterComputer {
-    fn init_eval(&mut self, pf: &Playfield, _: usize) {
-        self.num_voids_pre = pf.count_voids();
-        println!("Num voids: {}", self.num_voids_pre);
-    }
-    fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> i32 {
-        let bottom_block = lowest_block(fig_pos);
-        let mut pf = pf.clone();
-        fig_pos.lock(&mut pf);
-
-        let mut blocks_below_score = 0;
-        let fig_face = fig_pos.get_face();
-        for block_pos in fig_face.get_block_positions() {
-            let test_pos =
-                block_pos + fig_pos.get_position().get_pos().clone() +
-                Position::new(0, 1);
-            if pf.contains(&test_pos) && pf.block_is_set(&test_pos) {
-                blocks_below_score += 1;
+fn get_pf_row_jitter(pf: &Playfield) -> u32 {
+    let mut jitter = 0;
+    for y in 0..(pf.height() as i32) {
+        let mut last_state = pf.block_is_locked(&Position::new(0, y));
+        for x in 0..(pf.width() as i32) {
+            let state = pf.block_is_locked(&Position::new(x, y));
+            if last_state != state {
+                last_state = state;
+                jitter += 1;
             }
         }
-
-        let new_voids = pf.count_voids() as i32 - self.num_voids_pre as i32;
-//        println!("New voids: {}", new_voids);
-
-        return bottom_block - new_voids * 2 + blocks_below_score;
     }
+    return jitter;
+}
+fn get_pf_col_jitter(pf: &Playfield) -> u32 {
+    let mut jitter = 0;
+    for x in 0..(pf.width() as i32) {
+        let mut last_state = pf.block_is_locked(&Position::new(x, 0));
+        for y in 0..(pf.height() as i32) {
+            let state = pf.block_is_locked(&Position::new(x, y));
+            if last_state != state {
+                last_state = state;
+                jitter += 1;
+            }
+        }
+    }
+    return jitter;
+}
+fn get_pf_avg_height(pf: &Playfield) -> f32 {
+    let mut total_height = 0;
+    for x in 0..(pf.width() as i32) {
+        for y in 0..(pf.height() as i32) {
+            if pf.block_is_locked(&Position::new(x, y)) {
+                total_height += pf.height() as i32 - y;
+                break;
+            }
+        }
+    }
+    return total_height as f32 / pf.width() as f32;
+}
+fn get_pf_max_height(pf: &Playfield) -> i32 {
+    let mut max_height = 0;
+    for x in 0..(pf.width() as i32) {
+        for y in 0..(pf.height() as i32) {
+            let height = pf.height() as i32- y;
+            if pf.block_is_locked(&Position::new(x, y)) && height > max_height {
+                max_height = height;
+            }
+        }
+    }
+    return max_height;
 }
 
 
@@ -214,8 +223,8 @@ impl JitterComputer {
 impl ComputerType for JitterComputer {
     fn init_eval(&mut self, pf: &Playfield, _: usize) {
         self.pre_voids = pf.count_voids() as i32;
-        self.pre_col_jitter = pf.get_col_jitter() as i32;
-        self.pre_row_jitter = pf.get_row_jitter() as i32;
+        self.pre_col_jitter = get_pf_col_jitter(pf) as i32;
+        self.pre_row_jitter = get_pf_row_jitter(pf) as i32;
     }
 
     fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> i32 {
@@ -223,8 +232,8 @@ impl ComputerType for JitterComputer {
         fig_pos.lock(&mut pf);
         let bottom_block = lowest_block(fig_pos);
         // Measure playfield jitter - The lower jitter the better
-        let col_jitter = pf.get_col_jitter() as i32 - self.pre_col_jitter;
-        let row_jitter = pf.get_row_jitter() as i32 - self.pre_row_jitter;
+        let col_jitter = get_pf_col_jitter(&pf) as i32 - self.pre_col_jitter;
+        let row_jitter = get_pf_row_jitter(&pf) as i32 - self.pre_row_jitter;
         let voids = 0; //pf.count_voids() as i32;
         let jitter = col_jitter * 3 + row_jitter;
         return bottom_block - jitter - voids * 2;
