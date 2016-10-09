@@ -85,6 +85,23 @@ impl Playfield {
         }
         return full_lines;
     }
+    pub fn get_all_locked_lines(&self) -> Vec<usize> {
+        let mut full_lines: Vec<usize> = vec![];
+        for y in 0..self.pf_height {
+            let mut line_full = true;
+            for x in 0..self.pf_width {
+                let pos = Position::new(x as i32, y as i32);
+                if !self.block_is_locked(&pos) {
+                    line_full = false;
+                    break;
+                }
+            }
+            if line_full {
+                full_lines.push(y);
+            }
+        }
+        return full_lines;
+    }
 
     pub fn set_lines(&mut self, lines: &[usize], block: &Block) {
         for line in lines {
