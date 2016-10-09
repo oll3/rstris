@@ -134,5 +134,8 @@ fn path_to_per_height(path: Vec<(Movement, u64)>) -> Vec<Vec<MoveAndTime>> {
             );
         }
     }
+    if current_level.len() > 0 {
+        moves.push(current_level);
+    }
     return moves;
 }
