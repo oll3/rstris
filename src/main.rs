@@ -142,8 +142,8 @@ fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
 
 struct RandomComputer {}
 impl ComputerType for RandomComputer {
-    fn eval_placing(&mut self, _: &FigurePos, _: &Playfield) -> i32 {
-        rand::random::<i32>()
+    fn eval_placing(&mut self, _: &FigurePos, _: &Playfield) -> f32 {
+        rand::random::<f32>()
     }
 }
 
@@ -227,7 +227,7 @@ impl ComputerType for JitterComputer {
         self.pre_row_jitter = get_pf_row_jitter(pf) as i32;
     }
 
-    fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> i32 {
+    fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> f32 {
         let mut pf = pf.clone();
         fig_pos.lock(&mut pf);
         let bottom_block = lowest_block(fig_pos);
@@ -236,7 +236,7 @@ impl ComputerType for JitterComputer {
         let row_jitter = get_pf_row_jitter(&pf) as i32 - self.pre_row_jitter;
         let voids = 0; //pf.count_voids() as i32;
         let jitter = col_jitter * 3 + row_jitter;
-        return bottom_block - jitter - voids * 2;
+        return (bottom_block - jitter - voids * 2) as f32;
     }
 }
 

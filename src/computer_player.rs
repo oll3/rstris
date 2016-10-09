@@ -10,12 +10,12 @@ use player::*;
 
 pub trait ComputerType {
     fn init_eval(&mut self, pf: &Playfield, avail_placings: usize) {}
-    fn eval_placing(&mut self, figure_pos: &FigurePos, pf: &Playfield) -> i32;
+    fn eval_placing(&mut self, figure_pos: &FigurePos, pf: &Playfield) -> f32;
 }
 
 struct EvalPosition {
     pos: PosDir,
-    eval: i32,
+    eval: f32,
 }
 
 pub struct ComputerPlayer<'a> {
@@ -75,7 +75,7 @@ impl <'a>Player for ComputerPlayer<'a> {
             let eval_pos = EvalPosition{pos: p, eval: eval};
             eval_placing.push(eval_pos);
         }
-        eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
+        eval_placing.sort_by(|a, b| b.eval.partial_cmp(&a.eval).unwrap());
         self.avail_placing = eval_placing;
 
         // Find a path to first (and best) available placing
