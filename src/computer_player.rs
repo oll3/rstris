@@ -43,10 +43,13 @@ impl <'a>Player for ComputerPlayer<'a> {
         let y = fig_pos.get_position().get_y() as usize;
         if *movement == Movement::MoveDown && y < self.path_per_height.len() {
             let moves = self.path_per_height[y].clone();
-            println!("Down movement ({}) - Enqueue moves {:?}", ticks, moves);
+            let time_between_moves =
+                self.common().force_down_time / (moves.len() + 1) as u64;
+            let mut movement_time = ticks;
             for move_and_time in &moves {
+                movement_time += time_between_moves;
                 self.common_mut().add_move(move_and_time.movement.clone(),
-                                           move_and_time.time);
+                                           movement_time);
             }
         }
     }
