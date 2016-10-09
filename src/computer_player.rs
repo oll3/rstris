@@ -53,8 +53,55 @@ impl <'a>Player for ComputerPlayer<'a> {
 
     fn new_figure_event(&mut self, ticks: u64,
                         pf: &Playfield, fig_pos: &FigurePos) {
-        self.new_figure_event(pf, fig_pos, ticks);
+
+        let mut pf_no_fig = pf.clone();
+        fig_pos.remove(&mut pf_no_fig);
+
+        // Find all possible placings
+        let avail_placing = find_placement_quick(&pf_no_fig, fig_pos);
+        println!("New figure ({}) - {} available placings",
+                 self.last_fig, avail_placing.len());
+
+        // Evaluate all placings to find the best one
+        self.com_type.init_eval(&pf_no_fig, self.avail_placing.len());
+        let mut eval_placing: Vec<EvalPosition> = vec![];;
+        for p in avail_placing {
+            let eval_pos =
+                FigurePos::new(fig_pos.get_figure().clone(), p.clone());
+            let eval = self.com_type.eval_placing(&eval_pos, &pf_no_fig);
+            let eval_pos = EvalPosition{pos: p, eval: eval};
+            eval_placing.push(eval_pos);
+        }
+        eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
+        self.avail_placing = eval_placing;
+
+        // Find a path to first (and best) available placing
+        let mut path = Vec::new();
+        for eval_pos in &self.avail_placing {
+            path = find_path(&pf_no_fig,
+                             &fig_pos.get_figure(),
+                             &fig_pos.get_position(),
+                             &eval_pos.pos,
+                             self.move_time,
+                             self.common.force_down_time);
+            if path.len() > 0 {
+                break;
+            }
+        }
+
+        self.path_per_height.clear();
+        if path.len() > 0 {
+            path.reverse();
+
+            // Convert the path from being in exact Movements to
+            // describe the sideways/rotational movements per height level
+            println!("Found path ({:?})", path);
+            self.path_per_height = path_to_per_height(path);
+            println!("Converted path to per height ({:?})", self.path_per_height);
+        }
+
         self.last_path_update = ticks;
+        self.figure_move_event(ticks, pf, fig_pos, &Movement::MoveDown);
     }
 }
 
@@ -69,53 +116,6 @@ impl <'a> ComputerPlayer<'a> {
             move_time: move_time,
             com_type: com_type,
             path_per_height: Vec::new(),
-        }
-    }
-
-    fn new_figure_event(&mut self, pf: &Playfield, fig_pos: &FigurePos,
-                        ticks: u64) {
-        let mut pf = pf.clone();
-        fig_pos.remove(&mut pf);
-
-        // Find all possible placings
-        let avail_placing = find_placement_quick(&pf, fig_pos);
-        println!("New figure ({}) - {} available placings",
-                 self.last_fig, avail_placing.len());
-
-        // Evaluate all placings to find the best one
-        self.com_type.init_eval(&pf, self.avail_placing.len());
-        let mut eval_placing: Vec<EvalPosition> = vec![];;
-        for p in avail_placing {
-            let eval_pos =
-                FigurePos::new(fig_pos.get_figure().clone(), p.clone());
-            let eval = self.com_type.eval_placing(&eval_pos, &pf);
-            let eval_pos = EvalPosition{pos: p, eval: eval};
-            eval_placing.push(eval_pos);
-        }
-        eval_placing.sort_by(|a, b| b.eval.cmp(&a.eval));
-        self.avail_placing = eval_placing;
-
-        // Find a path to first (and best) available placing
-        let mut path = Vec::new();
-        self.path_per_height.clear();
-        for eval_pos in &self.avail_placing {
-            path = find_path(&pf,
-                             &fig_pos.get_figure(),
-                             &fig_pos.get_position(),
-                             &eval_pos.pos,
-                             self.move_time,
-                             self.common.force_down_time);
-            if path.len() > 0 {
-                break;
-            }
-        }
-        if path.len() > 0 {
-            path.reverse();
-
-            // Convert the path from being in exact Movements to
-            // describe the sideways/rotational movements per height level
-            self.path_per_height = path_to_per_height(path);
-            println!("Found path ({:?})", self.path_per_height);
         }
     }
 }
