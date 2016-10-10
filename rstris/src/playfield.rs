@@ -25,9 +25,6 @@ impl Playfield {
         }
         playfield
     }
-    pub fn get_block_id(&self, x: usize, y: usize) -> u8 {
-        self.blocks[y][x].id
-    }
     pub fn get_block(&self, x: usize, y: usize) -> &Block {
         if x >= self.pf_width || y >= self.pf_height {
             return &self.locked_block;

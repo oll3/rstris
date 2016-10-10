@@ -77,9 +77,6 @@ impl FigureFace {
     pub fn get_height(&self) -> usize {
         self.height
     }
-    pub fn get_block_id(&self, x: usize, y: usize) -> u8 {
-        self.blocks[y][x].id
-    }
     pub fn get_block(&self, x: usize, y: usize) -> &Block {
         &self.blocks[y][x]
     }
