@@ -90,7 +90,7 @@ impl FigureFace {
                 let b = self.get_block(col, row);
                 let block_pos = Position::new(pos.get_x() + col as i32, pos_y);
                 if b.is_set() && pf.contains(&block_pos) {
-                    pf.set_block(&block_pos, b.clone());
+                    pf.set_block_by_pos(&block_pos, b.clone());
                 }
             }
         }
@@ -104,7 +104,7 @@ impl FigureFace {
                 if b.is_set() && pf.contains(&block_pos) {
                     let mut b = b.clone();
                     b.state = BlockState::Locked;
-                    pf.set_block(&block_pos, b);
+                    pf.set_block_by_pos(&block_pos, b);
                 }
             }
         }
@@ -128,8 +128,8 @@ impl FigureFace {
                 let block_pos = Position::new(pos.get_x() + col as i32,
                                               pos.get_y() + row as i32);
                 if self.get_block(col, row).is_set() {
-                    let pf_block_state = pf.block_state(&block_pos);
-                    match *pf_block_state {
+                    let pf_block_state = pf.get_block_by_pos(&block_pos).state.clone();
+                    match pf_block_state {
                         BlockState::Locked => return pf_block_state.clone(),
                         BlockState::InFlight => state = pf_block_state.clone(),
                         _ => {},
