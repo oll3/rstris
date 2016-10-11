@@ -17,8 +17,9 @@ impl<T> Matrix2D<T> where T: Clone {
     pub fn get(&self, x: usize, y: usize) -> &T {
         &self.items[y * self.width + x]
     }
-    pub fn get_mut(&self, x: usize, y: usize) -> &mut T {
-        &self.items[y * self.width + x]
+    pub fn set(&mut self, x: usize, y: usize, item: T) {
+        self.items[y * self.width + x] = item;
     }
-
+    pub fn width(&self) -> usize { self.width }
+    pub fn height(&self) -> usize { self.height }
 }
