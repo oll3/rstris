@@ -56,9 +56,6 @@ impl Figure {
     pub fn faces(&self) -> &Vec<FigureFace> {
         &self.vfaces
     }
-    pub fn add_face(&mut self, blocks: &[&[u8]]) {
-        self.vfaces.push(FigureFace::new(blocks));
-    }
     pub fn get_face(&self, face_index: usize) -> &FigureFace {
         let face_index = face_index % self.vfaces.len();
         return &self.vfaces[face_index];
