@@ -1,13 +1,12 @@
 use block::*;
 use position::Position;
+use matrix_2d::Matrix2D;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Playfield {
     pf_name: String,
-    pf_width: usize,
-    pf_height: usize,
-    blocks: Vec<Block>,
+    blocks: Matrix2D<Block>,
     locked_block: Block,
 }
 
@@ -15,39 +14,37 @@ impl Playfield {
     pub fn new(name: &str, width: usize, height: usize) -> Playfield {
         Playfield{
             pf_name: name.to_owned(),
-            pf_width: width,
-            pf_height: height,
-            blocks: vec![Block::new_not_set(); width * height],
+            blocks: Matrix2D::new(width, height, Block::new_not_set()),
             locked_block: Block::new_locked(0)}
     }
     pub fn get_block(&self, x: usize, y: usize) -> &Block {
-        if x >= self.pf_width || y >= self.pf_height {
+        if x >= self.blocks.width() || y >= self.blocks.height() {
             return &self.locked_block;
         }
-        return &self.blocks[y * self.pf_width + x];
+        return &self.blocks.get(x, y);
     }
     pub fn get_block_by_pos(&self, pos: &Position) -> &Block {
         self.get_block(pos.get_x() as usize, pos.get_y() as usize)
     }
     pub fn set_block(&mut self, x: usize, y: usize, block: Block) {
-        if x < self.pf_width && y < self.pf_height {
-            self.blocks[y * self.pf_width + x] = block;
+        if x < self.blocks.width() && y < self.blocks.height() {
+            self.blocks.set(x, y, block);
         }
     }
     pub fn set_block_by_pos(&mut self, pos: &Position, block: Block) {
         self.set_block(pos.get_x() as usize, pos.get_y() as usize, block);
     }
     pub fn width(&self) -> usize {
-        self.pf_width
+        self.blocks.width()
     }
     pub fn height(&self) -> usize {
-        self.pf_height
+        self.blocks.height()
     }
     pub fn contains(&self, pos: &Position) -> bool {
         let x = pos.get_x();
         let y = pos.get_y();
-        x >= 0 && x < self.pf_width as i32 &&
-            y >= 0 && y < self.pf_height as i32
+        x >= 0 && x < self.blocks.width() as i32 &&
+            y >= 0 && y < self.blocks.height() as i32
     }
     pub fn block_is_set(&self, pos: &Position) -> bool {
         self.get_block_by_pos(pos).state != BlockState::NotSet
@@ -66,7 +63,7 @@ impl Playfield {
         let mut full_lines: Vec<usize> = vec![];
         for y in lines_to_test {
             let mut line_full = true;
-            for x in 0..self.pf_width {
+            for x in 0..self.blocks.width() {
                 let pos = Position::new(x as i32, *y as i32);
                 if !self.block_is_locked(&pos) {
                     line_full = false;
@@ -81,9 +78,9 @@ impl Playfield {
     }
     pub fn get_all_locked_lines(&self) -> Vec<usize> {
         let mut full_lines: Vec<usize> = vec![];
-        for y in 0..self.pf_height {
+        for y in 0..self.blocks.height() {
             let mut line_full = true;
-            for x in 0..self.pf_width {
+            for x in 0..self.blocks.width() {
                 let pos = Position::new(x as i32, y as i32);
                 if !self.block_is_locked(&pos) {
                     line_full = false;
@@ -99,7 +96,7 @@ impl Playfield {
 
     pub fn set_lines(&mut self, lines: &[usize], block: &Block) {
         for line in lines {
-            for x in 0..self.pf_width {
+            for x in 0..self.blocks.width() {
                 self.set_block(x, *line, block.clone());
             }
         }
@@ -111,7 +108,7 @@ impl Playfield {
     pub fn throw_line(&mut self, line: usize) {
         let mut y = line;
         loop {
-            for x in 0..self.pf_width {
+            for x in 0..self.blocks.width() {
                 if y >= 1 {
                     let block = self.get_block(x, y - 1).clone();
                     self.set_block(x, y, block);
