@@ -71,44 +71,50 @@ impl <'a>PlayfieldContext<'a> {
     }
 }
 
+macro_rules! bl {
+    ($x:expr) => (match $x {
+        0 => Block::new_not_set(),
+        _ => Block::new_locked($x)})
+}
+
 //
 // Build list of figures
 //
 fn init_figures() -> Vec<Figure> {
     let mut figure_list: Vec<Figure> = Vec::new();
-    figure_list.push(Figure::
-                     new_from_face("1",
-                                   &[&[0, 0, 0],
-                                     &[1, 1, 1],
-                                     &[0, 1, 0]]));
-    figure_list.push(Figure::
-                     new_from_face("2",
-                                   &[&[0, 0, 0],
-                                     &[2, 2, 2],
-                                     &[0, 0, 2]]));
-    figure_list.push(Figure::
-                     new_from_face("3",
-                                   &[&[0, 0, 3],
-                                     &[3, 3, 3],
-                                     &[0, 0, 0]]));
-    figure_list.push(Figure::
-                     new_from_face("4",
-                                   &[&[4, 4],
-                                     &[4, 4]]));
-    figure_list.push(Figure::
-                     new_from_face("5",
-                                   &[&[0, 5, 5],
-                                     &[5, 5, 0]]));
-    figure_list.push(Figure::
-                     new_from_face("6",
-                                   &[&[6, 6, 0],
-                                     &[0, 6, 6]]));
-    figure_list.push(Figure::
-                     new_from_face("7",
-                                   &[&[0, 7, 0],
-                                     &[0, 7, 0],
-                                     &[0, 7, 0],
-                                     &[0, 7, 0]]));
+    figure_list.push(
+        Figure::new_from_face("1",
+                              &[&[bl!(0), bl!(0), bl!(0)],
+                                &[bl!(1), bl!(1), bl!(1)],
+                                &[bl!(0), bl!(1), bl!(0)]]));
+    figure_list.push(
+        Figure::new_from_face("2",
+                              &[&[bl!(0), bl!(0), bl!(0)],
+                                &[bl!(2), bl!(2), bl!(2)],
+                                &[bl!(0), bl!(0), bl!(2)]]));
+    figure_list.push(
+        Figure::new_from_face("3",
+                              &[&[bl!(0), bl!(0), bl!(3)],
+                                &[bl!(3), bl!(3), bl!(3)],
+                                &[bl!(0), bl!(0), bl!(0)]]));
+    figure_list.push(
+        Figure::new_from_face("4",
+                              &[&[bl!(4), bl!(4)],
+                                &[bl!(4), bl!(4)]]));
+    figure_list.push(
+        Figure::new_from_face("5",
+                              &[&[bl!(0), bl!(5), bl!(5)],
+                                &[bl!(5), bl!(5), bl!(0)]]));
+    figure_list.push(
+        Figure::new_from_face("6",
+                              &[&[bl!(6), bl!(6), bl!(0)],
+                                &[bl!(0), bl!(6), bl!(6)]]));
+    figure_list.push(
+        Figure::new_from_face("7",
+                              &[&[bl!(0), bl!(7), bl!(0)],
+                                &[bl!(0), bl!(7), bl!(0)],
+                                &[bl!(0), bl!(7), bl!(0)],
+                                &[bl!(0), bl!(7), bl!(0)]]));
     return figure_list;
 }
 
