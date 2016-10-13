@@ -372,10 +372,7 @@ fn main() {
                 if let Some(move_and_time) = move_and_time {
                     execute_move(*player, &mut pf_ctx.pf, move_and_time);
                     if !player.figure_in_play() {
-                        let scan: Vec<usize> =
-                            (0..pf_ctx.pf.height()).collect();
-                        let mut locked = pf_ctx.pf.get_locked_lines(&scan);
-
+                        let mut locked = pf_ctx.pf.get_all_locked_lines();
                         pf_ctx.pf.set_lines(&locked, &Block::new_locked(10));
                         pf_ctx.lines_to_throw.append(&mut locked);
                     }
