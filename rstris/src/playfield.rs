@@ -1,7 +1,6 @@
 use block::*;
 use position::Position;
 use matrix_2d::Matrix2D;
-use std::collections::HashSet;
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Playfield {
@@ -123,8 +122,10 @@ impl Playfield {
 
     pub fn count_voids(&self) -> u32 {
         let mut voids = 0;
-        let mut visited: HashSet<Position> = HashSet::new();
-        let mut all_open: Vec<Position> = Vec::new();
+        let mut visited: Matrix2D<bool> =
+            Matrix2D::new(self.blocks.width(), self.blocks.height(), false);
+        let mut all_open: Vec<Position> =
+            Vec::with_capacity(self.blocks.width() * self.blocks.height());
         for y in 0..self.height() {
             for x in 0..self.width() {
                 let pos = Position::new(x as i32, y as i32);
@@ -134,11 +135,11 @@ impl Playfield {
             }
         }
         for pos in all_open {
-            if visited.contains(&pos) {
+            if *visited.get(pos.get_x() as usize, pos.get_y() as usize) {
                 continue;
             }
             voids += 1;
-            visited.insert(pos.clone());
+            visited.set(pos.get_x() as usize, pos.get_y() as usize, true);
 
             let mut fill: Vec<Position> = Vec::new();
             fill.push(pos.clone());
@@ -152,9 +153,11 @@ impl Playfield {
 
                 for test_pos in test_positions.iter() {
                     if self.contains(test_pos) &&
-                        !visited.contains(test_pos) &&
+                        !*visited.get(test_pos.get_x() as usize,
+                                      test_pos.get_y() as usize) &&
                         !self.block_is_locked(test_pos) {
-                            visited.insert(test_pos.clone());
+                            visited.set(test_pos.get_x() as usize,
+                                        test_pos.get_y() as usize, true);
                             fill.push(test_pos.clone());
                         }
                 }
