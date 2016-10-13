@@ -1,6 +1,7 @@
 extern crate rustc_serialize;
 
 mod matrix_2d;
+mod matrix_3d;
 pub mod block;
 pub mod position;
 pub mod playfield;
