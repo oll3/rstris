@@ -211,11 +211,14 @@ fn get_pf_max_height(pf: &Playfield) -> i32 {
     return max_height;
 }
 
-
 struct JitterComputer {
     pre_col_jitter: i32,
     pre_row_jitter: i32,
     pre_voids: i32,
+    pre_avg_height: f32,
+    avg_height_factor: f32,
+    pre_max_height: i32,
+    pre_locked_lines: i32,
 }
 impl JitterComputer {
     fn new() -> Self {
@@ -223,6 +226,10 @@ impl JitterComputer {
             pre_col_jitter: 0,
             pre_row_jitter: 0,
             pre_voids: 0,
+            pre_avg_height: 0.0,
+            avg_height_factor: 0.0,
+            pre_max_height: 0,
+            pre_locked_lines: 0,
         }
     }
 }
@@ -231,18 +238,36 @@ impl ComputerType for JitterComputer {
         self.pre_voids = pf.count_voids() as i32;
         self.pre_col_jitter = get_pf_col_jitter(pf) as i32;
         self.pre_row_jitter = get_pf_row_jitter(pf) as i32;
+        self.pre_avg_height = get_pf_avg_height(pf);
+        self.pre_max_height = get_pf_max_height(pf);
+        self.avg_height_factor = self.pre_avg_height / pf.height() as f32;
+        self.pre_locked_lines = pf.get_all_locked_lines().len() as i32;
     }
 
     fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> f32 {
         let mut pf = pf.clone();
         fig_pos.lock(&mut pf);
+        let mut locked_lines = pf.get_all_locked_lines();
+        let lock_cnt = locked_lines.len() as i32 - self.pre_locked_lines;
+        let tetris = if lock_cnt >= 4 {1000.0} else {0.0};
+        locked_lines.sort();
+        for line in &locked_lines {
+            pf.throw_line(*line);
+        }
+        let avg_height = get_pf_avg_height(&pf);
+        let remove_lines_score = lock_cnt as f32 * 1000.0 *
+            (self.avg_height_factor - 0.24);
+
         let bottom_block = lowest_block(fig_pos);
         // Measure playfield jitter - The lower jitter the better
         let col_jitter = get_pf_col_jitter(&pf) as i32 - self.pre_col_jitter;
         let row_jitter = get_pf_row_jitter(&pf) as i32 - self.pre_row_jitter;
-        let voids = 0; //pf.count_voids() as i32;
-        let jitter = col_jitter * 3 + row_jitter;
-        return (bottom_block - jitter - voids * 2) as f32;
+        let voids = 0; //pf.count_voids() as i32 - self.pre_voids;
+        let jitter = col_jitter * 2 + row_jitter;
+        let total_score =
+            (bottom_block - jitter - voids * 4) as f32 /* +
+            remove_lines_score + tetris*/;
+        return total_score;
     }
 }
 
