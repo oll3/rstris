@@ -160,7 +160,7 @@ fn lowest_block(fig_pos: &FigurePos) -> i32 {
 
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
-    for y in 0..(pf.height() as i32) {
+    for y in 0..((pf.height() + 1) as i32) {
         let mut last_state = pf.block_is_locked(&Position::new(0, y));
         for x in 0..(pf.width() as i32) {
             let state = pf.block_is_locked(&Position::new(x, y));
@@ -174,7 +174,7 @@ fn get_pf_row_jitter(pf: &Playfield) -> u32 {
 }
 fn get_pf_col_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
-    for x in 0..(pf.width() as i32) {
+    for x in -1..((pf.width() + 1) as i32) {
         let mut last_state = pf.block_is_locked(&Position::new(x, 0));
         for y in 0..(pf.height() as i32) {
             let state = pf.block_is_locked(&Position::new(x, y));
