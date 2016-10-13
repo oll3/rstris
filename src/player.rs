@@ -100,7 +100,6 @@ impl PlayerCommon {
     pub fn add_move(&mut self, movement: Movement, ticks: u64) {
         self.set_time_of_last_move(&movement, ticks);
         let move_time = MoveAndTime{movement: movement, time: ticks};
-        println!("Add move {:?}", move_time);
         self.move_queue.push(move_time);
     }
 
@@ -148,8 +147,6 @@ impl PlayerCommon {
                 self.time_since_move(ticks, &Movement::MoveDown);
             if time_since_down >= self.force_down_time as i64 {
                 let overdue = time_since_down - self.force_down_time as i64;
-                println!("Move down (ticks: {}, overdue: {})",
-                         ticks, overdue);
                 self.add_move(Movement::MoveDown,
                               (ticks as i64) as u64);
             }
