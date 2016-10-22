@@ -2,7 +2,7 @@ use block::*;
 use position::Position;
 use matrix_2d::Matrix2D;
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone)]
 pub struct Playfield {
     pf_name: String,
     blocks: Matrix2D<Block>,

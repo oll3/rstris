@@ -3,7 +3,7 @@ use playfield::*;
 use position::*;
 use matrix_2d::Matrix2D;
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct FigureFace {
     blocks: Matrix2D<Block>,
 }

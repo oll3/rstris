@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, Eq, PartialEq, Hash, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BlockState {
     // Not set
     NotSet,
@@ -10,7 +10,7 @@ pub enum BlockState {
     Locked,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Block {
     pub id: u8,
     pub state: BlockState,

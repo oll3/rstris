@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Hash, Eq, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Matrix2D<T> {
     width: usize,
     height: usize,

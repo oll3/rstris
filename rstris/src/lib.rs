@@ -1,5 +1,3 @@
-extern crate rustc_serialize;
-
 mod vec2;
 mod vec3;
 mod matrix_2d;

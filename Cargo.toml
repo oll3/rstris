@@ -7,7 +7,6 @@ authors = ["Olle <ollebull@gmail.com>"]
 sdl2 = "*"
 time = "0.1"
 rand = "*"
-rustc-serialize = "*"
 
 [dependencies.rstris]
 path = "rstris"
