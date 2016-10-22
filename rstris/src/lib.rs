@@ -1,5 +1,7 @@
 extern crate rustc_serialize;
 
+mod vec2;
+mod vec3;
 mod matrix_2d;
 mod matrix_3d;
 pub mod block;
