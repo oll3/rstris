@@ -1,3 +1,4 @@
+use vec3::*;
 use std::ops::Add;
 use std::cmp::Ordering;
 
@@ -11,6 +12,12 @@ pub struct Position {
 pub struct PosDir {
     pos: Position,
     dir: i32,
+}
+
+impl ToVec3<i32> for PosDir {
+    fn to_vec3(&self) -> Vec3<i32> {
+        Vec3::new(self.pos.x, self.pos.y, self.dir)
+    }
 }
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
