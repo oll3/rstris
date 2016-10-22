@@ -1,6 +1,7 @@
 extern crate time;
 
 use matrix_3d::Matrix3D;
+use vec3::Vec3;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
 use std::cmp::max;
@@ -8,8 +9,8 @@ use figure::*;
 use position::*;
 use playfield::*;
 
-static MAX_FIGURE_DIR: usize = 4;
-static MAX_FIGURE_SIZE: usize = 4;
+static MAX_FIGURE_DIR: i32 = 4;
+static MAX_FIGURE_SIZE: i32 = 4;
 
 
 #[derive(Debug)]
@@ -66,9 +67,14 @@ impl NodeContext {
             move_time: move_time,
             down_time: down_time,
             node_by_id: Vec::new(),
-            node_by_pos: Matrix3D::new(pf.width() + MAX_FIGURE_SIZE,
-                                       pf.height() + MAX_FIGURE_SIZE,
-                                       MAX_FIGURE_DIR, None),
+            node_by_pos: Matrix3D::new_coords(
+                Vec3::new(-MAX_FIGURE_SIZE,
+                          -MAX_FIGURE_SIZE,
+                          0),
+                Vec3::new(pf.width() as i32 + MAX_FIGURE_SIZE,
+                          pf.height() as i32 + MAX_FIGURE_SIZE,
+                          MAX_FIGURE_DIR),
+                None),
             open_set: BinaryHeap::new(),
         }
     }
@@ -80,11 +86,7 @@ impl NodeContext {
         return self.get_node_from_id(best_node.id).clone();
     }
     fn mark_best_pos(&mut self, node: &Node) {
-        self.node_by_pos.set(
-            (node.pos.get_x() + MAX_FIGURE_SIZE as i32) as usize,
-            (node.pos.get_y() + MAX_FIGURE_SIZE as i32) as usize,
-            node.pos.get_dir() as usize,
-            Some(node.id));
+        self.node_by_pos.tv_set(&node.pos, Some(node.id));
     }
     fn add_node(&mut self, node: Node) {
         self.node_by_id.push(node);
@@ -97,11 +99,7 @@ impl NodeContext {
     fn mark_closed(&mut self, _: &Node) {
     }
     fn no_pos_with_lower_est(&self, node: &Node) -> bool {
-        if let Some(best_node) =
-            *self.node_by_pos.get(
-                (node.pos.get_x() + MAX_FIGURE_SIZE as i32) as usize,
-                (node.pos.get_y() + MAX_FIGURE_SIZE as i32) as usize,
-                node.pos.get_dir() as usize)
+        if let Some(best_node) = *self.node_by_pos.tv_get(&node.pos)
         {
             let n = self.get_node_from_id(best_node);
             if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
