@@ -1,10 +1,10 @@
 extern crate time;
 
 use std::collections::LinkedList;
-use std::collections::HashSet;
 use figure_pos::*;
 use position::*;
 use playfield::*;
+use matrix_3d::*;
 
 pub fn find_placement_quick(pf: &Playfield,
                             fig_pos: &FigurePos) -> Vec<PosDir> {
@@ -45,7 +45,8 @@ pub fn find_placement(pf: &Playfield,
     let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
     let mut moves: LinkedList<PosDir> = LinkedList::new();
-    let mut visited: HashSet<PosDir> = HashSet::new();
+    let mut visited: Matrix3D<bool> =
+        Matrix3D::new(pf.width() as u32, pf.height() as u32, 4, false);
     let mut it_cnt = 0;
     let start_pos = fig_pos.get_position().clone();
     let fig = fig_pos.get_figure();
@@ -58,7 +59,7 @@ pub fn find_placement(pf: &Playfield,
         return placements;
     }
 
-    visited.insert(start_pos.clone());
+    visited.tv_set(&start_pos, true);
     moves.push_back(start_pos);
 
     while moves.len() > 0 {
@@ -68,23 +69,24 @@ pub fn find_placement(pf: &Playfield,
         // already (one left, right, down, rotate cw).
         let tmp_pos = PosDir::apply_move(&current_pos,
                                          &Movement::MoveLeft);
-        if !visited.contains(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
-            visited.insert(tmp_pos.clone());
+        if !visited.tv_get(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
+            visited.tv_set(&tmp_pos, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos,
                                          &Movement::MoveRight);
-        if !visited.contains(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
-            visited.insert(tmp_pos.clone());
+        if !visited.tv_get(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
+            visited.tv_set(&tmp_pos, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos,
                                          &Movement::RotateCW);
         if tmp_pos.get_dir() < fig.faces().len() as i32 &&
-            !visited.contains(&tmp_pos) &&
-            !fig.collide_locked(&pf, &tmp_pos) {
-                visited.insert(tmp_pos.clone());
-                moves.push_back(tmp_pos);
+            !visited.tv_get(&tmp_pos) &&
+            !fig.collide_locked(&pf, &tmp_pos)
+        {
+            visited.tv_set(&tmp_pos, true);
+            moves.push_back(tmp_pos);
         }
 
         // Down is special. If we can't move down from current position then
@@ -95,9 +97,9 @@ pub fn find_placement(pf: &Playfield,
             // Valid placement
             println!("Valid position: {:?}", tmp_pos);
             placements.push(current_pos.clone());
-        } else if !visited.contains(&tmp_pos) {
+        } else if !visited.tv_get(&tmp_pos) {
             moves.push_back(tmp_pos.clone());
-            visited.insert(tmp_pos);
+            visited.tv_set(&tmp_pos, true);
         }
         it_cnt += 1;
     }
