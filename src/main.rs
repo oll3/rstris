@@ -42,7 +42,7 @@ struct PlayfieldContext<'a> {
     pf: Playfield,
     players: Vec<&'a mut Player>,
     game_over: bool,
-    lines_to_throw: Vec<usize>,
+    lines_to_throw: Vec<u32>,
 }
 
 
@@ -335,8 +335,7 @@ fn main() {
         5000000, &mut com_random2,
     );
 
-    let pf1 = Playfield::new("Playfield 1",
-                             PF_WIDTH as usize, PF_HEIGHT as usize);
+    let pf1 = Playfield::new("Playfield 1", PF_WIDTH, PF_HEIGHT);
     let mut pf_ctx = PlayfieldContext::new(pf1);
 
 
@@ -431,9 +430,10 @@ fn main() {
         for player in &mut pf_ctx.players {
             draw.draw_next_figure(&mut renderer,
                                   &player.next_figure(),
-                                  PF_WIDTH + 3,
-                                  (figure_max_height + 1) * pi,
-                                  figure_max_width, figure_max_height);
+                                  (PF_WIDTH + 3) as i32,
+                                  ((figure_max_height + 1) * pi) as i32,
+                                  figure_max_width as i32,
+                                  figure_max_height as i32);
 
             pi += 1;
         }

@@ -26,11 +26,12 @@ impl DrawContext {
     }
 
     fn draw_block(&mut self, renderer: &mut Renderer,
-                  x: u32, y: u32, color: Color) {
+                  x: i32, y: i32, color: Color) {
         renderer.set_draw_color(color);
+        let size = self.block_size as i32;
+        let spacing = self.block_spacing as i32;
         let border_rect =
-            Rect::new((x * self.block_size + x * self.block_spacing) as i32,
-                      (y * self.block_size + y * self.block_spacing) as i32,
+            Rect::new(x * size + x * spacing, y * size + y * spacing,
                       self.block_size, self.block_size);
         let _ = renderer.fill_rect(border_rect);
     }
@@ -62,33 +63,30 @@ impl DrawContext {
                           playfield: &Playfield) {
         let frame_color = self.frame_color;
         let fill_color = self.fill_color;
-        for y in 0..playfield.height() {
-            self.draw_block(renderer, 0, y as u32, frame_color);
-            for x in 0..playfield.width() {
+        for y in 0..playfield.height() as i32 {
+            self.draw_block(renderer, 0, y, frame_color);
+            for x in 0..playfield.width() as i32 {
                 let block = playfield.get_block(x, y);
                 if block.is_set() {
-                    self.draw_block(renderer, (x + 1) as u32, y as u32,
-                                    DrawContext::
-                                    get_block_color(&block));
+                    self.draw_block(renderer, x + 1, y,
+                                    DrawContext::get_block_color(&block));
                 } else {
-                    self.draw_block(renderer, (x + 1) as u32, y as u32,
-                                    fill_color);
+                    self.draw_block(renderer, x + 1, y, fill_color);
                 }
             }
-            self.draw_block(renderer, (playfield.width() + 1) as u32,
-                            y as u32, frame_color);
+            self.draw_block(renderer, playfield.width() as i32 + 1,
+                            y, frame_color);
         }
-        for bottom in 0..(playfield.width() + 2) {
-            self.draw_block(renderer, bottom as u32,
-                            playfield.height() as u32,
+        for bottom in 0..(playfield.width() + 2) as i32 {
+            self.draw_block(renderer, bottom, playfield.height() as i32,
                             frame_color);
         }
     }
 
     pub fn draw_next_figure(&mut self,
                             renderer: &mut Renderer,
-                            figure: &Figure, offs_x: u32, offs_y: u32,
-                            fig_max_width: u32, fig_max_heigth: u32) {
+                            figure: &Figure, offs_x: i32, offs_y: i32,
+                            fig_max_width: i32, fig_max_heigth: i32) {
         let frame_color = self.frame_color;
         let fill_color = self.fill_color;
         for y in 0..(fig_max_heigth + 2) {
@@ -96,31 +94,30 @@ impl DrawContext {
                 if y == 0 || y == (fig_max_heigth + 1) ||
                     x == 0 || x == (fig_max_width + 1) {
                         self.draw_block(renderer,
-                                        x as u32 + offs_x,
-                                        y as u32 + offs_y,
+                                        x + offs_x,
+                                        y + offs_y,
                                         frame_color);
                     }
                 else {
                     self.draw_block(renderer,
-                                    x as u32 + offs_x,
-                                    y as u32 + offs_y,
+                                    x + offs_x,
+                                    y + offs_y,
                                     fill_color);
                 }
             }
         }
 
         let face = &figure.get_face(0);
-        let fig_x_offs = (fig_max_width - face.get_width() as u32) / 2;
-        let fig_y_offs = (fig_max_heigth - face.get_height() as u32) / 2;
-        for y in 0..face.get_height() {
-            for x in 0..face.get_width() {
+        let fig_x_offs = (fig_max_width - face.get_width() as i32) / 2;
+        let fig_y_offs = (fig_max_heigth - face.get_height() as i32) / 2;
+        for y in 0..face.get_height() as i32 {
+            for x in 0..face.get_width() as i32 {
                 let block = face.get_block(x, y);
                 if block.is_set() {
                     self.draw_block(renderer,
-                                    x as u32 + offs_x + 1 + fig_x_offs,
-                                    y as u32 + offs_y + 1 + fig_y_offs,
-                                    DrawContext::
-                                    get_block_color(&block));
+                                    x + offs_x + 1 + fig_x_offs,
+                                    y + offs_y + 1 + fig_y_offs,
+                                    DrawContext::get_block_color(&block));
                 }
             }
         }

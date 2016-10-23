@@ -26,9 +26,10 @@ impl Figure {
         for _ in 0..3 {
             let mut next_face =
                 FigureFace::new_empty(face.get_height(), face.get_width());
-            for y in 0..face.get_height() {
-                for x in 0..face.get_width() {
-                    let b = &face.get_block(x, face.get_height() - y - 1);
+            for y in 0..face.get_height() as i32 {
+                for x in 0..face.get_width() as i32 {
+                    let ty = face.get_height() as i32 - y - 1;
+                    let b = &face.get_block(x, ty);
                     next_face.set_block(y, x, b);
                 }
             }
