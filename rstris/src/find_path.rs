@@ -7,6 +7,8 @@ use std::cmp::Ordering;
 use std::cmp::max;
 use figure::*;
 use position::*;
+use pos_dir::*;
+use movement::*;
 use playfield::*;
 
 static MAX_FIGURE_DIR: i32 = 4;

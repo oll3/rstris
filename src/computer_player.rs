@@ -2,6 +2,8 @@ extern crate rand;
 
 use rstris::playfield::*;
 use rstris::position::*;
+use rstris::pos_dir::*;
+use rstris::movement::*;
 use rstris::figure_pos::*;
 use rstris::find_placement::*;
 use rstris::find_path::*;

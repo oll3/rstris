@@ -8,6 +8,8 @@ use rstris::playfield::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
 use rstris::position::*;
+use rstris::pos_dir::*;
+use rstris::movement::*;
 
 
 pub struct PlayerStats {

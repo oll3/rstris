@@ -1,4 +1,5 @@
 use position::*;
+use pos_dir::*;
 use figure::*;
 use figure_face::*;
 use playfield::*;

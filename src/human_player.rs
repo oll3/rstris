@@ -4,6 +4,8 @@ use sdl2::keyboard::Keycode;
 use player::*;
 use rstris::playfield::*;
 use rstris::position::*;
+use rstris::pos_dir::*;
+use rstris::movement::*;
 use rstris::figure_pos::*;
 
 static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;

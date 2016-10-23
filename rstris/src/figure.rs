@@ -1,6 +1,7 @@
 use figure_face::*;
 use playfield::*;
 use position::*;
+use pos_dir::*;
 use block::*;
 
 

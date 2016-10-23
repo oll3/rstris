@@ -4,6 +4,8 @@ mod matrix2;
 mod matrix3;
 pub mod block;
 pub mod position;
+pub mod pos_dir;
+pub mod movement;
 pub mod playfield;
 pub mod figure_face;
 pub mod figure;
