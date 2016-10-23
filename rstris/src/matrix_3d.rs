@@ -28,7 +28,11 @@ impl<T> Matrix3D<T> where T: Clone {
     pub fn width(&self) -> u32 { (self.br.x - self.tl.x) as u32 }
     pub fn height(&self) -> u32 { (self.br.y - self.tl.y) as u32 }
     pub fn depth(&self) -> u32 { (self.br.z - self.tl.z) as u32 }
-
+    pub fn contains(&self, x: i32, y: i32, z: i32) -> bool {
+        x >= self.tl.x && x < self.br.x &&
+            y >= self.tl.y && y < self.br.y &&
+            z >= self.tl.z && z < self.br.z
+    }
     pub fn get(&self, x: i32, y: i32, z: i32) -> &T {
         let x = (x - self.tl.x) as u32;
         let y = (y - self.tl.y) as u32;
