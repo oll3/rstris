@@ -1,13 +1,13 @@
 use vec3::*;
 
 #[derive(Debug, Clone)]
-pub struct Matrix3D<T> {
+pub struct Matrix3<T> {
     tl: Vec3<i32>,
     br: Vec3<i32>,
     items: Vec<T>,
 }
 
-impl<T> Matrix3D<T> where T: Clone {
+impl<T> Matrix3<T> where T: Clone {
     pub fn new(width: u32, height: u32, depth: u32,
                initial_value: T) -> Self  {
         Self::new_coords(Vec3::new(0 as i32, 0 as i32, 0 as i32),
@@ -16,7 +16,7 @@ impl<T> Matrix3D<T> where T: Clone {
     }
     pub fn new_coords(tl: Vec3<i32>, br: Vec3<i32>,
                       initial_value: T) -> Self  {
-        Matrix3D {
+        Matrix3 {
             items: vec![initial_value;
                         ((br.x - tl.x) *
                         (br.y - tl.y) *

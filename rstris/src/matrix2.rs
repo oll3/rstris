@@ -1,13 +1,13 @@
 use vec2::*;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-pub struct Matrix2D<T> {
+pub struct Matrix2<T> {
     tl: Vec2<i32>,
     br: Vec2<i32>,
     items: Vec<T>,
 }
 
-impl<T> Matrix2D<T> where T: Clone {
+impl<T> Matrix2<T> where T: Clone {
     pub fn new(width: u32, height: u32, initial_value: T) -> Self  {
         Self::new_coords(Vec2::new(0 as i32, 0 as i32),
                          Vec2::new(width as i32, height as i32),
@@ -15,7 +15,7 @@ impl<T> Matrix2D<T> where T: Clone {
     }
     pub fn new_coords(tl: Vec2<i32>, br: Vec2<i32>,
                       initial_value: T) -> Self  {
-        Matrix2D {
+        Matrix2 {
             items: vec![initial_value;
                         ((br.x - tl.x) *
                         (br.y - tl.y)) as usize],

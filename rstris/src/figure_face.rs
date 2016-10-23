@@ -1,22 +1,22 @@
 use block::*;
 use playfield::*;
 use position::*;
-use matrix_2d::Matrix2D;
+use matrix2::Matrix2;
 
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct FigureFace {
-    blocks: Matrix2D<Block>,
+    blocks: Matrix2<Block>,
 }
 
 impl FigureFace {
     pub fn new(blocks: &[&[Block]]) -> FigureFace {
         FigureFace {
-            blocks: Matrix2D::new_init(blocks),
+            blocks: Matrix2::new_init(blocks),
         }
     }
     pub fn new_empty(width: u32, height: u32) -> FigureFace {
         FigureFace {
-            blocks: Matrix2D::new(width, height, Block::new_not_set()),
+            blocks: Matrix2::new(width, height, Block::new_not_set()),
         }
     }
     //

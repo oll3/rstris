@@ -1,11 +1,11 @@
 use block::*;
 use position::Position;
-use matrix_2d::Matrix2D;
+use matrix2::Matrix2;
 
 #[derive(Debug, Clone)]
 pub struct Playfield {
     pf_name: String,
-    blocks: Matrix2D<Block>,
+    blocks: Matrix2<Block>,
     locked_block: Block,
 }
 
@@ -13,7 +13,7 @@ impl Playfield {
     pub fn new(name: &str, width: u32, height: u32) -> Playfield {
         Playfield{
             pf_name: name.to_owned(),
-            blocks: Matrix2D::new(width, height, Block::new_not_set()),
+            blocks: Matrix2::new(width, height, Block::new_not_set()),
             locked_block: Block::new_locked(0)}
     }
     pub fn get_block(&self, x: i32, y: i32) -> &Block {
@@ -122,8 +122,8 @@ impl Playfield {
 
     pub fn count_voids(&self) -> u32 {
         let mut voids = 0;
-        let mut visited: Matrix2D<bool> =
-            Matrix2D::new(self.blocks.width(), self.blocks.height(), false);
+        let mut visited: Matrix2<bool> =
+            Matrix2::new(self.blocks.width(), self.blocks.height(), false);
         let mut all_open: Vec<Position> =
             Vec::with_capacity((self.blocks.width() *
                                 self.blocks.height()) as usize);

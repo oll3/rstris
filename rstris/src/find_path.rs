@@ -1,7 +1,7 @@
 extern crate time;
 
-use matrix_3d::Matrix3D;
 use vec3::Vec3;
+use matrix3::Matrix3;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
 use std::cmp::max;
@@ -49,7 +49,7 @@ struct NodeContext {
 
     // Node by position is used to make the search for already
     // visited positions quicker.
-    node_by_pos: Matrix3D<Option<usize>>,
+    node_by_pos: Matrix3<Option<usize>>,
 
     open_set: BinaryHeap<NodeIdAndEst>,
 }
@@ -67,7 +67,7 @@ impl NodeContext {
             move_time: move_time,
             down_time: down_time,
             node_by_id: Vec::new(),
-            node_by_pos: Matrix3D::new_coords(
+            node_by_pos: Matrix3::new_coords(
                 Vec3::new(-MAX_FIGURE_SIZE,
                           -MAX_FIGURE_SIZE,
                           0),

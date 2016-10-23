@@ -1,7 +1,7 @@
 mod vec2;
 mod vec3;
-mod matrix_2d;
-mod matrix_3d;
+mod matrix2;
+mod matrix3;
 pub mod block;
 pub mod position;
 pub mod playfield;

@@ -4,7 +4,7 @@ use std::collections::LinkedList;
 use figure_pos::*;
 use position::*;
 use playfield::*;
-use matrix_3d::*;
+use matrix3::*;
 
 pub fn find_placement_quick(pf: &Playfield,
                             fig_pos: &FigurePos) -> Vec<PosDir> {
@@ -45,8 +45,8 @@ pub fn find_placement(pf: &Playfield,
     let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
     let mut moves: LinkedList<PosDir> = LinkedList::new();
-    let mut visited: Matrix3D<bool> =
-        Matrix3D::new(pf.width() as u32, pf.height() as u32, 4, false);
+    let mut visited: Matrix3<bool> =
+        Matrix3::new(pf.width() as u32, pf.height() as u32, 4, false);
     let mut it_cnt = 0;
     let start_pos = fig_pos.get_position().clone();
     let fig = fig_pos.get_figure();
