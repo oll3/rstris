@@ -1,3 +1,4 @@
+use vec2::*;
 use vec3::*;
 use std::ops::Add;
 use std::cmp::Ordering;
@@ -6,6 +7,12 @@ use std::cmp::Ordering;
 pub struct Position {
     x: i32,
     y: i32,
+}
+
+impl ToVec2<i32> for Position {
+    fn to_vec2(&self) -> Vec2<i32> {
+        Vec2::new(self.x, self.y)
+    }
 }
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
