@@ -3,8 +3,6 @@ use sdl2::keyboard::Keycode;
 
 use player::*;
 use rstris::playfield::*;
-use rstris::position::*;
-use rstris::pos_dir::*;
 use rstris::movement::*;
 use rstris::figure_pos::*;
 
@@ -21,7 +19,6 @@ pub struct KeyMap {
 pub struct HumanPlayer {
     common: PlayerCommon,
     key_map: KeyMap,
-    last_forced_down_time: u64,
     delay_first_step_down: u64,
 }
 
@@ -35,13 +32,11 @@ impl Player for HumanPlayer {
         &mut self.common
     }
 
-    fn figure_move_event(&mut self, ticks: u64, pf: &Playfield,
-                         fig_pos: &FigurePos, movement: &Movement) {
-    }
-
+    fn figure_move_event(&mut self, _: u64, _: &Playfield,
+                         _: &FigurePos, _: &Movement) {}
 
     fn new_figure_event(&mut self, ticks: u64,
-                        pf: &Playfield, fig_pos: &FigurePos) {
+                        _: &Playfield, _: &FigurePos) {
         self.delay_first_step_down = ticks + DELAY_FIRST_STEP_DOWN;
     }
 
@@ -75,7 +70,6 @@ impl HumanPlayer {
         HumanPlayer {
             common: common,
             key_map: key_map,
-            last_forced_down_time: 0,
             delay_first_step_down: 0,
         }
     }

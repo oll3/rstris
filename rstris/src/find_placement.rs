@@ -2,7 +2,6 @@ extern crate time;
 
 use std::collections::LinkedList;
 use figure_pos::*;
-use position::*;
 use pos_dir::*;
 use movement::*;
 use playfield::*;

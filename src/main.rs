@@ -9,10 +9,6 @@ mod player;
 mod human_player;
 mod computer_player;
 
-use std::io;
-use std::fs::File;
-use std::io::prelude::*;
-
 use game_logic::*;
 use player::*;
 use human_player::*;
@@ -150,6 +146,7 @@ fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
 
 struct RandomComputer {}
 impl ComputerType for RandomComputer {
+    fn init_eval(&mut self, _: &Playfield, _: usize) {}
     fn eval_placing(&mut self, _: &FigurePos, _: &Playfield) -> f32 {
         rand::random::<f32>()
     }
@@ -251,14 +248,14 @@ impl ComputerType for JitterComputer {
         fig_pos.lock(&mut pf);
         let mut locked_lines = pf.get_all_locked_lines();
         let lock_cnt = locked_lines.len() as i32 - self.pre_locked_lines;
-        let tetris = if lock_cnt >= 4 {1000.0} else {0.0};
+        //let tetris = if lock_cnt >= 4 {1000.0} else {0.0};
         locked_lines.sort();
         for line in &locked_lines {
             pf.throw_line(*line);
         }
-        let avg_height = get_pf_avg_height(&pf);
+        /*let avg_height = get_pf_avg_height(&pf);
         let remove_lines_score = lock_cnt as f32 * 1000.0 *
-            (self.avg_height_factor - 0.24);
+            (self.avg_height_factor - 0.24);*/
 
         let bottom_block = lowest_block(fig_pos);
         // Measure playfield jitter - The lower jitter the better

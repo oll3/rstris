@@ -2,7 +2,6 @@ use player::*;
 
 use rstris::playfield::*;
 use rstris::block::*;
-use rstris::position::*;
 use rstris::pos_dir::*;
 use rstris::movement::*;
 use rstris::figure_pos::*;

@@ -1,8 +1,8 @@
-use figure_face::*;
-use playfield::*;
-use position::*;
-use pos_dir::*;
-use block::*;
+use figure_face::FigureFace;
+use playfield::Playfield;
+use pos_dir::PosDir;
+use block::Block;
+use block::BlockState;
 
 
 #[derive(Clone, Debug)]

@@ -7,8 +7,6 @@ use std::collections::BinaryHeap;
 use rstris::playfield::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
-use rstris::position::*;
-use rstris::pos_dir::*;
 use rstris::movement::*;
 
 
@@ -143,12 +141,11 @@ impl PlayerCommon {
         self.figure_in_play.is_some()
     }
 
-    fn update(&mut self, ticks: u64, pf: &Playfield) {
+    fn update(&mut self, ticks: u64, _: &Playfield) {
         if self.figure_in_play() {
             let time_since_down =
                 self.time_since_move(ticks, &Movement::MoveDown);
             if time_since_down >= self.force_down_time as i64 {
-                let overdue = time_since_down - self.force_down_time as i64;
                 self.add_move(Movement::MoveDown,
                               (ticks as i64) as u64);
             }

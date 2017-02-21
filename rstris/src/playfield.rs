@@ -1,4 +1,5 @@
-use block::*;
+use block::Block;
+use block::BlockState;
 use position::Position;
 use matrix2::Matrix2;
 

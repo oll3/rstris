@@ -1,7 +1,6 @@
 extern crate rand;
 
 use rstris::playfield::*;
-use rstris::position::*;
 use rstris::pos_dir::*;
 use rstris::movement::*;
 use rstris::figure_pos::*;
@@ -11,7 +10,7 @@ use rstris::find_path::*;
 use player::*;
 
 pub trait ComputerType {
-    fn init_eval(&mut self, pf: &Playfield, avail_placings: usize) {}
+    fn init_eval(&mut self, pf: &Playfield, avail_placings: usize);
     fn eval_placing(&mut self, figure_pos: &FigurePos, pf: &Playfield) -> f32;
 }
 
@@ -40,7 +39,7 @@ impl <'a>Player for ComputerPlayer<'a> {
         &mut self.common
     }
 
-    fn figure_move_event(&mut self, ticks: u64, pf: &Playfield,
+    fn figure_move_event(&mut self, ticks: u64, _: &Playfield,
                          fig_pos: &FigurePos, movement: &Movement) {
         let y = fig_pos.get_position().get_y() as usize;
         if *movement == Movement::MoveDown && y < self.path_per_height.len() {
