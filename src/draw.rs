@@ -3,7 +3,8 @@ use rstris::playfield::*;
 use rstris::figure::*;
 
 use sdl2::rect::Rect;
-use sdl2::render::Renderer;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 use sdl2::pixels::Color;
 
 
@@ -25,15 +26,15 @@ impl DrawContext {
         return ctx;
     }
 
-    fn draw_block(&mut self, renderer: &mut Renderer,
+    fn draw_block(&mut self, canvas: &mut Canvas<Window>,
                   x: i32, y: i32, color: Color) {
-        renderer.set_draw_color(color);
+        canvas.set_draw_color(color);
         let size = self.block_size as i32;
         let spacing = self.block_spacing as i32;
         let border_rect =
             Rect::new(x * size + x * spacing, y * size + y * spacing,
                       self.block_size, self.block_size);
-        let _ = renderer.fill_rect(border_rect);
+        let _ = canvas.fill_rect(border_rect);
     }
 
     fn get_block_color(block: &Block) -> Color {
@@ -59,32 +60,32 @@ impl DrawContext {
         return color;
     }
 
-    pub fn draw_playfield(&mut self, renderer: &mut Renderer,
+    pub fn draw_playfield(&mut self, canvas: &mut Canvas<Window>,
                           playfield: &Playfield) {
         let frame_color = self.frame_color;
         let fill_color = self.fill_color;
         for y in 0..playfield.height() as i32 {
-            self.draw_block(renderer, 0, y, frame_color);
+            self.draw_block(canvas, 0, y, frame_color);
             for x in 0..playfield.width() as i32 {
                 let block = playfield.get_block(x, y);
                 if block.is_set() {
-                    self.draw_block(renderer, x + 1, y,
+                    self.draw_block(canvas, x + 1, y,
                                     DrawContext::get_block_color(&block));
                 } else {
-                    self.draw_block(renderer, x + 1, y, fill_color);
+                    self.draw_block(canvas, x + 1, y, fill_color);
                 }
             }
-            self.draw_block(renderer, playfield.width() as i32 + 1,
+            self.draw_block(canvas, playfield.width() as i32 + 1,
                             y, frame_color);
         }
         for bottom in 0..(playfield.width() + 2) as i32 {
-            self.draw_block(renderer, bottom, playfield.height() as i32,
+            self.draw_block(canvas, bottom, playfield.height() as i32,
                             frame_color);
         }
     }
 
     pub fn draw_next_figure(&mut self,
-                            renderer: &mut Renderer,
+                            canvas: &mut Canvas<Window>,
                             figure: &Figure, offs_x: i32, offs_y: i32,
                             fig_max_width: i32, fig_max_heigth: i32) {
         let frame_color = self.frame_color;
@@ -93,13 +94,13 @@ impl DrawContext {
             for x in 0..(fig_max_width + 2) {
                 if y == 0 || y == (fig_max_heigth + 1) ||
                     x == 0 || x == (fig_max_width + 1) {
-                        self.draw_block(renderer,
+                        self.draw_block(canvas,
                                         x + offs_x,
                                         y + offs_y,
                                         frame_color);
                     }
                 else {
-                    self.draw_block(renderer,
+                    self.draw_block(canvas,
                                     x + offs_x,
                                     y + offs_y,
                                     fill_color);
@@ -114,7 +115,7 @@ impl DrawContext {
             for x in 0..face.get_width() as i32 {
                 let block = face.get_block(x, y);
                 if block.is_set() {
-                    self.draw_block(renderer,
+                    self.draw_block(canvas,
                                     x + offs_x + 1 + fig_x_offs,
                                     y + offs_y + 1 + fig_y_offs,
                                     DrawContext::get_block_color(&block));
@@ -122,12 +123,12 @@ impl DrawContext {
             }
         }
     }
-    pub fn clear(&mut self, renderer: &mut Renderer, color: Color) {
-        let _ = renderer.set_draw_color(color);
-        let _ = renderer.clear();
+    pub fn clear(&mut self, canvas: &mut Canvas<Window>, color: Color) {
+        let _ = canvas.set_draw_color(color);
+        let _ = canvas.clear();
     }
 
-    pub fn present(&mut self, renderer: &mut Renderer) {
-        let _ = renderer.present();
+    pub fn present(&mut self, canvas: &mut Canvas<Window>) {
+        let _ = canvas.present();
     }
 }

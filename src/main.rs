@@ -30,9 +30,6 @@ static PF_WIDTH: u32 = 16;
 static PF_HEIGHT: u32 = 30;
 static BLOCK_SIZE: u32 = 20;
 static BLOCK_SPACING: u32 = 1;
-static FRAME_COLOR: Color = Color::RGB(200, 64, 64);
-static FILL_COLOR: Color = Color::RGB(98, 204, 244);
-static BG_COLOR: Color = Color::RGB(101, 208, 246);
 
 struct PlayfieldContext<'a> {
     pf: Playfield,
@@ -273,6 +270,10 @@ impl ComputerType for JitterComputer {
 
 fn main() {
 
+    let FRAME_COLOR: Color = Color::RGB(200, 64, 64);
+    let FILL_COLOR: Color = Color::RGB(98, 204, 244);
+    let BG_COLOR: Color = Color::RGB(101, 208, 246);
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -291,7 +292,7 @@ fn main() {
         .opengl()
         .build()
         .unwrap();
-    let mut renderer = window.renderer().build().unwrap();
+    let mut canvas = window.into_canvas().build().unwrap();
     let mut draw = DrawContext::new(BLOCK_SIZE,
                                     BLOCK_SPACING,
                                     FRAME_COLOR,
@@ -421,11 +422,11 @@ fn main() {
         }
 
         /* Render graphics */
-        draw.clear(&mut renderer, BG_COLOR);
-        draw.draw_playfield(&mut renderer, &pf_ctx.pf);
+        draw.clear(&mut canvas, BG_COLOR);
+        draw.draw_playfield(&mut canvas, &pf_ctx.pf);
         let mut pi = 0;
         for player in &mut pf_ctx.players {
-            draw.draw_next_figure(&mut renderer,
+            draw.draw_next_figure(&mut canvas,
                                   &player.next_figure(),
                                   (PF_WIDTH + 3) as i32,
                                   ((figure_max_height + 1) * pi) as i32,
@@ -434,13 +435,13 @@ fn main() {
 
             pi += 1;
         }
-        draw.present(&mut renderer);
+        draw.present(&mut canvas);
 
         /* Write FPS in window title */
         frame_cnt_sec += 1;
         if (ticks as i64 - sec_timer as i64) >= 1000000000 {
             let title = format!("RSTris (fps: {})", frame_cnt_sec);
-            let mut window = renderer.window_mut().unwrap();
+            let mut window = canvas.window_mut();
 
             frame_cnt_sec = 0;
             sec_timer = ticks;
