@@ -1,7 +1,7 @@
 use block::Block;
 use block::BlockState;
-use position::Position;
 use matrix2::Matrix2;
+use position::Position;
 
 #[derive(Debug, Clone)]
 pub struct Playfield {
@@ -12,10 +12,11 @@ pub struct Playfield {
 
 impl Playfield {
     pub fn new(name: &str, width: u32, height: u32) -> Playfield {
-        Playfield{
+        Playfield {
             pf_name: name.to_owned(),
             blocks: Matrix2::new(width, height, Block::new_not_set()),
-            locked_block: Block::new_locked(0)}
+            locked_block: Block::new_locked(0),
+        }
     }
     pub fn get_block(&self, x: i32, y: i32) -> &Block {
         if !self.blocks.contains(x, y) {
@@ -43,8 +44,7 @@ impl Playfield {
     pub fn contains(&self, pos: &Position) -> bool {
         let x = pos.get_x();
         let y = pos.get_y();
-        x >= 0 && x < self.blocks.width() as i32 &&
-            y >= 0 && y < self.blocks.height() as i32
+        x >= 0 && x < self.blocks.width() as i32 && y >= 0 && y < self.blocks.height() as i32
     }
     pub fn block_is_set(&self, pos: &Position) -> bool {
         self.get_block_by_pos(pos).state != BlockState::NotSet
@@ -116,7 +116,9 @@ impl Playfield {
                     self.set_block(x, y, Block::new_not_set());
                 }
             }
-            if y == 0 {break;}
+            if y == 0 {
+                break;
+            }
             y -= 1;
         }
     }
@@ -126,8 +128,7 @@ impl Playfield {
         let mut visited: Matrix2<bool> =
             Matrix2::new(self.blocks.width(), self.blocks.height(), false);
         let mut all_open: Vec<Position> =
-            Vec::with_capacity((self.blocks.width() *
-                                self.blocks.height()) as usize);
+            Vec::with_capacity((self.blocks.width() * self.blocks.height()) as usize);
         for y in 0..self.height() {
             for x in 0..self.width() {
                 let pos = Position::new(x as i32, y as i32);
@@ -147,16 +148,17 @@ impl Playfield {
             fill.push(pos.clone());
             while fill.len() > 0 {
                 let pos = fill.pop().unwrap();
-                let test_positions =
-                    [Position::new(pos.get_x() + 1, pos.get_y()),
-                     Position::new(pos.get_x(), pos.get_y() + 1),
-                     Position::new(pos.get_x() - 1, pos.get_y()),
-                     Position::new(pos.get_x(), pos.get_y() - 1)];
+                let test_positions = [
+                    Position::new(pos.get_x() + 1, pos.get_y()),
+                    Position::new(pos.get_x(), pos.get_y() + 1),
+                    Position::new(pos.get_x() - 1, pos.get_y()),
+                    Position::new(pos.get_x(), pos.get_y() - 1),
+                ];
 
                 for test_pos in test_positions.iter() {
-                    if self.contains(test_pos) &&
-                        !*visited.tv_get(test_pos) &&
-                        !self.block_is_locked(test_pos)
+                    if self.contains(test_pos)
+                        && !*visited.tv_get(test_pos)
+                        && !self.block_is_locked(test_pos)
                     {
                         visited.tv_set(test_pos, true);
                         fill.push(test_pos.clone());

@@ -1,6 +1,6 @@
-use vec3::*;
-use position::*;
 use movement::*;
+use position::*;
+use vec3::*;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct PosDir {
@@ -16,17 +16,20 @@ impl ToVec3<i32> for PosDir {
 
 impl PosDir {
     pub fn new(x: i32, y: i32, dir: i32) -> Self {
-        PosDir{pos: Position::new(x, y), dir: dir}
+        PosDir {
+            pos: Position::new(x, y),
+            dir: dir,
+        }
     }
     pub fn apply_move(pos1: &PosDir, movement: &Movement) -> Self {
         let mut pos = pos1.clone();
         match *movement {
-            Movement::MoveLeft => {pos.pos.add(-1, 0)},
-            Movement::MoveRight => {pos.pos.add(1, 0)},
-            Movement::MoveDown => {pos.pos.add(0, 1)},
-            Movement::MoveUp => {pos.pos.add(0, -1)},
-            Movement::RotateCW => {pos.dir += 1},
-            Movement::RotateCCW => {pos.dir -= 1},
+            Movement::MoveLeft => pos.pos.add(-1, 0),
+            Movement::MoveRight => pos.pos.add(1, 0),
+            Movement::MoveDown => pos.pos.add(0, 1),
+            Movement::MoveUp => pos.pos.add(0, -1),
+            Movement::RotateCW => pos.dir += 1,
+            Movement::RotateCCW => pos.dir -= 1,
         };
         pos
     }

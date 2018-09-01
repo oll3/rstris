@@ -1,7 +1,7 @@
-use pos_dir::*;
 use figure::*;
 use figure_face::*;
 use playfield::*;
+use pos_dir::*;
 
 #[derive(Debug, Clone)]
 pub struct FigurePos {
@@ -13,7 +13,10 @@ impl FigurePos {
     pub fn new(fig: Figure, pos: PosDir) -> Self {
         let mut norm_pos = pos;
         norm_pos.normalize_dir(fig.faces().len());
-        return FigurePos{fig: fig, pos: norm_pos};
+        return FigurePos {
+            fig: fig,
+            pos: norm_pos,
+        };
     }
     pub fn get_position(&self) -> &PosDir {
         &self.pos

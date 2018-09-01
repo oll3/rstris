@@ -1,9 +1,8 @@
+use block::Block;
+use block::BlockState;
 use figure_face::FigureFace;
 use playfield::Playfield;
 use pos_dir::PosDir;
-use block::Block;
-use block::BlockState;
-
 
 #[derive(Clone, Debug)]
 pub struct Figure {
@@ -11,10 +10,12 @@ pub struct Figure {
     vfaces: Vec<FigureFace>,
 }
 
-
 impl Figure {
     pub fn new(name: &str) -> Figure {
-        Figure{figure_name: name.to_owned(), vfaces: vec![]}
+        Figure {
+            figure_name: name.to_owned(),
+            vfaces: vec![],
+        }
     }
 
     //
@@ -25,8 +26,7 @@ impl Figure {
         let mut face = FigureFace::new(blocks);
         fig.vfaces.push(face.clone());
         for _ in 0..3 {
-            let mut next_face =
-                FigureFace::new_empty(face.get_height(), face.get_width());
+            let mut next_face = FigureFace::new_empty(face.get_height(), face.get_width());
             for y in 0..face.get_height() as i32 {
                 for x in 0..face.get_width() as i32 {
                     let ty = face.get_height() as i32 - y - 1;
@@ -39,8 +39,11 @@ impl Figure {
             }
             face = next_face;
         }
-        println!("Built figure {} with {} faces",
-                 fig.get_name(), fig.faces().len());
+        println!(
+            "Built figure {} with {} faces",
+            fig.get_name(),
+            fig.faces().len()
+        );
         fig
     }
     fn test_face_present(&self, face: &FigureFace) -> bool {
@@ -103,82 +106,117 @@ impl Figure {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use figure_face::*;
     use block::*;
+    use figure_face::*;
 
     macro_rules! bl {
-    ($x:expr) => (match $x {
-        0 => Block::new_not_set(),
-        _ => Block::new_locked($x)})
+        ($x:expr) => {
+            match $x {
+                0 => Block::new_not_set(),
+                _ => Block::new_locked($x),
+            }
+        };
     }
 
     #[test]
     fn test_figure1() {
-        let fig = Figure::new_from_face("Figure 1",
-                                        &[&[bl!(0), bl!(0), bl!(0)],
-                                          &[bl!(1), bl!(1), bl!(1)],
-                                          &[bl!(0), bl!(1), bl!(0)]]);
+        let fig = Figure::new_from_face(
+            "Figure 1",
+            &[
+                &[bl!(0), bl!(0), bl!(0)],
+                &[bl!(1), bl!(1), bl!(1)],
+                &[bl!(0), bl!(1), bl!(0)],
+            ],
+        );
         assert_eq!(fig.faces().len(), 4);
-        assert_eq!(*fig.get_face(0),
-                   FigureFace::new(&[&[bl!(0), bl!(0), bl!(0)],
-                                     &[bl!(1), bl!(1), bl!(1)],
-                                     &[bl!(0), bl!(1), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(0),
+            FigureFace::new(&[
+                &[bl!(0), bl!(0), bl!(0)],
+                &[bl!(1), bl!(1), bl!(1)],
+                &[bl!(0), bl!(1), bl!(0)]
+            ])
+        );
         assert_eq!(fig.get_face(0).get_row_with_blocks(), [1, 2]);
-        assert_eq!(*fig.get_face(1),
-                   FigureFace::new(&[&[bl!(0), bl!(1), bl!(0)],
-                                     &[bl!(1), bl!(1), bl!(0)],
-                                     &[bl!(0), bl!(1), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(1),
+            FigureFace::new(&[
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(1), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)]
+            ])
+        );
         assert_eq!(fig.get_face(1).get_row_with_blocks(), [0, 1, 2]);
-        assert_eq!(*fig.get_face(2),
-                   FigureFace::new(&[&[bl!(0), bl!(1), bl!(0)],
-                                     &[bl!(1), bl!(1), bl!(1)],
-                                     &[bl!(0), bl!(0), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(2),
+            FigureFace::new(&[
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(1), bl!(1), bl!(1)],
+                &[bl!(0), bl!(0), bl!(0)]
+            ])
+        );
         assert_eq!(fig.get_face(2).get_row_with_blocks(), [0, 1]);
-        assert_eq!(*fig.get_face(3),
-                   FigureFace::new(&[&[bl!(0), bl!(1), bl!(0)],
-                                     &[bl!(0), bl!(1), bl!(1)],
-                                     &[bl!(0), bl!(1), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(3),
+            FigureFace::new(&[
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(1)],
+                &[bl!(0), bl!(1), bl!(0)]
+            ])
+        );
         assert_eq!(fig.get_face(3).get_row_with_blocks(), [0, 1, 2]);
     }
     #[test]
     fn test_figure2() {
-        let fig = Figure::new_from_face("Figure 2",
-                                        &[&[bl!(0), bl!(1), bl!(0)],
-                                          &[bl!(0), bl!(1), bl!(0)],
-                                          &[bl!(0), bl!(1), bl!(0)],
-                                          &[bl!(0), bl!(1), bl!(0)]]);
+        let fig = Figure::new_from_face(
+            "Figure 2",
+            &[
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)],
+            ],
+        );
         assert_eq!(fig.faces().len(), 2);
-        assert_eq!(*fig.get_face(0),
-                   FigureFace::new(&[&[bl!(0), bl!(1), bl!(0)],
-                                     &[bl!(0), bl!(1), bl!(0)],
-                                     &[bl!(0), bl!(1), bl!(0)],
-                                     &[bl!(0), bl!(1), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(0),
+            FigureFace::new(&[
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)],
+                &[bl!(0), bl!(1), bl!(0)]
+            ])
+        );
         assert_eq!(fig.get_face(0).get_row_with_blocks(), [0, 1, 2, 3]);
-        assert_eq!(*fig.get_face(1),
-                   FigureFace::new(&[&[bl!(0), bl!(0), bl!(0), bl!(0)],
-                                     &[bl!(1), bl!(1), bl!(1), bl!(1)],
-                                     &[bl!(0), bl!(0), bl!(0), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(1),
+            FigureFace::new(&[
+                &[bl!(0), bl!(0), bl!(0), bl!(0)],
+                &[bl!(1), bl!(1), bl!(1), bl!(1)],
+                &[bl!(0), bl!(0), bl!(0), bl!(0)]
+            ])
+        );
         assert_eq!(fig.get_face(1).get_row_with_blocks(), [1]);
     }
     #[test]
     fn test_figure3() {
-        let fig = Figure::new_from_face("Figure 3",
-                                        &[&[bl!(1), bl!(0)],
-                                          &[bl!(1), bl!(1)],
-                                          &[bl!(0), bl!(1)]]);
+        let fig = Figure::new_from_face(
+            "Figure 3",
+            &[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]],
+        );
         assert_eq!(fig.faces().len(), 2);
-        assert_eq!(*fig.get_face(0),
-                   FigureFace::new(&[&[bl!(1), bl!(0)],
-                                     &[bl!(1), bl!(1)],
-                                     &[bl!(0), bl!(1)]]));
+        assert_eq!(
+            *fig.get_face(0),
+            FigureFace::new(&[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]])
+        );
         assert_eq!(fig.get_face(0).get_row_with_blocks(), [0, 1, 2]);
-        assert_eq!(*fig.get_face(1),
-                   FigureFace::new(&[&[bl!(0), bl!(1), bl!(1)],
-                                     &[bl!(1), bl!(1), bl!(0)]]));
+        assert_eq!(
+            *fig.get_face(1),
+            FigureFace::new(&[&[bl!(0), bl!(1), bl!(1)], &[bl!(1), bl!(1), bl!(0)]])
+        );
         assert_eq!(fig.get_face(1).get_row_with_blocks(), [0, 1]);
     }
 }

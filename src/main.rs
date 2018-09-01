@@ -1,30 +1,29 @@
 extern crate rand;
+extern crate rstris;
 extern crate sdl2;
 extern crate time;
-extern crate rstris;
 
+mod computer_player;
 mod draw;
 mod game_logic;
-mod player;
 mod human_player;
-mod computer_player;
+mod player;
 
-use game_logic::*;
-use player::*;
-use human_player::*;
 use computer_player::*;
 use draw::*;
+use game_logic::*;
+use human_player::*;
+use player::*;
 use rstris::block::*;
-use rstris::playfield::*;
 use rstris::figure::*;
-use rstris::position::*;
 use rstris::figure_pos::*;
+use rstris::playfield::*;
+use rstris::position::*;
 
-use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
 use std::collections::HashMap;
-
 
 static PF_WIDTH: u32 = 16;
 static PF_HEIGHT: u32 = 30;
@@ -38,13 +37,14 @@ struct PlayfieldContext<'a> {
     lines_to_throw: Vec<u32>,
 }
 
-
-impl <'a>PlayfieldContext<'a> {
+impl<'a> PlayfieldContext<'a> {
     pub fn new(pf: Playfield) -> Self {
-        PlayfieldContext{pf: pf,
-                         players: Vec::new(),
-                         game_over: false,
-                         lines_to_throw: Vec::new()}
+        PlayfieldContext {
+            pf: pf,
+            players: Vec::new(),
+            game_over: false,
+            lines_to_throw: Vec::new(),
+        }
     }
 
     pub fn add_player(&mut self, player: &'a mut Player) {
@@ -63,9 +63,12 @@ impl <'a>PlayfieldContext<'a> {
 }
 
 macro_rules! bl {
-    ($x:expr) => (match $x {
-        0 => Block::new_not_set(),
-        _ => Block::new_locked($x)})
+    ($x:expr) => {
+        match $x {
+            0 => Block::new_not_set(),
+            _ => Block::new_locked($x),
+        }
+    };
 }
 
 //
@@ -73,44 +76,55 @@ macro_rules! bl {
 //
 fn init_figures() -> Vec<Figure> {
     let mut figure_list: Vec<Figure> = Vec::new();
-    figure_list.push(
-        Figure::new_from_face("1",
-                              &[&[bl!(0), bl!(0), bl!(0)],
-                                &[bl!(1), bl!(1), bl!(1)],
-                                &[bl!(0), bl!(1), bl!(0)]]));
-    figure_list.push(
-        Figure::new_from_face("2",
-                              &[&[bl!(0), bl!(0), bl!(0)],
-                                &[bl!(2), bl!(2), bl!(2)],
-                                &[bl!(0), bl!(0), bl!(2)]]));
-    figure_list.push(
-        Figure::new_from_face("3",
-                              &[&[bl!(0), bl!(0), bl!(3)],
-                                &[bl!(3), bl!(3), bl!(3)],
-                                &[bl!(0), bl!(0), bl!(0)]]));
-    figure_list.push(
-        Figure::new_from_face("4",
-                              &[&[bl!(4), bl!(4)],
-                                &[bl!(4), bl!(4)]]));
-    figure_list.push(
-        Figure::new_from_face("5",
-                              &[&[bl!(0), bl!(5), bl!(5)],
-                                &[bl!(5), bl!(5), bl!(0)]]));
-    figure_list.push(
-        Figure::new_from_face("6",
-                              &[&[bl!(6), bl!(6), bl!(0)],
-                                &[bl!(0), bl!(6), bl!(6)]]));
-    figure_list.push(
-        Figure::new_from_face("7",
-                              &[&[bl!(0), bl!(7), bl!(0)],
-                                &[bl!(0), bl!(7), bl!(0)],
-                                &[bl!(0), bl!(7), bl!(0)],
-                                &[bl!(0), bl!(7), bl!(0)]]));
+    figure_list.push(Figure::new_from_face(
+        "1",
+        &[
+            &[bl!(0), bl!(0), bl!(0)],
+            &[bl!(1), bl!(1), bl!(1)],
+            &[bl!(0), bl!(1), bl!(0)],
+        ],
+    ));
+    figure_list.push(Figure::new_from_face(
+        "2",
+        &[
+            &[bl!(0), bl!(0), bl!(0)],
+            &[bl!(2), bl!(2), bl!(2)],
+            &[bl!(0), bl!(0), bl!(2)],
+        ],
+    ));
+    figure_list.push(Figure::new_from_face(
+        "3",
+        &[
+            &[bl!(0), bl!(0), bl!(3)],
+            &[bl!(3), bl!(3), bl!(3)],
+            &[bl!(0), bl!(0), bl!(0)],
+        ],
+    ));
+    figure_list.push(Figure::new_from_face(
+        "4",
+        &[&[bl!(4), bl!(4)], &[bl!(4), bl!(4)]],
+    ));
+    figure_list.push(Figure::new_from_face(
+        "5",
+        &[&[bl!(0), bl!(5), bl!(5)], &[bl!(5), bl!(5), bl!(0)]],
+    ));
+    figure_list.push(Figure::new_from_face(
+        "6",
+        &[&[bl!(6), bl!(6), bl!(0)], &[bl!(0), bl!(6), bl!(6)]],
+    ));
+    figure_list.push(Figure::new_from_face(
+        "7",
+        &[
+            &[bl!(0), bl!(7), bl!(0)],
+            &[bl!(0), bl!(7), bl!(0)],
+            &[bl!(0), bl!(7), bl!(0)],
+            &[bl!(0), bl!(7), bl!(0)],
+        ],
+    ));
     return figure_list;
 }
 
-fn get_max_figure_dimensions(figure_list: &Vec<Figure>)
-                             -> (u32, u32) {
+fn get_max_figure_dimensions(figure_list: &Vec<Figure>) -> (u32, u32) {
     let mut max_width: u32 = 0;
     let mut max_height: u32 = 0;
     for fig in figure_list {
@@ -150,8 +164,7 @@ impl ComputerType for RandomComputer {
 }
 
 fn lowest_block(fig_pos: &FigurePos) -> i32 {
-    fig_pos.get_face().get_lowest_block().get_y() +
-        fig_pos.get_position().get_y()
+    fig_pos.get_face().get_lowest_block().get_y() + fig_pos.get_position().get_y()
 }
 
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
@@ -198,7 +211,7 @@ fn get_pf_max_height(pf: &Playfield) -> i32 {
     let mut max_height = 0;
     for x in 0..(pf.width() as i32) {
         for y in 0..(pf.height() as i32) {
-            let height = pf.height() as i32- y;
+            let height = pf.height() as i32 - y;
             if pf.block_is_locked(&Position::new(x, y)) && height > max_height {
                 max_height = height;
             }
@@ -218,7 +231,7 @@ struct JitterComputer {
 }
 impl JitterComputer {
     fn new() -> Self {
-        JitterComputer{
+        JitterComputer {
             pre_col_jitter: 0,
             pre_row_jitter: 0,
             pre_voids: 0,
@@ -267,9 +280,7 @@ impl ComputerType for JitterComputer {
     }
 }
 
-
 fn main() {
-
     let FRAME_COLOR: Color = Color::RGB(200, 64, 64);
     let FILL_COLOR: Color = Color::RGB(98, 204, 244);
     let BG_COLOR: Color = Color::RGB(101, 208, 246);
@@ -278,32 +289,29 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let figure_list = init_figures();
-    let (figure_max_width, figure_max_height) =
-        get_max_figure_dimensions(&figure_list);
-    println!("Max figure dimensions: {} x {}",
-             figure_max_width, figure_max_height);
+    let (figure_max_width, figure_max_height) = get_max_figure_dimensions(&figure_list);
+    println!(
+        "Max figure dimensions: {} x {}",
+        figure_max_width, figure_max_height
+    );
 
-    let window_width: u32 = (PF_WIDTH + 2 + figure_max_width + 3) *
-        (BLOCK_SIZE + BLOCK_SPACING);
+    let window_width: u32 = (PF_WIDTH + 2 + figure_max_width + 3) * (BLOCK_SIZE + BLOCK_SPACING);
     let window_height: u32 = (PF_HEIGHT + 1) * (BLOCK_SIZE + BLOCK_SPACING);
-    let window = video_subsystem.window("rust-sdl2 demo: Video",
-                                        window_width, window_height)
+    let window = video_subsystem
+        .window("rust-sdl2 demo: Video", window_width, window_height)
         .position_centered()
         .opengl()
         .build()
         .unwrap();
     let mut canvas = window.into_canvas().build().unwrap();
-    let mut draw = DrawContext::new(BLOCK_SIZE,
-                                    BLOCK_SPACING,
-                                    FRAME_COLOR,
-                                    FILL_COLOR);
+    let mut draw = DrawContext::new(BLOCK_SIZE, BLOCK_SPACING, FRAME_COLOR, FILL_COLOR);
 
     let player1_key_map = KeyMap {
         step_left: Some(Keycode::Left),
         step_right: Some(Keycode::Right),
         step_down: Some(Keycode::Down),
         rot_cw: Some(Keycode::Up),
-        rot_ccw: None
+        rot_ccw: None,
     };
 
     let player2_key_map = KeyMap {
@@ -311,37 +319,38 @@ fn main() {
         step_right: Some(Keycode::D),
         step_down: Some(Keycode::S),
         rot_cw: Some(Keycode::W),
-        rot_ccw: None
+        rot_ccw: None,
     };
     let mut player1 = HumanPlayer::new(
         PlayerCommon::new("Human 1", 500000000, figure_list.clone()),
-        player1_key_map
+        player1_key_map,
     );
     let mut player2 = HumanPlayer::new(
         PlayerCommon::new("Human 2", 500000000, figure_list.clone()),
-        player2_key_map
+        player2_key_map,
     );
 
     let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 10000000, figure_list.clone()),
-        9000000, &mut com_type1,
+        9000000,
+        &mut com_type1,
     );
-    let mut com_random2 = RandomComputer{};
+    let mut com_random2 = RandomComputer {};
     let mut com2 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
-        5000000, &mut com_random2,
+        5000000,
+        &mut com_random2,
     );
 
     let pf1 = Playfield::new("Playfield 1", PF_WIDTH, PF_HEIGHT);
     let mut pf_ctx = PlayfieldContext::new(pf1);
 
-
-//    pf_ctx.add_player(&mut player1);
-//    pf_ctx.add_player(&mut player2);
+    //    pf_ctx.add_player(&mut player1);
+    //    pf_ctx.add_player(&mut player2);
     pf_ctx.add_player(&mut com1);
-//    pf_ctx.add_player(&mut com2);
-//    pf_ctx.add_player(&mut com3);
+    //    pf_ctx.add_player(&mut com2);
+    //    pf_ctx.add_player(&mut com3);
 
     let mut pause = false;
     let mut frame_cnt_sec = 0;
@@ -353,27 +362,36 @@ fn main() {
         let ticks = time::precise_time_ns() - start_ticks;
         for event in events.poll_iter() {
             match event {
-                Event::Quit {..} | Event::KeyDown {
-                    keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },Event::KeyDown { keycode: Some(Keycode::P), .. } => {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(Keycode::P),
+                    ..
+                } => {
                     pause = !pause;
                     if pause {
                         println!("Paused");
                     } else {
                         println!("Continued");
                     }
-                },Event::KeyDown {
-                    keycode: Some(key), .. } => {
+                }
+                Event::KeyDown {
+                    keycode: Some(key), ..
+                } => {
                     if !pressed_keys.contains_key(&key) {
                         pressed_keys.insert(key, ticks);
                     }
-                },Event::KeyUp {
-                    keycode: Some(key), .. } => {
+                }
+                Event::KeyUp {
+                    keycode: Some(key), ..
+                } => {
                     if pressed_keys.contains_key(&key) {
                         pressed_keys.remove(&key);
                     }
-                },
+                }
 
                 _ => {}
             }
@@ -383,10 +401,8 @@ fn main() {
             continue;
         }
 
-
         // Handle movement and figure creation
         for player in &mut pf_ctx.players {
-
             player.update(ticks, &pf_ctx.pf);
             player.handle_input(ticks, &mut pressed_keys);
 
@@ -402,8 +418,7 @@ fn main() {
                     }
                 }
             } else if pf_ctx.lines_to_throw.len() == 0 {
-                let placement_result =
-                    try_place_new_figure(*player, ticks, &mut pf_ctx.pf);
+                let placement_result = try_place_new_figure(*player, ticks, &mut pf_ctx.pf);
                 if placement_result == BlockState::Locked {
                     pf_ctx.game_over = true;
                 }
@@ -426,12 +441,14 @@ fn main() {
         draw.draw_playfield(&mut canvas, &pf_ctx.pf);
         let mut pi = 0;
         for player in &mut pf_ctx.players {
-            draw.draw_next_figure(&mut canvas,
-                                  &player.next_figure(),
-                                  (PF_WIDTH + 3) as i32,
-                                  ((figure_max_height + 1) * pi) as i32,
-                                  figure_max_width as i32,
-                                  figure_max_height as i32);
+            draw.draw_next_figure(
+                &mut canvas,
+                &player.next_figure(),
+                (PF_WIDTH + 3) as i32,
+                ((figure_max_height + 1) * pi) as i32,
+                figure_max_width as i32,
+                figure_max_height as i32,
+            );
 
             pi += 1;
         }

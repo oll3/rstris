@@ -27,5 +27,7 @@ impl PartialOrd for MoveAndTime {
 }
 impl Eq for MoveAndTime {}
 impl PartialEq for MoveAndTime {
-    fn eq(&self, other: &MoveAndTime) -> bool { self.time == other.time }
+    fn eq(&self, other: &MoveAndTime) -> bool {
+        self.time == other.time
+    }
 }

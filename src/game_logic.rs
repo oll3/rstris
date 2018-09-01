@@ -1,17 +1,15 @@
 use player::*;
 
-use rstris::playfield::*;
 use rstris::block::*;
-use rstris::pos_dir::*;
-use rstris::movement::*;
 use rstris::figure_pos::*;
+use rstris::movement::*;
+use rstris::playfield::*;
+use rstris::pos_dir::*;
 
 //
 // Try to place players next figure in playfield
 //
-pub fn try_place_new_figure(player: &mut Player, ticks: u64,
-                            pf: &mut Playfield) -> BlockState {
-
+pub fn try_place_new_figure(player: &mut Player, ticks: u64, pf: &mut Playfield) -> BlockState {
     let figure = player.common().next_figure().clone();
     let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
     if figure.collide_locked(pf, &pos) {
@@ -26,9 +24,12 @@ pub fn try_place_new_figure(player: &mut Player, ticks: u64,
     let next_down = ticks + player.common().force_down_time;
     player.common_mut().add_move(Movement::MoveDown, next_down);
 
-    println!("{}: Placed figure {} in playfield (next is {})",
-             player.common().get_name(), fig_pos.get_figure().get_name(),
-             player.common().next_figure().get_name());
+    println!(
+        "{}: Placed figure {} in playfield (next is {})",
+        player.common().get_name(),
+        fig_pos.get_figure().get_name(),
+        player.common().next_figure().get_name()
+    );
     fig_pos.place(pf);
     player.common_mut().set_figure(Some(fig_pos.clone()));
 
@@ -39,9 +40,7 @@ pub fn try_place_new_figure(player: &mut Player, ticks: u64,
 //
 // Move player current figure according to the given movement.
 //
-pub fn execute_move(player: &mut Player, pf: &mut Playfield,
-                    move_and_time: MoveAndTime) {
-
+pub fn execute_move(player: &mut Player, pf: &mut Playfield, move_and_time: MoveAndTime) {
     let (fig_move, move_time) = (move_and_time.movement, move_and_time.time);
     let mut fig_pos = player.common().get_figure().unwrap();
     fig_pos.remove(pf);
@@ -51,8 +50,7 @@ pub fn execute_move(player: &mut Player, pf: &mut Playfield,
     if collision == BlockState::Locked && fig_move == Movement::MoveDown {
         fig_pos.lock(pf);
         player.common_mut().set_figure(None);
-    }
-    else {
+    } else {
         if collision == BlockState::NotSet {
             fig_pos.set_position(&test_pos);
         }

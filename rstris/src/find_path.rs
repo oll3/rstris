@@ -1,14 +1,14 @@
 extern crate time;
 
-use vec3::Vec3;
-use matrix3::Matrix3;
-use std::collections::BinaryHeap;
-use std::cmp::Ordering;
-use std::cmp::max;
 use figure::*;
-use pos_dir::*;
+use matrix3::Matrix3;
 use movement::*;
 use playfield::*;
+use pos_dir::*;
+use std::cmp::max;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+use vec3::Vec3;
 
 static MAX_FIGURE_DIR: i32 = 4;
 static MAX_FIGURE_SIZE: i32 = 4;
@@ -57,10 +57,7 @@ struct NodeContext {
 }
 
 impl NodeContext {
-    fn new(move_time: u64, down_time: u64,
-           pf: &Playfield,
-           fig: &Figure,
-           end_pos: &PosDir) -> Self {
+    fn new(move_time: u64, down_time: u64, pf: &Playfield, fig: &Figure, end_pos: &PosDir) -> Self {
         NodeContext {
             pf: pf.clone(),
             fig: fig.clone(),
@@ -70,13 +67,14 @@ impl NodeContext {
             down_time: down_time,
             node_by_id: Vec::new(),
             node_by_pos: Matrix3::new_coords(
-                Vec3::new(-MAX_FIGURE_SIZE,
-                          -MAX_FIGURE_SIZE,
-                          0),
-                Vec3::new(pf.width() as i32 + MAX_FIGURE_SIZE,
-                          pf.height() as i32 + MAX_FIGURE_SIZE,
-                          MAX_FIGURE_DIR),
-                None),
+                Vec3::new(-MAX_FIGURE_SIZE, -MAX_FIGURE_SIZE, 0),
+                Vec3::new(
+                    pf.width() as i32 + MAX_FIGURE_SIZE,
+                    pf.height() as i32 + MAX_FIGURE_SIZE,
+                    MAX_FIGURE_DIR,
+                ),
+                None,
+            ),
             open_set: BinaryHeap::new(),
         }
     }
@@ -94,15 +92,15 @@ impl NodeContext {
         self.node_by_id.push(node);
     }
     fn mark_open(&mut self, node: &Node) {
-        let id_and_est = NodeIdAndEst{id: node.id,
-                                      est: node.get_tot_est()};
+        let id_and_est = NodeIdAndEst {
+            id: node.id,
+            est: node.get_tot_est(),
+        };
         self.open_set.push(id_and_est);
     }
-    fn mark_closed(&mut self, _: &Node) {
-    }
+    fn mark_closed(&mut self, _: &Node) {}
     fn no_pos_with_lower_est(&self, node: &Node) -> bool {
-        if let Some(best_node) = *self.node_by_pos.tv_get(&node.pos)
-        {
+        if let Some(best_node) = *self.node_by_pos.tv_get(&node.pos) {
             let n = self.get_node_from_id(best_node);
             if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
                 return false;
@@ -112,19 +110,16 @@ impl NodeContext {
     }
 }
 
-
 fn est_pos_distance(start: &PosDir, end: &PosDir) -> u64 {
-    ((start.get_x() - end.get_x()).abs() as u64 +
-     (start.get_dir() - end.get_dir()).abs() as u64)
+    ((start.get_x() - end.get_x()).abs() as u64 + (start.get_dir() - end.get_dir()).abs() as u64)
 }
-
 
 #[derive(Clone, Debug)]
 struct Node {
     id: usize,
     pid: Option<usize>,
     pos: PosDir,
-    walked: u64, // g
+    walked: u64,  // g
     est_end: u64, // h
     mvmnt: Option<Movement>,
     time: u64,
@@ -133,14 +128,18 @@ struct Node {
 }
 
 impl Node {
-    fn new(ctx: &mut NodeContext,
-           parent: Option<usize>,
-           pos: &PosDir, walked: u64, est_distance_end: u64,
-           mvmnt: Option<Movement>, time: u64,
-           last_time_move: i64, last_time_down: i64)
-           -> Node {
-
-        let node = Node{
+    fn new(
+        ctx: &mut NodeContext,
+        parent: Option<usize>,
+        pos: &PosDir,
+        walked: u64,
+        est_distance_end: u64,
+        mvmnt: Option<Movement>,
+        time: u64,
+        last_time_move: i64,
+        last_time_down: i64,
+    ) -> Node {
+        let node = Node {
             id: ctx.node_by_id.len(),
             pid: parent,
             pos: pos.clone(),
@@ -166,8 +165,7 @@ impl Node {
         let time_since_down = self.time as i64 - self.last_time_down;
         return ctx.down_time as i64 - time_since_down;
     }
-    fn new_moved_node(&self, ctx: &mut NodeContext,
-                      movement: Movement) -> Node {
+    fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement) -> Node {
         let mut fig_pos = PosDir::apply_move(&self.pos, &movement);
         fig_pos.normalize_dir(ctx.fig.faces().len());
 
@@ -178,31 +176,36 @@ impl Node {
         if movement == Movement::MoveDown {
             tt += max(0, self.time_until_down(ctx)) as u64;
             ltd = tt as i64;
-        }
-        else {
+        } else {
             tt += max(0, self.time_until_move(ctx)) as u64;
             ltm = tt as i64;
         }
 
         let distance_to_end = est_pos_distance(&fig_pos, &ctx.end_pos);
-        Node::new(ctx, Some(self.id), &fig_pos,
-                  self.walked + 1,
-                  distance_to_end,
-                  Some(movement.clone()),
-                  tt, ltm, ltd)
+        Node::new(
+            ctx,
+            Some(self.id),
+            &fig_pos,
+            self.walked + 1,
+            distance_to_end,
+            Some(movement.clone()),
+            tt,
+            ltm,
+            ltd,
+        )
     }
 
     fn get_possible_moves(&self, ctx: &mut NodeContext) -> Vec<Node> {
-
         if self.time_until_move(ctx) < self.time_until_down(ctx) {
             // Regular move
-            return vec![self.new_moved_node(ctx, Movement::MoveLeft),
-                        self.new_moved_node(ctx, Movement::MoveRight),
-                        self.new_moved_node(ctx, Movement::RotateCW),
-                        self.new_moved_node(ctx, Movement::RotateCCW),
-                        self.new_moved_node(ctx, Movement::MoveDown)];
-        }
-        else {
+            return vec![
+                self.new_moved_node(ctx, Movement::MoveLeft),
+                self.new_moved_node(ctx, Movement::MoveRight),
+                self.new_moved_node(ctx, Movement::RotateCW),
+                self.new_moved_node(ctx, Movement::RotateCCW),
+                self.new_moved_node(ctx, Movement::MoveDown),
+            ];
+        } else {
             // Forced down move
             return vec![self.new_moved_node(ctx, Movement::MoveDown)];
         }
@@ -219,24 +222,37 @@ impl Node {
     }
 }
 
-pub fn find_path(pf: &Playfield, fig: &Figure,
-                 start_pos: &PosDir,
-                 end_pos: &PosDir,
-                 move_time: u64,
-                 force_down_time: u64) -> Vec<(Movement, u64)>
-{
-    let mut ctx = NodeContext::new(move_time,
-                                   force_down_time,
-                                   pf, fig, end_pos);
-    let start_node = Node::new(&mut ctx, None, start_pos, 0,
-                               est_pos_distance(start_pos, end_pos),
-                               None, 0, 0, 0);
+pub fn find_path(
+    pf: &Playfield,
+    fig: &Figure,
+    start_pos: &PosDir,
+    end_pos: &PosDir,
+    move_time: u64,
+    force_down_time: u64,
+) -> Vec<(Movement, u64)> {
+    let mut ctx = NodeContext::new(move_time, force_down_time, pf, fig, end_pos);
+    let start_node = Node::new(
+        &mut ctx,
+        None,
+        start_pos,
+        0,
+        est_pos_distance(start_pos, end_pos),
+        None,
+        0,
+        0,
+        0,
+    );
     ctx.mark_open(&start_node);
     ctx.mark_best_pos(&start_node);
     if DEBUG_FIND_PATH {
-      println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
-               start_pos, end_pos, est_pos_distance(start_pos, end_pos),
-               move_time, force_down_time);
+        println!(
+            "Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
+            start_pos,
+            end_pos,
+            est_pos_distance(start_pos, end_pos),
+            move_time,
+            force_down_time
+        );
     }
 
     while ctx.open_set.len() > 0 {
@@ -247,17 +263,17 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
             if node.pos == *end_pos {
                 // End was found
                 if DEBUG_FIND_PATH {
-                    let search_time =
-                        (time::precise_time_ns() - ctx.start_time) as f64/1000000.0;
-                    println!("Path found for {} in {} ms (searched {} nodes)",
-                             ctx.fig.get_name(), search_time, ctx.node_by_id.len());
+                    let search_time = (time::precise_time_ns() - ctx.start_time) as f64 / 1000000.0;
+                    println!(
+                        "Path found for {} in {} ms (searched {} nodes)",
+                        ctx.fig.get_name(),
+                        search_time,
+                        ctx.node_by_id.len()
+                    );
                 }
                 // Reconstruct path from end node
                 return node.get_path(&ctx);
-            }
-            else if !fig.collide_any(&ctx.pf, &node.pos) &&
-                ctx.no_pos_with_lower_est(&node)
-            {
+            } else if !fig.collide_any(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(&node) {
                 ctx.mark_open(&node);
                 ctx.mark_best_pos(&node);
             }
@@ -265,12 +281,16 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         ctx.mark_closed(&q);
     }
     if DEBUG_FIND_PATH {
-        let search_time = (time::precise_time_ns() -
-                           ctx.start_time) as f64 / 1000000.0;
-        println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
-                 fig.get_name(), start_pos, end_pos,
-                 est_pos_distance(start_pos, end_pos),
-                 ctx.node_by_id.len(), search_time);
+        let search_time = (time::precise_time_ns() - ctx.start_time) as f64 / 1000000.0;
+        println!(
+            "No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
+            fig.get_name(),
+            start_pos,
+            end_pos,
+            est_pos_distance(start_pos, end_pos),
+            ctx.node_by_id.len(),
+            search_time
+        );
     }
     return vec![];
 }

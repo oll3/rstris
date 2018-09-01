@@ -7,39 +7,46 @@ pub struct Matrix3<T> {
     items: Vec<T>,
 }
 
-impl<T> Matrix3<T> where T: Clone {
-    pub fn new(width: u32, height: u32, depth: u32,
-               initial_value: T) -> Self  {
-        Self::new_coords(Vec3::new(0 as i32, 0 as i32, 0 as i32),
-                         Vec3::new(width as i32, height as i32, depth as i32),
-                         initial_value)
+impl<T> Matrix3<T>
+where
+    T: Clone,
+{
+    pub fn new(width: u32, height: u32, depth: u32, initial_value: T) -> Self {
+        Self::new_coords(
+            Vec3::new(0 as i32, 0 as i32, 0 as i32),
+            Vec3::new(width as i32, height as i32, depth as i32),
+            initial_value,
+        )
     }
-    pub fn new_coords(tl: Vec3<i32>, br: Vec3<i32>,
-                      initial_value: T) -> Self  {
+    pub fn new_coords(tl: Vec3<i32>, br: Vec3<i32>, initial_value: T) -> Self {
         Matrix3 {
-            items: vec![initial_value;
-                        ((br.x - tl.x) *
-                        (br.y - tl.y) *
-                         (br.z - tl.z)) as usize],
+            items: vec![initial_value; ((br.x - tl.x) * (br.y - tl.y) * (br.z - tl.z)) as usize],
             tl: tl,
             br: br,
         }
     }
-    pub fn width(&self) -> u32 { (self.br.x - self.tl.x) as u32 }
-    pub fn height(&self) -> u32 { (self.br.y - self.tl.y) as u32 }
-    pub fn depth(&self) -> u32 { (self.br.z - self.tl.z) as u32 }
+    pub fn width(&self) -> u32 {
+        (self.br.x - self.tl.x) as u32
+    }
+    pub fn height(&self) -> u32 {
+        (self.br.y - self.tl.y) as u32
+    }
+    pub fn depth(&self) -> u32 {
+        (self.br.z - self.tl.z) as u32
+    }
     pub fn contains(&self, x: i32, y: i32, z: i32) -> bool {
-        x >= self.tl.x && x < self.br.x &&
-            y >= self.tl.y && y < self.br.y &&
-            z >= self.tl.z && z < self.br.z
+        x >= self.tl.x
+            && x < self.br.x
+            && y >= self.tl.y
+            && y < self.br.y
+            && z >= self.tl.z
+            && z < self.br.z
     }
     pub fn get(&self, x: i32, y: i32, z: i32) -> &T {
         let x = (x - self.tl.x) as u32;
         let y = (y - self.tl.y) as u32;
         let z = (z - self.tl.z) as u32;
-        &self.items[(z * self.height() * self.width() +
-                     y * self.width() +
-                     x) as usize]
+        &self.items[(z * self.height() * self.width() + y * self.width() + x) as usize]
     }
     pub fn v_get(&self, v: &Vec3<i32>) -> &T {
         self.get(v.x, v.y, v.z)

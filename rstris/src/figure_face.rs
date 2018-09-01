@@ -1,7 +1,7 @@
 use block::*;
+use matrix2::Matrix2;
 use playfield::*;
 use position::*;
-use matrix2::Matrix2;
 
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct FigureFace {
@@ -110,15 +110,13 @@ impl FigureFace {
         let mut state = BlockState::NotSet;
         for row in 0..self.blocks.height() as i32 {
             for col in 0..self.blocks.width() as i32 {
-                let block_pos = Position::new(pos.get_x() + col,
-                                              pos.get_y() + row);
+                let block_pos = Position::new(pos.get_x() + col, pos.get_y() + row);
                 if self.get_block(col, row).is_set() {
-                    let pf_block_state =
-                        pf.get_block_by_pos(&block_pos).state.clone();
+                    let pf_block_state = pf.get_block_by_pos(&block_pos).state.clone();
                     match pf_block_state {
                         BlockState::Locked => return pf_block_state.clone(),
                         BlockState::InFlight => state = pf_block_state.clone(),
-                        _ => {},
+                        _ => {}
                     }
                 }
             }

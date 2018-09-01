@@ -5,9 +5,9 @@ pub struct Vec3<T> {
     pub z: T,
 }
 
-impl <T> Vec3 <T> {
+impl<T> Vec3<T> {
     pub fn new(x: T, y: T, z: T) -> Vec3<T> {
-        Vec3 {x: x, y: y, z: z}
+        Vec3 { x: x, y: y, z: z }
     }
 }
 

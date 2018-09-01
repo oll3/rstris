@@ -1,14 +1,13 @@
 extern crate rand;
 
-use std::collections::HashMap;
 use sdl2::keyboard::Keycode;
 use std::collections::BinaryHeap;
+use std::collections::HashMap;
 
-use rstris::playfield::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
 use rstris::movement::*;
-
+use rstris::playfield::*;
 
 pub struct PlayerStats {
     pub line_count: usize,
@@ -26,7 +25,6 @@ pub struct PlayerCommon {
 }
 
 pub trait Player {
-
     fn common(&self) -> &PlayerCommon;
     fn common_mut(&mut self) -> &mut PlayerCommon;
     fn update(&mut self, ticks: u64, pf: &Playfield) {
@@ -37,11 +35,15 @@ pub trait Player {
         // Implement if needed
     }
 
-    fn new_figure_event(&mut self, _: u64,
-                        _: &Playfield, _: &FigurePos);
+    fn new_figure_event(&mut self, _: u64, _: &Playfield, _: &FigurePos);
 
-    fn figure_move_event(&mut self, ticks: u64, pf: &Playfield,
-                         fig_pos: &FigurePos, movement: &Movement);
+    fn figure_move_event(
+        &mut self,
+        ticks: u64,
+        pf: &Playfield,
+        fig_pos: &FigurePos,
+        movement: &Movement,
+    );
 
     fn next_figure(&self) -> &Figure {
         self.common().next_figure()
@@ -53,14 +55,10 @@ pub trait Player {
 }
 
 impl PlayerCommon {
-
-    pub fn new(name: &str, force_down_time: u64,
-               figures: Vec<Figure>) -> Self {
+    pub fn new(name: &str, force_down_time: u64, figures: Vec<Figure>) -> Self {
         PlayerCommon {
             name: name.to_owned(),
-            stats: PlayerStats {
-                line_count: 0,
-            },
+            stats: PlayerStats { line_count: 0 },
             time_last_move: HashMap::new(),
             next_figure: PlayerCommon::get_rand_figure(&figures).clone(),
             avail_figures: figures,
@@ -71,8 +69,7 @@ impl PlayerCommon {
     }
 
     fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
-        let next_figure = (rand::random::<u8>() %
-                           figures.len() as u8) as usize;
+        let next_figure = (rand::random::<u8>() % figures.len() as u8) as usize;
         return &figures[next_figure];
     }
 
@@ -81,8 +78,7 @@ impl PlayerCommon {
     }
 
     pub fn gen_next_figure(&mut self) {
-        self.next_figure =
-            PlayerCommon::get_rand_figure(&self.avail_figures).clone();
+        self.next_figure = PlayerCommon::get_rand_figure(&self.avail_figures).clone();
     }
 
     pub fn get_name(&self) -> &String {
@@ -99,7 +95,10 @@ impl PlayerCommon {
 
     pub fn add_move(&mut self, movement: Movement, ticks: u64) {
         self.set_time_of_last_move(&movement, ticks);
-        let move_time = MoveAndTime{movement: movement, time: ticks};
+        let move_time = MoveAndTime {
+            movement: movement,
+            time: ticks,
+        };
         self.move_queue.push(move_time);
     }
 
@@ -143,11 +142,9 @@ impl PlayerCommon {
 
     fn update(&mut self, ticks: u64, _: &Playfield) {
         if self.figure_in_play() {
-            let time_since_down =
-                self.time_since_move(ticks, &Movement::MoveDown);
+            let time_since_down = self.time_since_move(ticks, &Movement::MoveDown);
             if time_since_down >= self.force_down_time as i64 {
-                self.add_move(Movement::MoveDown,
-                              (ticks as i64) as u64);
+                self.add_move(Movement::MoveDown, (ticks as i64) as u64);
             }
         }
     }

@@ -18,13 +18,22 @@ pub struct Block {
 
 impl Block {
     pub fn new_in_flight(block_id: u8) -> Block {
-        Block{id: block_id, state: BlockState::InFlight}
+        Block {
+            id: block_id,
+            state: BlockState::InFlight,
+        }
     }
     pub fn new_locked(block_id: u8) -> Block {
-        Block{id: block_id, state: BlockState::Locked}
+        Block {
+            id: block_id,
+            state: BlockState::Locked,
+        }
     }
     pub fn new_not_set() -> Block {
-        Block{id: 0, state: BlockState::NotSet}
+        Block {
+            id: 0,
+            state: BlockState::NotSet,
+        }
     }
 
     pub fn is_set(&self) -> bool {

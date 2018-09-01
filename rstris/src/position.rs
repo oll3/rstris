@@ -1,5 +1,5 @@
-use vec2::*;
 use std::ops::Add;
+use vec2::*;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct Position {
@@ -15,7 +15,7 @@ impl ToVec2<i32> for Position {
 
 impl Position {
     pub fn new(x: i32, y: i32) -> Position {
-        Position{x: x, y: y}
+        Position { x: x, y: y }
     }
     pub fn get_x(&self) -> i32 {
         self.x
@@ -38,7 +38,6 @@ impl Position {
 impl Add for Position {
     type Output = Position;
     fn add(self, other: Position) -> Position {
-        Position::new(self.x + other.x,
-                      self.y + other.y)
+        Position::new(self.x + other.x, self.y + other.y)
     }
 }
