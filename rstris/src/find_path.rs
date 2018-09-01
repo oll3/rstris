@@ -13,6 +13,7 @@ use playfield::*;
 static MAX_FIGURE_DIR: i32 = 4;
 static MAX_FIGURE_SIZE: i32 = 4;
 
+static DEBUG_FIND_PATH: bool = false;
 
 #[derive(Debug)]
 struct NodeIdAndEst {
@@ -232,10 +233,11 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
                                None, 0, 0, 0);
     ctx.mark_open(&start_node);
     ctx.mark_best_pos(&start_node);
-    println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
-             start_pos, end_pos,
-             est_pos_distance(start_pos, end_pos),
-             move_time, force_down_time);
+    if DEBUG_FIND_PATH {
+      println!("Find path {:?} -> {:?} (dist: {}, speed (move: {}, down: {})",
+               start_pos, end_pos, est_pos_distance(start_pos, end_pos),
+               move_time, force_down_time);
+    }
 
     while ctx.open_set.len() > 0 {
         let q = ctx.pop_best_open();
@@ -244,11 +246,12 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         for node in possible_nodes {
             if node.pos == *end_pos {
                 // End was found
-                let search_time =
-                    (time::precise_time_ns() - ctx.start_time) as f64/1000000.0;
-                println!("Path found for {} in {} ms (searched {} nodes)",
-                         ctx.fig.get_name(), search_time, ctx.node_by_id.len());
-
+                if DEBUG_FIND_PATH {
+                    let search_time =
+                        (time::precise_time_ns() - ctx.start_time) as f64/1000000.0;
+                    println!("Path found for {} in {} ms (searched {} nodes)",
+                             ctx.fig.get_name(), search_time, ctx.node_by_id.len());
+                }
                 // Reconstruct path from end node
                 return node.get_path(&ctx);
             }
@@ -261,11 +264,13 @@ pub fn find_path(pf: &Playfield, fig: &Figure,
         }
         ctx.mark_closed(&q);
     }
-    let search_time = (time::precise_time_ns() -
-                       ctx.start_time) as f64 / 1000000.0;
-    println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
-             fig.get_name(), start_pos, end_pos,
-             est_pos_distance(start_pos, end_pos),
-             ctx.node_by_id.len(), search_time);
+    if DEBUG_FIND_PATH {
+        let search_time = (time::precise_time_ns() -
+                           ctx.start_time) as f64 / 1000000.0;
+        println!("No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
+                 fig.get_name(), start_pos, end_pos,
+                 est_pos_distance(start_pos, end_pos),
+                 ctx.node_by_id.len(), search_time);
+    }
     return vec![];
 }

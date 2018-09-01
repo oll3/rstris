@@ -7,15 +7,20 @@ use movement::*;
 use playfield::*;
 use matrix3::*;
 
+static DEBUG_FIND_PLACEMENT: bool = false;
+
 pub fn find_placement_quick(pf: &Playfield,
                             fig_pos: &FigurePos) -> Vec<PosDir> {
+
     let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
     let start_pos = fig_pos.get_position().clone();
     let fig = fig_pos.get_figure();
 
-    println!("Find valid placements for figure {} (starting at {:?})",
-             fig.get_name(), start_pos);
+    if DEBUG_FIND_PLACEMENT {
+        println!("Find valid placements for figure {} (starting at {:?})",
+                 fig.get_name(), start_pos);
+    }
 
     for dir in 0..fig.faces().len() {
         let fig_face_width = fig.faces()[dir].get_width() as i32;
@@ -35,14 +40,19 @@ pub fn find_placement_quick(pf: &Playfield,
             }
         }
     }
-    println!("Found {} valid placements for {} ({} ms)",
-             placements.len(), fig.get_name(),
-             (time::precise_time_ns() - current_ticks) as f64 / 1000000.0);
+
+    if DEBUG_FIND_PLACEMENT {
+        println!("Found {} valid placements for {} ({} ms)",
+                 placements.len(), fig.get_name(),
+                 (time::precise_time_ns() - current_ticks) as f64 / 1000000.0);
+    }
+
     return placements;
 }
 
 pub fn find_placement(pf: &Playfield,
                       fig_pos: &FigurePos) -> Vec<PosDir> {
+
     let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
     let mut moves: LinkedList<PosDir> = LinkedList::new();
@@ -52,8 +62,11 @@ pub fn find_placement(pf: &Playfield,
     let start_pos = fig_pos.get_position().clone();
     let fig = fig_pos.get_figure();
 
-    println!("Find valid placements for figure {} (starting at {:?})",
-             fig.get_name(), start_pos);
+    if DEBUG_FIND_PLACEMENT {
+        println!("Find valid placements for figure {} (starting at {:?})",
+                 fig.get_name(), start_pos);
+    }
+
     if fig.collide_locked(pf, &start_pos) {
         println!("Invalid starting point ({:?}) for figure {}",
                  start_pos, fig.get_name());
@@ -96,7 +109,7 @@ pub fn find_placement(pf: &Playfield,
                                          &Movement::MoveDown);
         if fig.collide_locked(&pf, &tmp_pos) {
             // Valid placement
-            println!("Valid position: {:?}", tmp_pos);
+            // println!("Valid position: {:?}", tmp_pos);
             placements.push(current_pos.clone());
         } else if !visited.tv_get(&tmp_pos) {
             moves.push_back(tmp_pos.clone());
@@ -104,8 +117,12 @@ pub fn find_placement(pf: &Playfield,
         }
         it_cnt += 1;
     }
-    println!("Found {} valid placements for {} (iterated {} times, {} ms)",
-             placements.len(), fig.get_name(), it_cnt,
-             (time::precise_time_ns() - current_ticks) as f64 / 1000000.0);
+
+    if DEBUG_FIND_PLACEMENT {
+        println!("Found {} valid placements for {} (iterated {} times, {} ms)",
+                 placements.len(), fig.get_name(), it_cnt,
+                 (time::precise_time_ns() - current_ticks) as f64 / 1000000.0);
+    }
+
     return placements;
 }
