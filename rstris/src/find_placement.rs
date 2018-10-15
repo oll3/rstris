@@ -132,3 +132,82 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
 
     return placements;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use block::*;
+    use figure::*;
+    use position::*;
+    use test::Bencher;
+
+    macro_rules! bl {
+        ($x:expr) => {
+            match $x {
+                0 => Block::new_not_set(),
+                _ => Block::new_locked($x),
+            }
+        };
+    }
+
+    fn fig2(x: i32, y: i32, dir: i32) -> FigurePos {
+        FigurePos::new(
+            Figure::new_from_face(
+                "2",
+                &[
+                    &[bl!(0), bl!(0), bl!(0)],
+                    &[bl!(2), bl!(2), bl!(2)],
+                    &[bl!(0), bl!(0), bl!(2)],
+                ],
+            ),
+            PosDir::new(x, y, dir),
+        )
+    }
+
+    fn fig3(x: i32, y: i32, dir: i32) -> FigurePos {
+        FigurePos::new(
+            Figure::new_from_face(
+                "3",
+                &[
+                    &[bl!(0), bl!(0), bl!(3)],
+                    &[bl!(3), bl!(3), bl!(3)],
+                    &[bl!(0), bl!(0), bl!(0)],
+                ],
+            ),
+            PosDir::new(x, y, dir),
+        )
+    }
+
+    #[test]
+    fn find1() {
+        let start_pos = fig2(0, 0, 0);
+        let pf = Playfield::new("pf1", 10, 20);
+        let placings = find_placement_quick(&pf, &start_pos);
+        assert_eq!(placings.len(), 52);
+    }
+
+    #[test]
+    fn find2() {
+        let start_pos = fig3(0, 0, 0);
+        let pf = Playfield::new("pf1", 20, 20);
+        let placings = find_placement_quick(&pf, &start_pos);
+        assert_eq!(placings.len(), 92);
+    }
+
+    #[bench]
+    fn find_fig2_10x20(b: &mut Bencher) {
+        let start_pos = fig2(0, 0, 0);
+        let pf = Playfield::new("pf1", 10, 20);
+        b.iter(|| {
+            let placings = find_placement_quick(&pf, &start_pos);
+        });
+    }
+    #[bench]
+    fn find_fig3_20x20(b: &mut Bencher) {
+        let start_pos = fig3(0, 0, 0);
+        let pf = Playfield::new("pf1", 20, 20);
+        b.iter(|| {
+            let placings = find_placement_quick(&pf, &start_pos);
+        });
+    }
+}

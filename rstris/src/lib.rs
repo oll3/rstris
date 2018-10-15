@@ -1,3 +1,6 @@
+#![feature(test)]
+extern crate test;
+
 pub mod block;
 pub mod figure;
 pub mod figure_face;
