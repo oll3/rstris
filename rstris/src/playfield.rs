@@ -3,11 +3,37 @@ use block::BlockState;
 use matrix2::Matrix2;
 use position::Position;
 
+use std::slice::Iter;
+
 #[derive(Debug, Clone)]
 pub struct Playfield {
     pf_name: String,
     blocks: Matrix2<Block>,
     locked_block: Block,
+}
+
+pub struct LineIt<'a> {
+    line_num: u32,
+    pf: &'a Playfield,
+}
+
+pub struct Line<'a> {
+    line_num: u32,
+    block_iter: Iter<'a, Vec<Block>>,
+}
+
+impl<'a> Iterator for LineIt<'a> {
+    type Item = Line<'a>;
+    fn next<'s>(&'s mut self) -> Option<Self::Item> {
+        if self.line_num >= self.pf.blocks.height() {
+            return None;
+        }
+        self.line_num += 1;
+        return Some(Line {
+            line_num: self.line_num - 1,
+            block_iter: self.pf.blocks.line_iter(),
+        });
+    }
 }
 
 impl Playfield {
@@ -55,7 +81,12 @@ impl Playfield {
     pub fn clear_block(&mut self, pos: &Position) {
         self.set_block_by_pos(pos, Block::new_not_set());
     }
-
+    pub fn line_iter<'a>(&'a self) -> LineIt<'a> {
+        LineIt {
+            line_num: 0,
+            pf: &self,
+        }
+    }
     //
     // Search playfield for full lines (returned in order of top to bottom)
     //
@@ -76,6 +107,7 @@ impl Playfield {
         }
         return full_lines;
     }
+
     pub fn get_all_locked_lines(&self) -> Vec<u32> {
         let mut full_lines: Vec<u32> = vec![];
         for y in 0..self.blocks.height() {

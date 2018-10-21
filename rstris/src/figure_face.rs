@@ -69,58 +69,54 @@ impl FigureFace {
         self.blocks.set(x, y, block.clone());
     }
     pub fn place(&self, pf: &mut Playfield, pos: &Position) {
-        for row in 0..self.blocks.height() as i32 {
-            let pos_y = pos.get_y() + row;
-            for col in 0..self.blocks.width() as i32 {
-                let b = self.get_block(col, row);
-                let block_pos = Position::new(pos.get_x() + col, pos_y);
-                if b.is_set() && pf.contains(&block_pos) {
-                    pf.set_block_by_pos(&block_pos, b.clone());
+        self.blocks.iter()
+            .filter(|b| b.item.is_set())
+            .for_each(|b| {
+                let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
+                if pf.contains(&pos) {
+                    pf.set_block_by_pos(&pos, b.item.clone());
                 }
-            }
-        }
+        });
     }
     pub fn lock(&self, pf: &mut Playfield, pos: &Position) {
-        for row in 0..self.blocks.height() as i32 {
-            let pos_y = pos.get_y() + row;
-            for col in 0..self.blocks.width() as i32 {
-                let b = self.get_block(col, row);
-                let block_pos = Position::new(pos.get_x() + col, pos_y);
-                if b.is_set() && pf.contains(&block_pos) {
-                    let mut b = b.clone();
+        self.blocks.iter()
+            .filter(|b| b.item.is_set())
+            .for_each(|b| {
+                let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
+                if pf.contains(&pos) {
+                    let mut b = b.item.clone();
                     b.state = BlockState::Locked;
-                    pf.set_block_by_pos(&block_pos, b);
+                    pf.set_block_by_pos(&pos, b);
                 }
-            }
-        }
+        });
     }
     pub fn remove(&self, pf: &mut Playfield, pos: &Position) {
-        for row in 0..self.blocks.height() as i32 {
-            let pos_y = pos.get_y() + row;
-            for col in 0..self.blocks.width() as i32 {
-                let b = self.get_block(col, row);
-                let block_pos = Position::new(pos.get_x() + col, pos_y);
-                if b.is_set() && pf.contains(&block_pos) {
-                    pf.clear_block(&block_pos);
+        self.blocks.iter()
+            .filter(|b| b.item.is_set())
+            .for_each(|b| {
+                let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
+                if pf.contains(&pos) {
+                    pf.clear_block(&pos);
                 }
-            }
-        }
+        });
     }
     pub fn test_collision(&self, pf: &Playfield, pos: &Position) -> BlockState {
-        let mut state = BlockState::NotSet;
-        for row in 0..self.blocks.height() as i32 {
-            for col in 0..self.blocks.width() as i32 {
-                let block_pos = Position::new(pos.get_x() + col, pos.get_y() + row);
-                if self.get_block(col, row).is_set() {
-                    let pf_block_state = pf.get_block_by_pos(&block_pos).state.clone();
-                    match pf_block_state {
-                        BlockState::Locked => return pf_block_state.clone(),
-                        BlockState::InFlight => state = pf_block_state.clone(),
-                        _ => {}
+        self.blocks
+            .iter()
+            .filter(|b| b.item.is_set())
+            .fold(BlockState::NotSet, |acc, b| {
+                let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
+                match pf.get_block_by_pos(&pos).state {
+                    BlockState::Locked => BlockState::Locked,
+                    BlockState::InFlight => {
+                        if acc != BlockState::Locked {
+                            BlockState::InFlight
+                        } else {
+                            acc
+                        }
                     }
+                    _ => acc,
                 }
-            }
-        }
-        return state;
+            })
     }
 }
