@@ -31,9 +31,11 @@ where
     pub fn height(&self) -> u32 {
         (self.br.y - self.tl.y) as u32
     }
+    #[allow(dead_code)]
     pub fn depth(&self) -> u32 {
         (self.br.z - self.tl.z) as u32
     }
+    #[allow(dead_code)]
     pub fn contains(&self, x: i32, y: i32, z: i32) -> bool {
         x >= self.tl.x
             && x < self.br.x

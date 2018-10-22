@@ -250,13 +250,13 @@ impl ComputerType for JitterComputer {
         self.pre_avg_height = get_pf_avg_height(pf);
         self.pre_max_height = get_pf_max_height(pf);
         self.avg_height_factor = self.pre_avg_height / pf.height() as f32;
-        self.pre_locked_lines = pf.get_all_locked_lines().len() as i32;
+        self.pre_locked_lines = pf.count_locked_lines() as i32;
     }
 
     fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> f32 {
         let mut pf = pf.clone();
         fig_pos.lock(&mut pf);
-        let mut locked_lines = pf.get_all_locked_lines();
+        let mut locked_lines = pf.locked_lines();
         let lock_cnt = locked_lines.len() as i32 - self.pre_locked_lines;
         //let tetris = if lock_cnt >= 4 {1000.0} else {0.0};
         locked_lines.sort();
@@ -412,7 +412,7 @@ fn main() {
                 if let Some(move_and_time) = move_and_time {
                     execute_move(*player, &mut pf_ctx.pf, move_and_time);
                     if !player.figure_in_play() {
-                        let mut locked = pf_ctx.pf.get_all_locked_lines();
+                        let mut locked = pf_ctx.pf.locked_lines();
                         pf_ctx.pf.set_lines(&locked, &Block::new_locked(10));
                         pf_ctx.lines_to_throw.append(&mut locked);
                     }

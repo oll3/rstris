@@ -105,9 +105,7 @@ impl<'a> Player for ComputerPlayer<'a> {
 
             // Convert the path from being in exact Movements to
             // describe the sideways/rotational movements per height level
-            println!("Found path ({:?})", path);
             self.path_per_height = path_to_per_height(path);
-            println!("Converted path to per height ({:?})", self.path_per_height);
         }
 
         self.last_path_update = ticks;

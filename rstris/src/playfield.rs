@@ -3,37 +3,11 @@ use block::BlockState;
 use matrix2::Matrix2;
 use position::Position;
 
-use std::slice::Iter;
-
 #[derive(Debug, Clone)]
 pub struct Playfield {
     pf_name: String,
     blocks: Matrix2<Block>,
     locked_block: Block,
-}
-
-pub struct LineIt<'a> {
-    line_num: u32,
-    pf: &'a Playfield,
-}
-
-pub struct Line<'a> {
-    line_num: u32,
-    block_iter: Iter<'a, Vec<Block>>,
-}
-
-impl<'a> Iterator for LineIt<'a> {
-    type Item = Line<'a>;
-    fn next<'s>(&'s mut self) -> Option<Self::Item> {
-        if self.line_num >= self.pf.blocks.height() {
-            return None;
-        }
-        self.line_num += 1;
-        return Some(Line {
-            line_num: self.line_num - 1,
-            block_iter: self.pf.blocks.line_iter(),
-        });
-    }
 }
 
 impl Playfield {
@@ -81,49 +55,21 @@ impl Playfield {
     pub fn clear_block(&mut self, pos: &Position) {
         self.set_block_by_pos(pos, Block::new_not_set());
     }
-    pub fn line_iter<'a>(&'a self) -> LineIt<'a> {
-        LineIt {
-            line_num: 0,
-            pf: &self,
-        }
-    }
-    //
-    // Search playfield for full lines (returned in order of top to bottom)
-    //
-    pub fn get_locked_lines(&self, lines_to_test: &[u32]) -> Vec<u32> {
-        let mut full_lines: Vec<u32> = vec![];
-        for y in lines_to_test {
-            let mut line_full = true;
-            for x in 0..self.blocks.width() {
-                let pos = Position::new(x as i32, *y as i32);
-                if !self.block_is_locked(&pos) {
-                    line_full = false;
-                    break;
-                }
-            }
-            if line_full {
-                full_lines.push(*y);
-            }
-        }
-        return full_lines;
-    }
 
-    pub fn get_all_locked_lines(&self) -> Vec<u32> {
+    pub fn locked_lines(&self) -> Vec<u32> {
         let mut full_lines: Vec<u32> = vec![];
-        for y in 0..self.blocks.height() {
-            let mut line_full = true;
-            for x in 0..self.blocks.width() {
-                let pos = Position::new(x as i32, y as i32);
-                if !self.block_is_locked(&pos) {
-                    line_full = false;
-                    break;
-                }
+        self.blocks.line_iter().enumerate().for_each(|(index, l)| {
+            if l.into_iter().all(|b| b.state == BlockState::Locked) {
+                full_lines.push(index as u32);
             }
-            if line_full {
-                full_lines.push(y);
-            }
-        }
+        });
         return full_lines;
+    }
+    pub fn count_locked_lines(&self) -> u32 {
+        self.blocks
+            .line_iter()
+            .filter(|l| l.into_iter().all(|b| b.state == BlockState::Locked))
+            .count() as u32
     }
 
     pub fn set_lines(&mut self, lines: &[u32], block: &Block) {
@@ -214,11 +160,11 @@ mod tests {
         let mut pf = Playfield::new("pf1", 12, pf_height);
         let all_lines = (0..pf_height).collect::<Vec<u32>>();
         pf.set_lines(&all_lines, &Block::new_locked(1));
-        assert_eq!(pf.get_locked_lines(&all_lines).len() as u32, pf_height);
+        assert_eq!(pf.locked_lines().len() as u32, pf_height);
         pf.set_lines(&[0], &Block::new_not_set());
-        assert_eq!(pf.get_locked_lines(&all_lines)[0], 1);
+        assert_eq!(pf.locked_lines()[0], 1);
         pf.set_lines(&all_lines, &Block::new_in_flight(1));
-        assert_eq!(pf.get_locked_lines(&all_lines).len(), 0);
+        assert_eq!(pf.count_locked_lines(), 0);
     }
     #[test]
     fn throw_lines() {
@@ -232,8 +178,8 @@ mod tests {
         pf.set_lines(&all_lines, &Block::new_locked(1));
         pf.throw_line(0);
         pf.throw_line(pf_height - 1);
-        assert_eq!(pf.get_locked_lines(&all_lines).len() as u32, pf_height - 2);
+        assert_eq!(pf.count_locked_lines(), pf_height - 2);
         // first locked line is now 2
-        assert_eq!(pf.get_locked_lines(&all_lines)[0], 2);
+        assert_eq!(pf.locked_lines()[0], 2);
     }
 }
