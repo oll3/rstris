@@ -6,6 +6,7 @@ use movement::*;
 use playfield::*;
 use pos_dir::*;
 use std::collections::LinkedList;
+use vec3::Vec3;
 
 static DEBUG_FIND_PLACEMENT: bool = false;
 
@@ -24,11 +25,11 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
     }
 
     for dir in 0..fig.faces().len() {
-        let fig_face_width = fig.faces()[dir].get_width() as i32;
+        let fig_face_width = fig.faces()[dir].width() as i32;
         for x in -fig_face_width..pf.width() as i32 {
-            let mut last_pos = Some(PosDir::new(x as i32, 0, dir as i32));
+            let mut last_pos = Some(PosDir::new((x as i32, 0, dir as i32)));
             for y in 1..pf.height() {
-                let tmp_pos = PosDir::new(x as i32, y as i32, dir as i32);
+                let tmp_pos = PosDir::new((x as i32, y as i32, dir as i32));
                 if fig.test_collision(&pf, &tmp_pos) {
                     if last_pos.is_some() {
                         placements.push(last_pos.clone().unwrap());
@@ -79,7 +80,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         return placements;
     }
 
-    visited.tv_set(&start_pos, true);
+    visited.set(start_pos.into(), true);
     moves.push_back(start_pos);
 
     while moves.len() > 0 {
@@ -88,21 +89,22 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         // Visist all the closest positions that has not been visited
         // already (one left, right, down, rotate cw).
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveLeft);
-        if !visited.tv_get(&tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
-            visited.tv_set(&tmp_pos, true);
+        let point: Vec3<i32> = tmp_pos.into();
+        if !visited.get(point) && !fig.test_collision(&pf, &tmp_pos) {
+            visited.set(point, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveRight);
-        if !visited.tv_get(&tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
-            visited.tv_set(&tmp_pos, true);
+        if !visited.get(tmp_pos.into()) && !fig.test_collision(&pf, &tmp_pos) {
+            visited.set(tmp_pos.into(), true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::RotateCW);
         if tmp_pos.get_dir() < fig.faces().len() as i32
-            && !visited.tv_get(&tmp_pos)
+            && !visited.get(tmp_pos.into())
             && !fig.test_collision(&pf, &tmp_pos)
         {
-            visited.tv_set(&tmp_pos, true);
+            visited.set(tmp_pos.into(), true);
             moves.push_back(tmp_pos);
         }
 
@@ -113,9 +115,9 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
             // Valid placement
             // println!("Valid position: {:?}", tmp_pos);
             placements.push(current_pos.clone());
-        } else if !visited.tv_get(&tmp_pos) {
+        } else if !visited.get(tmp_pos.into()) {
             moves.push_back(tmp_pos.clone());
-            visited.tv_set(&tmp_pos, true);
+            visited.set(tmp_pos.into(), true);
         }
         it_cnt += 1;
     }

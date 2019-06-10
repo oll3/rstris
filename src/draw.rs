@@ -66,7 +66,7 @@ impl DrawContext {
         for y in 0..playfield.height() as i32 {
             self.draw_block(canvas, 0, y, frame_color);
             for x in 0..playfield.width() as i32 {
-                let block = playfield.get_block(x, y);
+                let block = playfield.get_block((x, y).into());
                 if block.is_set() {
                     self.draw_block(canvas, x + 1, y, DrawContext::get_block_color(&block));
                 } else {
@@ -102,11 +102,11 @@ impl DrawContext {
         }
 
         let face = &figure.get_face(0);
-        let fig_x_offs = (fig_max_width - face.get_width() as i32) / 2;
-        let fig_y_offs = (fig_max_heigth - face.get_height() as i32) / 2;
-        for y in 0..face.get_height() as i32 {
-            for x in 0..face.get_width() as i32 {
-                let block = face.get_block(x, y);
+        let fig_x_offs = (fig_max_width - face.width() as i32) / 2;
+        let fig_y_offs = (fig_max_heigth - face.height() as i32) / 2;
+        for y in 0..face.height() as i32 {
+            for x in 0..face.width() as i32 {
+                let block = face.get_block((x, y).into());
                 if block.is_set() {
                     self.draw_block(
                         canvas,

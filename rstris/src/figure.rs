@@ -25,12 +25,12 @@ impl Figure {
         let mut face = FigureFace::new(blocks);
         fig.vfaces.push(face.clone());
         for _ in 0..3 {
-            let mut next_face = FigureFace::new_empty(face.get_height(), face.get_width());
-            for y in 0..face.get_height() as i32 {
-                for x in 0..face.get_width() as i32 {
-                    let ty = face.get_height() as i32 - y - 1;
-                    let b = &face.get_block(x, ty);
-                    next_face.set_block(y, x, b);
+            let mut next_face = FigureFace::new_empty(face.height(), face.width());
+            for y in 0..face.height() as i32 {
+                for x in 0..face.width() as i32 {
+                    let ty = face.height() as i32 - y - 1;
+                    let b = face.get_block((x, ty).into());
+                    next_face.set_block((y, x).into(), b.clone());
                 }
             }
             if !fig.test_face_present(&next_face) {

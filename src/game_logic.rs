@@ -10,7 +10,7 @@ use rstris::pos_dir::*;
 //
 pub fn try_place_new_figure(player: &mut Player, ticks: u64, pf: &mut Playfield) -> bool {
     let figure = player.common().next_figure().clone();
-    let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
+    let pos = PosDir::new(((pf.width() / 2 - 1) as i32, 0, 0));
     if figure.test_collision(pf, &pos) {
         println!("Figure collided");
         return true;

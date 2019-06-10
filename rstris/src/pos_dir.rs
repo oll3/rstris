@@ -2,54 +2,41 @@ use movement::*;
 use position::*;
 use vec3::*;
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
-pub struct PosDir {
-    pos: Position,
-    dir: i32,
-}
-
-impl ToVec3<i32> for PosDir {
-    fn to_vec3(&self) -> Vec3<i32> {
-        Vec3::new(self.pos.get_x(), self.pos.get_y(), self.dir)
-    }
-}
+pub type PosDir = Vec3<i32>;
 
 impl PosDir {
-    pub fn new(x: i32, y: i32, dir: i32) -> Self {
-        PosDir {
-            pos: Position::new(x, y),
-            dir: dir,
-        }
-    }
-    pub fn apply_move(pos1: &PosDir, movement: &Movement) -> Self {
-        let mut pos = pos1.clone();
+    pub fn apply_move(&self, movement: &Movement) -> Self {
+        let mut pos = self.clone();
         match *movement {
-            Movement::MoveLeft => pos.pos.add(-1, 0),
-            Movement::MoveRight => pos.pos.add(1, 0),
-            Movement::MoveDown => pos.pos.add(0, 1),
-            Movement::MoveUp => pos.pos.add(0, -1),
-            Movement::RotateCW => pos.dir += 1,
-            Movement::RotateCCW => pos.dir -= 1,
+            Movement::MoveLeft => pos.x -= 1,
+            Movement::MoveRight => pos.x += 1,
+            Movement::MoveDown => pos.y += 1,
+            Movement::MoveUp => pos.y -= 1,
+            Movement::RotateCW => pos.z += 1,
+            Movement::RotateCCW => pos.z -= 1,
         };
         pos
     }
     pub fn get_x(&self) -> i32 {
-        self.pos.get_x()
+        self.x
     }
     pub fn get_y(&self) -> i32 {
-        self.pos.get_y()
+        self.y
     }
     pub fn get_dir(&self) -> i32 {
-        self.dir
+        self.z
     }
-    pub fn get_pos(&self) -> &Position {
-        &self.pos
+    pub fn get_pos(&self) -> Position {
+        Position {
+            x: self.x,
+            y: self.y,
+        }
     }
     pub fn normalize_dir(&mut self, num_directions: usize) {
-        if self.dir < 0 {
+        if self.z < 0 {
             // Handle negative rotation
-            self.dir = num_directions as i32 + self.dir;
+            self.z = num_directions as i32 + self.z;
         }
-        self.dir %= num_directions as i32;
+        self.z %= num_directions as i32;
     }
 }

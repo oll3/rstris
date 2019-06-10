@@ -129,11 +129,11 @@ fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
     let mut max_height: u32 = 0;
     for fig in figure_list {
         for face in fig.faces() {
-            if face.get_width() as u32 > max_width {
-                max_width = face.get_width() as u32;
+            if face.width() as u32 > max_width {
+                max_width = face.width() as u32;
             }
-            if face.get_height() as u32 > max_height {
-                max_height = face.get_height() as u32;
+            if face.height() as u32 > max_height {
+                max_height = face.height() as u32;
             }
         }
     }
@@ -149,15 +149,15 @@ impl ComputerType for RandomComputer {
 }
 
 fn lowest_block(fig_pos: &FigurePos) -> i32 {
-    fig_pos.get_face().get_lowest_block().get_y() + fig_pos.get_position().get_y()
+    fig_pos.get_face().row_of_lowest_block() + fig_pos.get_position().get_y()
 }
 
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
     for y in 0..((pf.height() + 1) as i32) {
-        let mut last_state = pf.block_is_set(&Position::new(0, y));
+        let mut last_state = pf.block_is_set(Position::new((0, y)));
         for x in 0..(pf.width() as i32) {
-            let state = pf.block_is_set(&Position::new(x, y));
+            let state = pf.block_is_set(Position::new((x, y)));
             if last_state != state {
                 last_state = state;
                 jitter += 1;
@@ -169,9 +169,9 @@ fn get_pf_row_jitter(pf: &Playfield) -> u32 {
 fn get_pf_col_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
     for x in -1..((pf.width() + 1) as i32) {
-        let mut last_state = pf.block_is_set(&Position::new(x, 0));
+        let mut last_state = pf.block_is_set(Position::new((x, 0)));
         for y in 0..(pf.height() as i32) {
-            let state = pf.block_is_set(&Position::new(x, y));
+            let state = pf.block_is_set(Position::new((x, y)));
             if last_state != state {
                 last_state = state;
                 jitter += 1;
@@ -184,7 +184,7 @@ fn get_pf_avg_height(pf: &Playfield) -> f32 {
     let mut total_height = 0;
     for x in 0..(pf.width() as i32) {
         for y in 0..(pf.height() as i32) {
-            if pf.block_is_set(&Position::new(x, y)) {
+            if pf.block_is_set(Position::new((x, y))) {
                 total_height += pf.height() as i32 - y;
                 break;
             }
@@ -197,7 +197,7 @@ fn get_pf_max_height(pf: &Playfield) -> i32 {
     for x in 0..(pf.width() as i32) {
         for y in 0..(pf.height() as i32) {
             let height = pf.height() as i32 - y;
-            if pf.block_is_set(&Position::new(x, y)) && height > max_height {
+            if pf.block_is_set(Position::new((x, y))) && height > max_height {
                 max_height = height;
             }
         }
@@ -317,8 +317,8 @@ fn main() {
 
     let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
-        9000000,
+        PlayerCommon::new("Computer 1", 4000000, figure_list.clone()),
+        4000000,
         &mut com_type1,
     );
     let mut com_random2 = RandomComputer {};
