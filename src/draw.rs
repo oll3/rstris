@@ -101,7 +101,7 @@ impl DrawContext {
         let fig_y_offs = (fig_max_heigth - face.height() as i32) / 2;
         for y in 0..face.height() as i32 {
             for x in 0..face.width() as i32 {
-                let block = face.get_block((x, y).into());
+                let block = face.get((x, y).into());
                 if block.is_set() {
                     self.draw_block(
                         canvas,

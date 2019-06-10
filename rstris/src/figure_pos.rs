@@ -1,7 +1,8 @@
-use crate::figure::*;
-use crate::figure_face::*;
-use crate::playfield::*;
-use crate::pos_dir::*;
+use crate::block::Block;
+use crate::figure::Figure;
+use crate::matrix2::Matrix2;
+use crate::playfield::Playfield;
+use crate::pos_dir::PosDir;
 
 #[derive(Debug, Clone)]
 pub struct FigurePos {
@@ -21,7 +22,7 @@ impl FigurePos {
     pub fn get_figure(&self) -> &Figure {
         &self.fig
     }
-    pub fn get_face(&self) -> &FigureFace {
+    pub fn get_face(&self) -> &Matrix2<Block> {
         &self.fig.get_face(self.pos.get_dir() as usize)
     }
     pub fn set_position(&mut self, pos: &PosDir) {
@@ -35,7 +36,16 @@ impl FigurePos {
     pub fn remove(&self, pf: &mut Playfield) {
         self.fig.remove(pf, &self.pos);
     }
+    fn row_of_lowest_block(face: &Matrix2<Block>) -> i32 {
+        let mut lowest = i32::min_value();
+        face.row_iter().for_each(|row| {
+            if row.items.iter().any(|b| b.is_set()) && row.point > lowest {
+                lowest = row.point;
+            }
+        });
+        lowest
+    }
     pub fn lowest_block(&self) -> i32 {
-        self.get_face().row_of_lowest_block() + self.get_position().get_y()
+        Self::row_of_lowest_block(self.get_face()) + self.get_position().get_y()
     }
 }

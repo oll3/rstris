@@ -1,12 +1,12 @@
 use crate::block::Block;
-use crate::figure_face::FigureFace;
+use crate::matrix2::Matrix2;
 use crate::playfield::Playfield;
 use crate::pos_dir::PosDir;
 
 #[derive(Clone, Debug)]
 pub struct Figure {
     figure_name: String,
-    vfaces: Vec<FigureFace>,
+    vfaces: Vec<Matrix2<Block>>,
 }
 
 impl Figure {
@@ -22,15 +22,15 @@ impl Figure {
     //
     pub fn new_from_face(name: &str, blocks: &[&[Block]]) -> Figure {
         let mut fig = Figure::new(name);
-        let mut face = FigureFace::new(blocks);
+        let mut face = Matrix2::from_items(blocks);
         fig.vfaces.push(face.clone());
         for _ in 0..3 {
-            let mut next_face = FigureFace::new_empty(face.height(), face.width());
+            let mut next_face = Matrix2::from_size(face.height(), face.width(), Block::Clear);
             for y in 0..face.height() as i32 {
                 for x in 0..face.width() as i32 {
                     let ty = face.height() as i32 - y - 1;
-                    let b = face.get_block((x, ty).into());
-                    next_face.set_block((y, x).into(), b.clone());
+                    let b = face.get((x, ty).into());
+                    next_face.set((y, x).into(), b.clone());
                 }
             }
             if !fig.test_face_present(&next_face) {
@@ -45,7 +45,7 @@ impl Figure {
         );
         fig
     }
-    fn test_face_present(&self, face: &FigureFace) -> bool {
+    fn test_face_present(&self, face: &Matrix2<Block>) -> bool {
         for f in &self.vfaces {
             if *f == *face {
                 return true;
@@ -56,10 +56,10 @@ impl Figure {
     pub fn get_name(&self) -> &String {
         &self.figure_name
     }
-    pub fn faces(&self) -> &Vec<FigureFace> {
+    pub fn faces(&self) -> &Vec<Matrix2<Block>> {
         &self.vfaces
     }
-    pub fn get_face(&self, face_index: usize) -> &FigureFace {
+    pub fn get_face(&self, face_index: usize) -> &Matrix2<Block> {
         let face_index = face_index % self.vfaces.len();
         &self.vfaces[face_index]
     }
@@ -68,20 +68,17 @@ impl Figure {
     // Place figure in playfield
     //
     pub fn place(&self, pf: &mut Playfield, pos: &PosDir) {
-        let face = self.get_face(pos.get_dir() as usize);
-        face.place(pf, pos.get_pos());
+        pf.place(pos.get_pos(), self.get_face(pos.get_dir() as usize));
     }
     //
     // Remove figure from playfield
     //
     pub fn remove(&self, pf: &mut Playfield, pos: &PosDir) {
-        let face = self.get_face(pos.get_dir() as usize);
-        face.remove(pf, pos.get_pos());
+        pf.remove(pos.get_pos(), self.get_face(pos.get_dir() as usize));
     }
 
     pub fn test_collision(&self, pf: &Playfield, pos: &PosDir) -> bool {
-        let face = self.get_face(pos.get_dir() as usize);
-        face.test_collision(pf, pos.get_pos())
+        pf.test_collision(pos.get_pos(), self.get_face(pos.get_dir() as usize))
     }
 }
 
@@ -89,7 +86,6 @@ impl Figure {
 mod tests {
     use super::*;
     use crate::block::Block;
-    use crate::figure_face::*;
 
     macro_rules! bl {
         ($x:expr) => {
@@ -113,7 +109,7 @@ mod tests {
         assert_eq!(fig.faces().len(), 4);
         assert_eq!(
             *fig.get_face(0),
-            FigureFace::new(&[
+            Matrix2::from_items(&[
                 &[bl!(0), bl!(0), bl!(0)],
                 &[bl!(1), bl!(1), bl!(1)],
                 &[bl!(0), bl!(1), bl!(0)]
@@ -121,7 +117,7 @@ mod tests {
         );
         assert_eq!(
             *fig.get_face(1),
-            FigureFace::new(&[
+            Matrix2::from_items(&[
                 &[bl!(0), bl!(1), bl!(0)],
                 &[bl!(1), bl!(1), bl!(0)],
                 &[bl!(0), bl!(1), bl!(0)]
@@ -129,7 +125,7 @@ mod tests {
         );
         assert_eq!(
             *fig.get_face(2),
-            FigureFace::new(&[
+            Matrix2::from_items(&[
                 &[bl!(0), bl!(1), bl!(0)],
                 &[bl!(1), bl!(1), bl!(1)],
                 &[bl!(0), bl!(0), bl!(0)]
@@ -137,7 +133,7 @@ mod tests {
         );
         assert_eq!(
             *fig.get_face(3),
-            FigureFace::new(&[
+            Matrix2::from_items(&[
                 &[bl!(0), bl!(1), bl!(0)],
                 &[bl!(0), bl!(1), bl!(1)],
                 &[bl!(0), bl!(1), bl!(0)]
@@ -158,7 +154,7 @@ mod tests {
         assert_eq!(fig.faces().len(), 2);
         assert_eq!(
             *fig.get_face(0),
-            FigureFace::new(&[
+            Matrix2::from_items(&[
                 &[bl!(0), bl!(1), bl!(0)],
                 &[bl!(0), bl!(1), bl!(0)],
                 &[bl!(0), bl!(1), bl!(0)],
@@ -167,7 +163,7 @@ mod tests {
         );
         assert_eq!(
             *fig.get_face(1),
-            FigureFace::new(&[
+            Matrix2::from_items(&[
                 &[bl!(0), bl!(0), bl!(0), bl!(0)],
                 &[bl!(1), bl!(1), bl!(1), bl!(1)],
                 &[bl!(0), bl!(0), bl!(0), bl!(0)]
@@ -183,11 +179,11 @@ mod tests {
         assert_eq!(fig.faces().len(), 2);
         assert_eq!(
             *fig.get_face(0),
-            FigureFace::new(&[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]])
+            Matrix2::from_items(&[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]])
         );
         assert_eq!(
             *fig.get_face(1),
-            FigureFace::new(&[&[bl!(0), bl!(1), bl!(1)], &[bl!(1), bl!(1), bl!(0)]])
+            Matrix2::from_items(&[&[bl!(0), bl!(1), bl!(1)], &[bl!(1), bl!(1), bl!(0)]])
         );
     }
 }

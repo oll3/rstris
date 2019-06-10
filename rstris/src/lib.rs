@@ -2,7 +2,6 @@
 //extern crate test;
 pub mod block;
 pub mod figure;
-pub mod figure_face;
 pub mod figure_pos;
 pub mod find_path;
 pub mod find_placement;
