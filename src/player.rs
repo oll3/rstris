@@ -1,4 +1,4 @@
-extern crate rand;
+use rand;
 
 use sdl2::keyboard::Keycode;
 use std::collections::BinaryHeap;

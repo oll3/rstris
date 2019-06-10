@@ -1,7 +1,7 @@
-use block::*;
-use matrix2::Matrix2;
-use playfield::*;
-use position::*;
+use crate::block::*;
+use crate::matrix2::Matrix2;
+use crate::playfield::*;
+use crate::position::*;
 
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct FigureFace {

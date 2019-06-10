@@ -1,6 +1,6 @@
-use movement::*;
-use position::*;
-use vec3::*;
+use crate::movement::*;
+use crate::position::*;
+use crate::vec3::*;
 
 pub type PosDir = Vec3<i32>;
 

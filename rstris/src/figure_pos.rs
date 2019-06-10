@@ -1,7 +1,7 @@
-use figure::*;
-use figure_face::*;
-use playfield::*;
-use pos_dir::*;
+use crate::figure::*;
+use crate::figure_face::*;
+use crate::playfield::*;
+use crate::pos_dir::*;
 
 #[derive(Debug, Clone)]
 pub struct FigurePos {

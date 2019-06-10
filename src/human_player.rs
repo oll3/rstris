@@ -1,7 +1,7 @@
 use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
 
-use player::*;
+use crate::player::*;
 use rstris::figure_pos::*;
 use rstris::movement::*;
 use rstris::playfield::*;

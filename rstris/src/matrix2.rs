@@ -1,4 +1,4 @@
-use vec2::Vec2;
+use crate::vec2::Vec2;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Matrix2<T> {
@@ -7,6 +7,7 @@ pub struct Matrix2<T> {
     pub items: Vec<T>,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ItemPoint<'a, T: 'a> {
     pub point: Vec2<i32>,
     pub item: &'a T,
@@ -42,6 +43,7 @@ where
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct RowPoint<'a, T: 'a> {
     pub point: i32,
     pub items: &'a [T],
@@ -151,27 +153,24 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use matrix2::*;
 
     #[test]
     fn test_iter() {
-        let mut m1 = Matrix2::new(10, 10, false);
-        m1.set(2, 3, true);
-        m1.set(9, 9, true);
-        let r: Vec<MatrixPoint<bool>> = m1.iter().filter(|p| *p.item == true).collect();
+        let mut m1 = Matrix2::from_size(10, 10, false);
+        m1.set((2, 3).into(), true);
+        m1.set((9, 9).into(), true);
+        let r: Vec<ItemPoint<bool>> = m1.iter().filter(|p| *p.item == true).collect();
         assert_eq!(
             r[0],
-            MatrixPoint {
-                x: 2,
-                y: 3,
+            ItemPoint {
+                point: Vec2 { x: 2, y: 3 },
                 item: &true
             }
         );
         assert_eq!(
             r[1],
-            MatrixPoint {
-                x: 9,
-                y: 9,
+            ItemPoint {
+                point: Vec2 { x: 9, y: 9 },
                 item: &true
             }
         );

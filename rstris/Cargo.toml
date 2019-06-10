@@ -1,7 +1,8 @@
 [package]
 name = "rstris"
 version = "0.1.0"
-authors = ["Olle <ollebull@gmail.com>"]
+authors = ["Olle Sandberg <olle@b3rg.se>"]
+edition = "2018"
 
 [dependencies]
 time = "*"

@@ -1,4 +1,4 @@
-extern crate rand;
+
 
 use rstris::figure_pos::*;
 use rstris::find_path::*;
@@ -7,7 +7,7 @@ use rstris::movement::*;
 use rstris::playfield::*;
 use rstris::pos_dir::*;
 
-use player::*;
+use crate::player::*;
 
 pub trait ComputerType {
     fn init_eval(&mut self, pf: &Playfield, avail_placings: usize);
@@ -21,7 +21,7 @@ struct EvalPosition {
 
 pub struct ComputerPlayer<'a> {
     common: PlayerCommon,
-    com_type: &'a mut ComputerType,
+    com_type: &'a mut dyn ComputerType,
     last_fig: String,
     avail_placing: Vec<EvalPosition>,
     last_path_update: u64,
@@ -114,7 +114,7 @@ impl<'a> Player for ComputerPlayer<'a> {
 }
 
 impl<'a> ComputerPlayer<'a> {
-    pub fn new(common: PlayerCommon, move_time: u64, com_type: &'a mut ComputerType) -> Self {
+    pub fn new(common: PlayerCommon, move_time: u64, com_type: &'a mut dyn ComputerType) -> Self {
         ComputerPlayer {
             common,
             avail_placing: Vec::new(),

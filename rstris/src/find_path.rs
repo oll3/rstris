@@ -1,14 +1,14 @@
 extern crate time;
 
-use figure::*;
-use matrix3::Matrix3;
-use movement::*;
-use playfield::*;
-use pos_dir::*;
+use crate::figure::*;
+use crate::matrix3::Matrix3;
+use crate::movement::*;
+use crate::playfield::*;
+use crate::pos_dir::*;
+use crate::vec3::Vec3;
 use std::cmp::max;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use vec3::Vec3;
 
 static MAX_FIGURE_DIR: i32 = 4;
 static MAX_FIGURE_SIZE: i32 = 4;

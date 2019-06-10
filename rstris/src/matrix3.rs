@@ -1,4 +1,4 @@
-use vec3::*;
+use crate::vec3::*;
 
 #[derive(Debug, Clone)]
 pub struct Matrix3<T> {

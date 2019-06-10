@@ -1,6 +1,6 @@
-use block::Block;
-use matrix2::Matrix2;
-use position::Position;
+use crate::block::Block;
+use crate::matrix2::Matrix2;
+use crate::position::Position;
 
 #[derive(Debug, Clone)]
 pub struct Playfield {
@@ -138,7 +138,7 @@ impl Playfield {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use block::*;
+    use crate::block::Block;
 
     #[test]
     fn block_types() {
@@ -146,9 +146,9 @@ mod tests {
         let pf_height = 22;
         let mut pf = Playfield::new("pf1", 12, pf_height);
         let all_lines = (0..pf_height).collect::<Vec<u32>>();
-        pf.set_lines(&all_lines, &Block::new_locked(1));
+        pf.set_lines(&all_lines, &Block::Set(1));
         assert_eq!(pf.locked_lines().len() as u32, pf_height);
-        pf.set_lines(&[0], &Block::new_not_set());
+        pf.set_lines(&[0], &Block::Clear);
         assert_eq!(pf.locked_lines()[0], 1);
         pf.set_lines(&all_lines, &Block::Clear);
         assert_eq!(pf.count_locked_lines(), 0);

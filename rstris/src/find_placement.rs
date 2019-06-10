@@ -1,12 +1,12 @@
 extern crate time;
 
-use figure_pos::*;
-use matrix3::*;
-use movement::*;
-use playfield::*;
-use pos_dir::*;
+use crate::figure_pos::*;
+use crate::matrix3::*;
+use crate::movement::*;
+use crate::playfield::*;
+use crate::pos_dir::*;
+use crate::vec3::Vec3;
 use std::collections::LinkedList;
-use vec3::Vec3;
 
 static DEBUG_FIND_PLACEMENT: bool = false;
 
@@ -138,16 +138,14 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use block::*;
-    use figure::*;
-    use position::*;
-    use test::Bencher;
+    use crate::block::Block;
+    use crate::figure::*;
 
     macro_rules! bl {
         ($x:expr) => {
             match $x {
-                0 => Block::new_not_set(),
-                _ => Block::new_locked($x),
+                0 => Block::Clear,
+                _ => Block::Set($x),
             }
         };
     }
@@ -162,7 +160,7 @@ mod tests {
                     &[bl!(0), bl!(0), bl!(2)],
                 ],
             ),
-            PosDir::new(x, y, dir),
+            PosDir::new((x, y, dir)),
         )
     }
 
@@ -176,7 +174,7 @@ mod tests {
                     &[bl!(0), bl!(0), bl!(0)],
                 ],
             ),
-            PosDir::new(x, y, dir),
+            PosDir::new((x, y, dir)),
         )
     }
 
@@ -195,7 +193,8 @@ mod tests {
         let placings = find_placement_quick(&pf, &start_pos);
         assert_eq!(placings.len(), 92);
     }
-
+    /*
+    use test::Bencher;
     #[bench]
     fn find_fig2_10x20(b: &mut Bencher) {
         let start_pos = fig2(0, 0, 0);
@@ -211,5 +210,5 @@ mod tests {
         b.iter(|| {
             let placings = find_placement_quick(&pf, &start_pos);
         });
-    }
+    }*/
 }

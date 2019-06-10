@@ -1,7 +1,7 @@
-extern crate rand;
-extern crate rstris;
-extern crate sdl2;
-extern crate time;
+use rand;
+
+use sdl2;
+use time;
 
 mod computer_player;
 mod draw;
@@ -9,11 +9,11 @@ mod game_logic;
 mod human_player;
 mod player;
 
-use computer_player::*;
-use draw::*;
-use game_logic::*;
-use human_player::*;
-use player::*;
+use crate::computer_player::*;
+use crate::draw::*;
+use crate::game_logic::*;
+use crate::human_player::*;
+use crate::player::*;
 use rstris::block::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
@@ -32,7 +32,7 @@ static BLOCK_SPACING: u32 = 1;
 
 struct PlayfieldContext<'a> {
     pf: Playfield,
-    players: Vec<&'a mut Player>,
+    players: Vec<&'a mut dyn Player>,
     game_over: bool,
     lines_to_throw: Vec<u32>,
 }
@@ -47,7 +47,7 @@ impl<'a> PlayfieldContext<'a> {
         }
     }
 
-    pub fn add_player(&mut self, player: &'a mut Player) {
+    pub fn add_player(&mut self, player: &'a mut dyn Player) {
         self.players.push(player);
     }
 
