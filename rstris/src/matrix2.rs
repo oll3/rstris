@@ -26,7 +26,7 @@ where
     T: Clone,
 {
     type Item = ItemPoint<'a, T>;
-    fn next<'s>(&'s mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.point.x as u32 >= self.matrix.width() {
             self.point.x = 0;
             self.point.y += 1;
@@ -39,7 +39,7 @@ where
             item: self.matrix.get(self.point),
         };
         self.point.x += 1;
-        return Some(point);
+        Some(point)
     }
 }
 
@@ -62,7 +62,7 @@ where
     T: Clone,
 {
     type Item = RowPoint<'a, T>;
-    fn next<'s>(&'s mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.point as u32 >= self.matrix.height() {
             return None;
         }
@@ -73,7 +73,7 @@ where
             items: &self.matrix.items[index..index + width],
         };
         self.point += 1;
-        return Some(point);
+        Some(point)
     }
 }
 
@@ -92,23 +92,23 @@ where
     pub fn from_items(items: &[&[T]]) -> Self {
         let height = items.len() as u32;
         let width = if height == 0 { 0 } else { items[0].len() } as u32;
-        let mut m = Self::from_size(width, height, items[0][0].clone());
+        let mut matrix = Self::from_size(width, height, items[0][0].clone());
         for y in 0..height as i32 {
             for x in 0..width as i32 {
-                m.set(Vec2 { x, y }, items[y as usize][x as usize].clone());
+                matrix.set(Vec2 { x, y }, items[y as usize][x as usize].clone());
             }
         }
-        return m;
+        matrix
     }
 
-    pub fn iter<'a>(&'a self) -> ItemIt<'a, T> {
+    pub fn iter(&self) -> ItemIt<T> {
         ItemIt {
             point: Vec2 { x: 0, y: 0 },
             matrix: &self,
         }
     }
 
-    pub fn row_iter<'a>(&'a self) -> RowIt<'a, T> {
+    pub fn row_iter(&self) -> RowIt<T> {
         RowIt {
             point: 0,
             matrix: &self,
@@ -186,9 +186,9 @@ where
 
             if test_func(item, other_item) {
                 return true;
-            };
+            }
         }
-        return false;
+        false
     }
 }
 

@@ -13,10 +13,10 @@ impl FigurePos {
     pub fn new(fig: Figure, pos: PosDir) -> Self {
         let mut norm_pos = pos;
         norm_pos.normalize_dir(fig.faces().len());
-        return FigurePos {
-            fig: fig,
+        FigurePos {
+            fig,
             pos: norm_pos,
-        };
+        }
     }
     pub fn get_position(&self) -> &PosDir {
         &self.pos
@@ -28,7 +28,7 @@ impl FigurePos {
         &self.fig.get_face(self.pos.get_dir() as usize)
     }
     pub fn set_position(&mut self, pos: &PosDir) {
-        let mut norm_pos = pos.clone();
+        let mut norm_pos = *pos;
         norm_pos.normalize_dir(self.fig.faces().len());
         self.pos = norm_pos;
     }

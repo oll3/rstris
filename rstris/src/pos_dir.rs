@@ -6,7 +6,7 @@ pub type PosDir = Vec3<i32>;
 
 impl PosDir {
     pub fn apply_move(&self, movement: &Movement) -> Self {
-        let mut pos = self.clone();
+        let mut pos = *self;
         match *movement {
             Movement::MoveLeft => pos.x -= 1,
             Movement::MoveRight => pos.x += 1,
@@ -35,7 +35,7 @@ impl PosDir {
     pub fn normalize_dir(&mut self, num_directions: usize) {
         if self.z < 0 {
             // Handle negative rotation
-            self.z = num_directions as i32 + self.z;
+            self.z += num_directions as i32;
         }
         self.z %= num_directions as i32;
     }

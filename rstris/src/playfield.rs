@@ -19,9 +19,10 @@ impl Playfield {
     }
     pub fn get_block(&self, pos: Position) -> &Block {
         if !self.blocks.contains(pos) {
-            return &self.outside_block;
+            &self.outside_block
+        } else {
+            &self.blocks.get(pos)
         }
-        return &self.blocks.get(pos);
     }
     pub fn set_block(&mut self, pos: Position, block: Block) {
         if self.blocks.contains(pos) {
@@ -46,16 +47,16 @@ impl Playfield {
     pub fn locked_lines(&self) -> Vec<u32> {
         let mut full_lines: Vec<u32> = vec![];
         self.blocks.row_iter().for_each(|row| {
-            if row.items.into_iter().all(|b| b.is_set()) {
+            if row.items.iter().all(|b| b.is_set()) {
                 full_lines.push(row.point as u32);
             }
         });
-        return full_lines;
+        full_lines
     }
     pub fn count_locked_lines(&self) -> u32 {
         self.blocks
             .row_iter()
-            .filter(|row| row.items.into_iter().all(|b| b.is_set()))
+            .filter(|row| row.items.iter().all(|b| b.is_set()))
             .count() as u32
     }
 
@@ -110,8 +111,8 @@ impl Playfield {
             visited.set(pos, true);
 
             let mut fill: Vec<Position> = Vec::new();
-            fill.push(pos.clone());
-            while fill.len() > 0 {
+            fill.push(pos);
+            while !fill.is_empty() {
                 let pos = fill.pop().unwrap();
                 let test_positions = [
                     pos + Position { x: 1, y: 0 },
@@ -131,7 +132,7 @@ impl Playfield {
                 }
             }
         }
-        return voids;
+        voids
     }
 }
 

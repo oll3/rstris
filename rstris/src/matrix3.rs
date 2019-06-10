@@ -21,8 +21,8 @@ where
     pub fn new_coords(tl: Vec3<i32>, br: Vec3<i32>, initial_value: T) -> Self {
         Matrix3 {
             items: vec![initial_value; ((br.x - tl.x) * (br.y - tl.y) * (br.z - tl.z)) as usize],
-            tl: tl,
-            br: br,
+            tl,
+            br,
         }
     }
     pub fn width(&self) -> u32 {

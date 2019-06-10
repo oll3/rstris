@@ -13,7 +13,7 @@ static DEBUG_FIND_PLACEMENT: bool = false;
 pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
     let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
-    let start_pos = fig_pos.get_position().clone();
+    let start_pos = fig_pos.get_position();
     let fig = fig_pos.get_figure();
 
     if DEBUG_FIND_PLACEMENT {
@@ -31,8 +31,8 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
             for y in 1..pf.height() {
                 let tmp_pos = PosDir::new((x as i32, y as i32, dir as i32));
                 if fig.test_collision(&pf, &tmp_pos) {
-                    if last_pos.is_some() {
-                        placements.push(last_pos.clone().unwrap());
+                    if let Some(p) = last_pos {
+                        placements.push(p);
                     }
                     last_pos = None;
                 } else {
@@ -47,11 +47,11 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
             "Found {} valid placements for {} ({} ms)",
             placements.len(),
             fig.get_name(),
-            (time::precise_time_ns() - current_ticks) as f64 / 1000000.0
+            (time::precise_time_ns() - current_ticks) as f64 / 1_000_000.0
         );
     }
 
-    return placements;
+    placements
 }
 
 pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
@@ -60,7 +60,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
     let mut moves: LinkedList<PosDir> = LinkedList::new();
     let mut visited: Matrix3<bool> = Matrix3::new(pf.width() as u32, pf.height() as u32, 4, false);
     let mut it_cnt = 0;
-    let start_pos = fig_pos.get_position().clone();
+    let start_pos = fig_pos.get_position();
     let fig = fig_pos.get_figure();
 
     if DEBUG_FIND_PLACEMENT {
@@ -80,31 +80,31 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         return placements;
     }
 
-    visited.set(start_pos.into(), true);
-    moves.push_back(start_pos);
+    visited.set(*start_pos, true);
+    moves.push_back(*start_pos);
 
-    while moves.len() > 0 {
+    while !moves.is_empty() {
         let current_pos = moves.pop_front().unwrap();
 
         // Visist all the closest positions that has not been visited
         // already (one left, right, down, rotate cw).
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveLeft);
-        let point: Vec3<i32> = tmp_pos.into();
+        let point: Vec3<i32> = tmp_pos;
         if !visited.get(point) && !fig.test_collision(&pf, &tmp_pos) {
             visited.set(point, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveRight);
-        if !visited.get(tmp_pos.into()) && !fig.test_collision(&pf, &tmp_pos) {
-            visited.set(tmp_pos.into(), true);
+        if !visited.get(tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
+            visited.set(tmp_pos, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::RotateCW);
         if tmp_pos.get_dir() < fig.faces().len() as i32
-            && !visited.get(tmp_pos.into())
+            && !visited.get(tmp_pos)
             && !fig.test_collision(&pf, &tmp_pos)
         {
-            visited.set(tmp_pos.into(), true);
+            visited.set(tmp_pos, true);
             moves.push_back(tmp_pos);
         }
 
@@ -114,10 +114,10 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         if fig.test_collision(&pf, &tmp_pos) {
             // Valid placement
             // println!("Valid position: {:?}", tmp_pos);
-            placements.push(current_pos.clone());
-        } else if !visited.get(tmp_pos.into()) {
-            moves.push_back(tmp_pos.clone());
-            visited.set(tmp_pos.into(), true);
+            placements.push(current_pos);
+        } else if !visited.get(tmp_pos) {
+            moves.push_back(tmp_pos);
+            visited.set(tmp_pos, true);
         }
         it_cnt += 1;
     }
@@ -128,11 +128,11 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
             placements.len(),
             fig.get_name(),
             it_cnt,
-            (time::precise_time_ns() - current_ticks) as f64 / 1000000.0
+            (time::precise_time_ns() - current_ticks) as f64 / 1_000_000.0
         );
     }
 
-    return placements;
+    placements
 }
 
 #[cfg(test)]

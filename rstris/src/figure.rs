@@ -51,7 +51,7 @@ impl Figure {
                 return true;
             }
         }
-        return false;
+        false
     }
     pub fn get_name(&self) -> &String {
         &self.figure_name
@@ -61,7 +61,7 @@ impl Figure {
     }
     pub fn get_face(&self, face_index: usize) -> &FigureFace {
         let face_index = face_index % self.vfaces.len();
-        return &self.vfaces[face_index];
+        &self.vfaces[face_index]
     }
 
     //
@@ -81,7 +81,7 @@ impl Figure {
 
     pub fn test_collision(&self, pf: &Playfield, pos: &PosDir) -> bool {
         let face = self.get_face(pos.get_dir() as usize);
-        return face.test_collision(pf, pos.get_pos());
+        face.test_collision(pf, pos.get_pos())
     }
 }
 

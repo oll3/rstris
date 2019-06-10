@@ -25,22 +25,20 @@ impl FigureFace {
     pub fn rows_with_blocks(&self) -> Vec<u32> {
         let mut rows: Vec<u32> = Vec::new();
         self.blocks.row_iter().for_each(|row| {
-            if row.items.into_iter().any(|b| b.is_set()) {
+            if row.items.iter().any(|b| b.is_set()) {
                 rows.push(row.point as u32)
             }
         });
-        return rows;
+        rows
     }
     pub fn row_of_lowest_block(&self) -> i32 {
         let mut lowest = i32::min_value();
         self.blocks.row_iter().for_each(|row| {
-            if row.items.into_iter().any(|b| b.is_set()) {
-                if row.point > lowest {
-                    lowest = row.point;
-                }
+            if row.items.iter().any(|b| b.is_set()) && row.point > lowest {
+                lowest = row.point;
             }
         });
-        return lowest;
+        lowest
     }
     pub fn width(&self) -> u32 {
         self.blocks.width()

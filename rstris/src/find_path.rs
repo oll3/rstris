@@ -61,10 +61,10 @@ impl NodeContext {
         NodeContext {
             pf: pf.clone(),
             fig: fig.clone(),
-            end_pos: end_pos.clone(),
+            end_pos: *end_pos,
             start_time: time::precise_time_ns(),
-            move_time: move_time,
-            down_time: down_time,
+            move_time,
+            down_time,
             node_by_id: Vec::new(),
             node_by_pos: Matrix3::new_coords(
                 Vec3::new((-MAX_FIGURE_SIZE, -MAX_FIGURE_SIZE, 0)),
@@ -79,14 +79,14 @@ impl NodeContext {
         }
     }
     fn get_node_from_id(&self, id: usize) -> &Node {
-        return &self.node_by_id[id];
+        &self.node_by_id[id]
     }
     fn pop_best_open(&mut self) -> Node {
         let best_node = self.open_set.pop().unwrap();
-        return self.get_node_from_id(best_node.id).clone();
+        self.get_node_from_id(best_node.id).clone()
     }
     fn mark_best_pos(&mut self, node: &Node) {
-        self.node_by_pos.set(node.pos.clone().into(), Some(node.id));
+        self.node_by_pos.set(node.pos, Some(node.id));
     }
     fn add_node(&mut self, node: Node) {
         self.node_by_id.push(node);
@@ -100,13 +100,13 @@ impl NodeContext {
     }
     fn mark_closed(&mut self, _: &Node) {}
     fn no_pos_with_lower_est(&self, node: &Node) -> bool {
-        if let Some(best_node) = *self.node_by_pos.get(node.pos.clone().into()) {
+        if let Some(best_node) = *self.node_by_pos.get(node.pos) {
             let n = self.get_node_from_id(best_node);
             if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
                 return false;
             }
         }
-        return true;
+        true
     }
 }
 
@@ -142,16 +142,16 @@ impl Node {
         let node = Node {
             id: ctx.node_by_id.len(),
             pid: parent,
-            pos: pos.clone(),
-            walked: walked,
+            pos: *pos,
+            walked,
             est_end: est_distance_end,
-            mvmnt: mvmnt,
-            time: time,
-            last_time_move: last_time_move,
-            last_time_down: last_time_down,
+            mvmnt,
+            time,
+            last_time_move,
+            last_time_down,
         };
         ctx.add_node(node.clone());
-        return node;
+        node
     }
 
     fn get_tot_est(&self) -> u64 {
@@ -159,11 +159,11 @@ impl Node {
     }
     fn time_until_move(&self, ctx: &NodeContext) -> i64 {
         let time_since_move = self.time as i64 - self.last_time_move;
-        return ctx.move_time as i64 - time_since_move;
+        ctx.move_time as i64 - time_since_move
     }
     fn time_until_down(&self, ctx: &NodeContext) -> i64 {
         let time_since_down = self.time as i64 - self.last_time_down;
-        return ctx.down_time as i64 - time_since_down;
+        ctx.down_time as i64 - time_since_down
     }
     fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement) -> Node {
         let mut fig_pos = PosDir::apply_move(&self.pos, &movement);
@@ -198,16 +198,16 @@ impl Node {
     fn get_possible_moves(&self, ctx: &mut NodeContext) -> Vec<Node> {
         if self.time_until_move(ctx) < self.time_until_down(ctx) {
             // Regular move
-            return vec![
+            vec![
                 self.new_moved_node(ctx, Movement::MoveLeft),
                 self.new_moved_node(ctx, Movement::MoveRight),
                 self.new_moved_node(ctx, Movement::RotateCW),
                 self.new_moved_node(ctx, Movement::RotateCCW),
                 self.new_moved_node(ctx, Movement::MoveDown),
-            ];
+            ]
         } else {
             // Forced down move
-            return vec![self.new_moved_node(ctx, Movement::MoveDown)];
+            vec![self.new_moved_node(ctx, Movement::MoveDown)]
         }
     }
 
@@ -218,7 +218,7 @@ impl Node {
             path.push((p.mvmnt.clone().unwrap(), p.time));
             p = &ctx.node_by_id[p.pid.unwrap()];
         }
-        return path;
+        path
     }
 }
 
@@ -255,7 +255,7 @@ pub fn find_path(
         );
     }
 
-    while ctx.open_set.len() > 0 {
+    while !ctx.open_set.is_empty() {
         let q = ctx.pop_best_open();
 
         let possible_nodes = q.get_possible_moves(&mut ctx);
@@ -263,7 +263,8 @@ pub fn find_path(
             if node.pos == *end_pos {
                 // End was found
                 if DEBUG_FIND_PATH {
-                    let search_time = (time::precise_time_ns() - ctx.start_time) as f64 / 1000000.0;
+                    let search_time =
+                        (time::precise_time_ns() - ctx.start_time) as f64 / 1_000_000.0;
                     println!(
                         "Path found for {} in {} ms (searched {} nodes)",
                         ctx.fig.get_name(),
@@ -281,7 +282,7 @@ pub fn find_path(
         ctx.mark_closed(&q);
     }
     if DEBUG_FIND_PATH {
-        let search_time = (time::precise_time_ns() - ctx.start_time) as f64 / 1000000.0;
+        let search_time = (time::precise_time_ns() - ctx.start_time) as f64 / 1_000_000.0;
         println!(
             "No path found for {} ({:?} to {:?} (distance: {}, tested: {}, {} ms)!",
             fig.get_name(),
@@ -292,5 +293,5 @@ pub fn find_path(
             search_time
         );
     }
-    return vec![];
+    vec![]
 }
