@@ -1,5 +1,4 @@
 use block::Block;
-use block::BlockState;
 use figure_face::FigureFace;
 use playfield::Playfield;
 use pos_dir::PosDir;
@@ -72,10 +71,6 @@ impl Figure {
         let face = self.get_face(pos.get_dir() as usize);
         face.place(pf, pos.get_pos());
     }
-    pub fn lock(&self, pf: &mut Playfield, pos: &PosDir) {
-        let face = self.get_face(pos.get_dir() as usize);
-        face.lock(pf, pos.get_pos());
-    }
     //
     // Remove figure from playfield
     //
@@ -84,25 +79,9 @@ impl Figure {
         face.remove(pf, pos.get_pos());
     }
 
-    pub fn test_collision(&self, pf: &Playfield, pos: &PosDir) -> BlockState {
+    pub fn test_collision(&self, pf: &Playfield, pos: &PosDir) -> bool {
         let face = self.get_face(pos.get_dir() as usize);
         return face.test_collision(pf, pos.get_pos());
-    }
-
-    //
-    // Test if figure will collide with any locked block if placed
-    // at the given position
-    //
-    pub fn collide_locked(&self, pf: &Playfield, pos: &PosDir) -> bool {
-        self.test_collision(pf, pos) == BlockState::Locked
-    }
-
-    //
-    // Test if figure will collide with any block if placed at the given
-    // position.
-    //
-    pub fn collide_any(&self, pf: &Playfield, pos: &PosDir) -> bool {
-        self.test_collision(pf, pos) != BlockState::NotSet
     }
 }
 

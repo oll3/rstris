@@ -40,7 +40,7 @@ struct PlayfieldContext<'a> {
 impl<'a> PlayfieldContext<'a> {
     pub fn new(pf: Playfield) -> Self {
         PlayfieldContext {
-            pf: pf,
+            pf,
             players: Vec::new(),
             game_over: false,
             lines_to_throw: Vec::new(),
@@ -65,8 +65,8 @@ impl<'a> PlayfieldContext<'a> {
 macro_rules! bl {
     ($x:expr) => {
         match $x {
-            0 => Block::new_not_set(),
-            _ => Block::new_locked($x),
+            0 => Block::Clear,
+            _ => Block::Set($x),
         }
     };
 }
@@ -124,7 +124,7 @@ fn init_figures() -> Vec<Figure> {
     return figure_list;
 }
 
-fn get_max_figure_dimensions(figure_list: &Vec<Figure>) -> (u32, u32) {
+fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
     let mut max_width: u32 = 0;
     let mut max_height: u32 = 0;
     for fig in figure_list {
@@ -139,21 +139,6 @@ fn get_max_figure_dimensions(figure_list: &Vec<Figure>) -> (u32, u32) {
     }
     return (max_width, max_height);
 }
-
-/*
-use rustc_serialize::json;
-fn pf_to_file(pf: &Playfield, file_name: String) -> Result<(), io::Error> {
-
-    let mut buffer = try!(File::create(file_name));
-    match json::encode(&pf) {
-        Ok(j) => {
-            try!(buffer.write_all(j.as_bytes()));
-        },
-        Err(_) => {},
-    }
-    return Ok(());
-}
-*/
 
 struct RandomComputer {}
 impl ComputerType for RandomComputer {
@@ -170,9 +155,9 @@ fn lowest_block(fig_pos: &FigurePos) -> i32 {
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
     for y in 0..((pf.height() + 1) as i32) {
-        let mut last_state = pf.block_is_locked(&Position::new(0, y));
+        let mut last_state = pf.block_is_set(&Position::new(0, y));
         for x in 0..(pf.width() as i32) {
-            let state = pf.block_is_locked(&Position::new(x, y));
+            let state = pf.block_is_set(&Position::new(x, y));
             if last_state != state {
                 last_state = state;
                 jitter += 1;
@@ -184,9 +169,9 @@ fn get_pf_row_jitter(pf: &Playfield) -> u32 {
 fn get_pf_col_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
     for x in -1..((pf.width() + 1) as i32) {
-        let mut last_state = pf.block_is_locked(&Position::new(x, 0));
+        let mut last_state = pf.block_is_set(&Position::new(x, 0));
         for y in 0..(pf.height() as i32) {
-            let state = pf.block_is_locked(&Position::new(x, y));
+            let state = pf.block_is_set(&Position::new(x, y));
             if last_state != state {
                 last_state = state;
                 jitter += 1;
@@ -199,7 +184,7 @@ fn get_pf_avg_height(pf: &Playfield) -> f32 {
     let mut total_height = 0;
     for x in 0..(pf.width() as i32) {
         for y in 0..(pf.height() as i32) {
-            if pf.block_is_locked(&Position::new(x, y)) {
+            if pf.block_is_set(&Position::new(x, y)) {
                 total_height += pf.height() as i32 - y;
                 break;
             }
@@ -212,7 +197,7 @@ fn get_pf_max_height(pf: &Playfield) -> i32 {
     for x in 0..(pf.width() as i32) {
         for y in 0..(pf.height() as i32) {
             let height = pf.height() as i32 - y;
-            if pf.block_is_locked(&Position::new(x, y)) && height > max_height {
+            if pf.block_is_set(&Position::new(x, y)) && height > max_height {
                 max_height = height;
             }
         }
@@ -255,9 +240,9 @@ impl ComputerType for JitterComputer {
 
     fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> f32 {
         let mut pf = pf.clone();
-        fig_pos.lock(&mut pf);
+        fig_pos.place(&mut pf);
         let mut locked_lines = pf.locked_lines();
-        let lock_cnt = locked_lines.len() as i32 - self.pre_locked_lines;
+        let _lock_cnt = locked_lines.len() as i32 - self.pre_locked_lines;
         //let tetris = if lock_cnt >= 4 {1000.0} else {0.0};
         locked_lines.sort();
         for line in &locked_lines {
@@ -281,9 +266,9 @@ impl ComputerType for JitterComputer {
 }
 
 fn main() {
-    let FRAME_COLOR: Color = Color::RGB(200, 64, 64);
-    let FILL_COLOR: Color = Color::RGB(98, 204, 244);
-    let BG_COLOR: Color = Color::RGB(101, 208, 246);
+    let frame_color = Color::RGB(200, 64, 64);
+    let fill_color = Color::RGB(98, 204, 244);
+    let bg_color = Color::RGB(101, 208, 246);
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -304,7 +289,7 @@ fn main() {
         .build()
         .unwrap();
     let mut canvas = window.into_canvas().build().unwrap();
-    let mut draw = DrawContext::new(BLOCK_SIZE, BLOCK_SPACING, FRAME_COLOR, FILL_COLOR);
+    let mut draw = DrawContext::new(BLOCK_SIZE, BLOCK_SPACING, frame_color, fill_color);
 
     let player1_key_map = KeyMap {
         step_left: Some(Keycode::Left),
@@ -321,23 +306,23 @@ fn main() {
         rot_cw: Some(Keycode::W),
         rot_ccw: None,
     };
-    let mut player1 = HumanPlayer::new(
+    let _player1 = HumanPlayer::new(
         PlayerCommon::new("Human 1", 500000000, figure_list.clone()),
         player1_key_map,
     );
-    let mut player2 = HumanPlayer::new(
+    let _player2 = HumanPlayer::new(
         PlayerCommon::new("Human 2", 500000000, figure_list.clone()),
         player2_key_map,
     );
 
     let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 10000000, figure_list.clone()),
+        PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
         9000000,
         &mut com_type1,
     );
     let mut com_random2 = RandomComputer {};
-    let mut com2 = ComputerPlayer::new(
+    let _com2 = ComputerPlayer::new(
         PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
         5000000,
         &mut com_random2,
@@ -381,9 +366,7 @@ fn main() {
                 Event::KeyDown {
                     keycode: Some(key), ..
                 } => {
-                    if !pressed_keys.contains_key(&key) {
-                        pressed_keys.insert(key, ticks);
-                    }
+                    pressed_keys.entry(key).or_insert(ticks);
                 }
                 Event::KeyUp {
                     keycode: Some(key), ..
@@ -413,20 +396,20 @@ fn main() {
                     execute_move(*player, &mut pf_ctx.pf, move_and_time);
                     if !player.figure_in_play() {
                         let mut locked = pf_ctx.pf.locked_lines();
-                        pf_ctx.pf.set_lines(&locked, &Block::new_locked(10));
+                        pf_ctx.pf.set_lines(&locked, &Block::Set(10));
                         pf_ctx.lines_to_throw.append(&mut locked);
                     }
                 }
-            } else if pf_ctx.lines_to_throw.len() == 0 {
+            } else if pf_ctx.lines_to_throw.is_empty() {
                 let placement_result = try_place_new_figure(*player, ticks, &mut pf_ctx.pf);
-                if placement_result == BlockState::Locked {
+                if placement_result {
                     pf_ctx.game_over = true;
                 }
             }
         }
 
         // Throw full lines (when there are no figures being played)
-        if pf_ctx.lines_to_throw.len() > 0 && !pf_ctx.figures_in_play() {
+        if !pf_ctx.lines_to_throw.is_empty() && !pf_ctx.figures_in_play() {
             pf_ctx.lines_to_throw.sort();
             pf_ctx.lines_to_throw.dedup();
             println!("Throw away lines: {:?}", pf_ctx.lines_to_throw);
@@ -436,29 +419,26 @@ fn main() {
             pf_ctx.lines_to_throw.clear();
         }
 
-        /* Render graphics */
-        draw.clear(&mut canvas, BG_COLOR);
+        // Render graphics
+        draw.clear(&mut canvas, bg_color);
         draw.draw_playfield(&mut canvas, &pf_ctx.pf);
-        let mut pi = 0;
-        for player in &mut pf_ctx.players {
+        for (pi, player) in pf_ctx.players.iter().enumerate() {
             draw.draw_next_figure(
                 &mut canvas,
                 &player.next_figure(),
                 (PF_WIDTH + 3) as i32,
-                ((figure_max_height + 1) * pi) as i32,
+                ((figure_max_height + 1) * pi as u32) as i32,
                 figure_max_width as i32,
                 figure_max_height as i32,
             );
-
-            pi += 1;
         }
         draw.present(&mut canvas);
 
-        /* Write FPS in window title */
+        // Write FPS in window title
         frame_cnt_sec += 1;
         if (ticks as i64 - sec_timer as i64) >= 1000000000 {
             let title = format!("RSTris (fps: {})", frame_cnt_sec);
-            let mut window = canvas.window_mut();
+            let window = canvas.window_mut();
 
             frame_cnt_sec = 0;
             sec_timer = ticks;

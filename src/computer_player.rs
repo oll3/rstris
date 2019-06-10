@@ -77,7 +77,7 @@ impl<'a> Player for ComputerPlayer<'a> {
         for p in avail_placing {
             let eval_pos = FigurePos::new(fig_pos.get_figure().clone(), p.clone());
             let eval = self.com_type.eval_placing(&eval_pos, &pf_no_fig);
-            let eval_pos = EvalPosition { pos: p, eval: eval };
+            let eval_pos = EvalPosition { pos: p, eval };
             eval_placing.push(eval_pos);
         }
         eval_placing.sort_by(|a, b| b.eval.partial_cmp(&a.eval).unwrap());
@@ -116,12 +116,12 @@ impl<'a> Player for ComputerPlayer<'a> {
 impl<'a> ComputerPlayer<'a> {
     pub fn new(common: PlayerCommon, move_time: u64, com_type: &'a mut ComputerType) -> Self {
         ComputerPlayer {
-            common: common,
+            common,
             avail_placing: Vec::new(),
             last_fig: "".to_string(),
             last_path_update: 0,
-            move_time: move_time,
-            com_type: com_type,
+            move_time,
+            com_type,
             path_per_height: Vec::new(),
         }
     }
@@ -137,12 +137,12 @@ fn path_to_per_height(path: Vec<(Movement, u64)>) -> Vec<Vec<MoveAndTime>> {
         } else {
             current_level.push(MoveAndTime {
                 movement: movement.clone(),
-                time: time,
+                time,
             });
         }
     }
     if current_level.len() > 0 {
         moves.push(current_level);
     }
-    return moves;
+    moves
 }

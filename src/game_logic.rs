@@ -1,6 +1,5 @@
 use player::*;
 
-use rstris::block::*;
 use rstris::figure_pos::*;
 use rstris::movement::*;
 use rstris::playfield::*;
@@ -9,15 +8,12 @@ use rstris::pos_dir::*;
 //
 // Try to place players next figure in playfield
 //
-pub fn try_place_new_figure(player: &mut Player, ticks: u64, pf: &mut Playfield) -> BlockState {
+pub fn try_place_new_figure(player: &mut Player, ticks: u64, pf: &mut Playfield) -> bool {
     let figure = player.common().next_figure().clone();
     let pos = PosDir::new((pf.width() / 2 - 1) as i32, 0, 0);
-    if figure.collide_locked(pf, &pos) {
-        println!("Figure collided with locked block");
-        return BlockState::Locked;
-    } else if figure.collide_any(pf, &pos) {
-        println!("Figure collided with blocking block");
-        return BlockState::InFlight;
+    if figure.test_collision(pf, &pos) {
+        println!("Figure collided");
+        return true;
     }
     let fig_pos = FigurePos::new(figure, pos);
     player.common_mut().gen_next_figure();
@@ -34,7 +30,7 @@ pub fn try_place_new_figure(player: &mut Player, ticks: u64, pf: &mut Playfield)
     player.common_mut().set_figure(Some(fig_pos.clone()));
 
     player.new_figure_event(ticks, pf, &fig_pos);
-    return BlockState::NotSet;
+    return false;
 }
 
 //
@@ -47,11 +43,11 @@ pub fn execute_move(player: &mut Player, pf: &mut Playfield, move_and_time: Move
     let test_pos = PosDir::apply_move(fig_pos.get_position(), &fig_move);
 
     let collision = fig_pos.get_figure().test_collision(pf, &test_pos);
-    if collision == BlockState::Locked && fig_move == Movement::MoveDown {
-        fig_pos.lock(pf);
+    if collision && fig_move == Movement::MoveDown {
+        fig_pos.place(pf);
         player.common_mut().set_figure(None);
     } else {
-        if collision == BlockState::NotSet {
+        if !collision {
             fig_pos.set_position(&test_pos);
         }
         fig_pos.place(pf);

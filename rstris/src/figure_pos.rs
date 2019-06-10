@@ -35,9 +35,6 @@ impl FigurePos {
     pub fn place(&self, pf: &mut Playfield) {
         self.fig.place(pf, &self.pos);
     }
-    pub fn lock(&self, pf: &mut Playfield) {
-        self.fig.lock(pf, &self.pos);
-    }
     pub fn remove(&self, pf: &mut Playfield) {
         self.fig.remove(pf, &self.pos);
     }

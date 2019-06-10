@@ -29,7 +29,7 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
             let mut last_pos = Some(PosDir::new(x as i32, 0, dir as i32));
             for y in 1..pf.height() {
                 let tmp_pos = PosDir::new(x as i32, y as i32, dir as i32);
-                if fig.collide_locked(&pf, &tmp_pos) {
+                if fig.test_collision(&pf, &tmp_pos) {
                     if last_pos.is_some() {
                         placements.push(last_pos.clone().unwrap());
                     }
@@ -70,7 +70,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         );
     }
 
-    if fig.collide_locked(pf, &start_pos) {
+    if fig.test_collision(pf, &start_pos) {
         println!(
             "Invalid starting point ({:?}) for figure {}",
             start_pos,
@@ -88,19 +88,19 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         // Visist all the closest positions that has not been visited
         // already (one left, right, down, rotate cw).
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveLeft);
-        if !visited.tv_get(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
+        if !visited.tv_get(&tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
             visited.tv_set(&tmp_pos, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveRight);
-        if !visited.tv_get(&tmp_pos) && !fig.collide_locked(&pf, &tmp_pos) {
+        if !visited.tv_get(&tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
             visited.tv_set(&tmp_pos, true);
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::RotateCW);
         if tmp_pos.get_dir() < fig.faces().len() as i32
             && !visited.tv_get(&tmp_pos)
-            && !fig.collide_locked(&pf, &tmp_pos)
+            && !fig.test_collision(&pf, &tmp_pos)
         {
             visited.tv_set(&tmp_pos, true);
             moves.push_back(tmp_pos);
@@ -109,7 +109,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         // Down is special. If we can't move down from current position then
         // the current position is a valid placement.
         let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveDown);
-        if fig.collide_locked(&pf, &tmp_pos) {
+        if fig.test_collision(&pf, &tmp_pos) {
             // Valid placement
             // println!("Valid position: {:?}", tmp_pos);
             placements.push(current_pos.clone());

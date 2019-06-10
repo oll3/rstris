@@ -63,12 +63,12 @@ impl PlayerCommon {
             next_figure: PlayerCommon::get_rand_figure(&figures).clone(),
             avail_figures: figures,
             figure_in_play: None,
-            force_down_time: force_down_time,
+            force_down_time,
             move_queue: BinaryHeap::new(),
         }
     }
 
-    fn get_rand_figure(figures: &Vec<Figure>) -> &Figure {
+    fn get_rand_figure(figures: &[Figure]) -> &Figure {
         let next_figure = (rand::random::<u8>() % figures.len() as u8) as usize;
         return &figures[next_figure];
     }
@@ -96,7 +96,7 @@ impl PlayerCommon {
     pub fn add_move(&mut self, movement: Movement, ticks: u64) {
         self.set_time_of_last_move(&movement, ticks);
         let move_time = MoveAndTime {
-            movement: movement,
+            movement,
             time: ticks,
         };
         self.move_queue.push(move_time);

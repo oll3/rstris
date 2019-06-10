@@ -16,7 +16,7 @@ impl FigureFace {
     }
     pub fn new_empty(width: u32, height: u32) -> FigureFace {
         FigureFace {
-            blocks: Matrix2::new(width, height, Block::new_not_set()),
+            blocks: Matrix2::new(width, height, Block::Clear),
         }
     }
     //
@@ -69,53 +69,36 @@ impl FigureFace {
         self.blocks.set(x, y, block.clone());
     }
     pub fn place(&self, pf: &mut Playfield, pos: &Position) {
-        self.blocks.iter()
+        self.blocks
+            .iter()
             .filter(|b| b.item.is_set())
             .for_each(|b| {
                 let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
                 if pf.contains(&pos) {
                     pf.set_block_by_pos(&pos, b.item.clone());
                 }
-        });
-    }
-    pub fn lock(&self, pf: &mut Playfield, pos: &Position) {
-        self.blocks.iter()
-            .filter(|b| b.item.is_set())
-            .for_each(|b| {
-                let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
-                if pf.contains(&pos) {
-                    let mut b = b.item.clone();
-                    b.state = BlockState::Locked;
-                    pf.set_block_by_pos(&pos, b);
-                }
-        });
+            });
     }
     pub fn remove(&self, pf: &mut Playfield, pos: &Position) {
-        self.blocks.iter()
+        self.blocks
+            .iter()
             .filter(|b| b.item.is_set())
             .for_each(|b| {
                 let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
                 if pf.contains(&pos) {
                     pf.clear_block(&pos);
                 }
-        });
+            });
     }
-    pub fn test_collision(&self, pf: &Playfield, pos: &Position) -> BlockState {
+    pub fn test_collision(&self, pf: &Playfield, pos: &Position) -> bool {
         self.blocks
             .iter()
             .filter(|b| b.item.is_set())
-            .fold(BlockState::NotSet, |acc, b| {
+            .fold(false, |acc, b| {
                 let pos = Position::new(pos.get_x() + b.x, pos.get_y() + b.y);
-                match pf.get_block_by_pos(&pos).state {
-                    BlockState::Locked => BlockState::Locked,
-                    BlockState::InFlight => {
-                        if acc != BlockState::Locked {
-                            BlockState::InFlight
-                        } else {
-                            acc
-                        }
-                    }
-                    _ => acc,
+                match pf.get_block_by_pos(&pos) {
+                    Block::Set(_) => true,
+                    Block::Clear => acc,
                 }
             })
     }

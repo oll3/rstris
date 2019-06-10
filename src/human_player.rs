@@ -6,7 +6,7 @@ use rstris::figure_pos::*;
 use rstris::movement::*;
 use rstris::playfield::*;
 
-static DELAY_FIRST_STEP_DOWN: u64 = 1 * 1000 * 1000 * 1000;
+static DELAY_FIRST_STEP_DOWN: u64 = 1000_000_000;
 
 pub struct KeyMap {
     pub step_left: Option<Keycode>,
@@ -59,21 +59,21 @@ impl Player for HumanPlayer {
 impl HumanPlayer {
     pub fn new(common: PlayerCommon, key_map: KeyMap) -> Self {
         HumanPlayer {
-            common: common,
-            key_map: key_map,
+            common,
+            key_map,
             delay_first_step_down: 0,
         }
     }
     fn key_to_movement(&self, key: Keycode) -> Option<Movement> {
-        if !self.key_map.step_left.is_none() && key == self.key_map.step_left.unwrap() {
+        if self.key_map.step_left.is_some() && key == self.key_map.step_left.unwrap() {
             return Some(Movement::MoveLeft);
-        } else if !self.key_map.step_right.is_none() && key == self.key_map.step_right.unwrap() {
+        } else if self.key_map.step_right.is_some() && key == self.key_map.step_right.unwrap() {
             return Some(Movement::MoveRight);
-        } else if !self.key_map.step_down.is_none() && key == self.key_map.step_down.unwrap() {
+        } else if self.key_map.step_down.is_some() && key == self.key_map.step_down.unwrap() {
             return Some(Movement::MoveDown);
-        } else if !self.key_map.rot_cw.is_none() && key == self.key_map.rot_cw.unwrap() {
+        } else if self.key_map.rot_cw.is_some() && key == self.key_map.rot_cw.unwrap() {
             return Some(Movement::RotateCW);
-        } else if !self.key_map.rot_ccw.is_none() && key == self.key_map.rot_ccw.unwrap() {
+        } else if self.key_map.rot_ccw.is_some() && key == self.key_map.rot_ccw.unwrap() {
             return Some(Movement::RotateCCW);
         }
         return None;

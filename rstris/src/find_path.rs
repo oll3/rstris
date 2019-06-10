@@ -273,7 +273,7 @@ pub fn find_path(
                 }
                 // Reconstruct path from end node
                 return node.get_path(&ctx);
-            } else if !fig.collide_any(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(&node) {
+            } else if !fig.test_collision(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(&node) {
                 ctx.mark_open(&node);
                 ctx.mark_best_pos(&node);
             }

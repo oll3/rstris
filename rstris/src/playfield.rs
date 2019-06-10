@@ -1,5 +1,4 @@
 use block::Block;
-use block::BlockState;
 use matrix2::Matrix2;
 use position::Position;
 
@@ -7,20 +6,20 @@ use position::Position;
 pub struct Playfield {
     pf_name: String,
     blocks: Matrix2<Block>,
-    locked_block: Block,
+    outside_block: Block,
 }
 
 impl Playfield {
     pub fn new(name: &str, width: u32, height: u32) -> Playfield {
         Playfield {
             pf_name: name.to_owned(),
-            blocks: Matrix2::new(width, height, Block::new_not_set()),
-            locked_block: Block::new_locked(0),
+            blocks: Matrix2::new(width, height, Block::Clear),
+            outside_block: Block::Set(0),
         }
     }
     pub fn get_block(&self, x: i32, y: i32) -> &Block {
         if !self.blocks.contains(x, y) {
-            return &self.locked_block;
+            return &self.outside_block;
         }
         return &self.blocks.get(x, y);
     }
@@ -47,19 +46,16 @@ impl Playfield {
         x >= 0 && x < self.blocks.width() as i32 && y >= 0 && y < self.blocks.height() as i32
     }
     pub fn block_is_set(&self, pos: &Position) -> bool {
-        self.get_block_by_pos(pos).state != BlockState::NotSet
-    }
-    pub fn block_is_locked(&self, pos: &Position) -> bool {
-        self.get_block_by_pos(pos).state == BlockState::Locked
+        self.get_block_by_pos(pos).is_set()
     }
     pub fn clear_block(&mut self, pos: &Position) {
-        self.set_block_by_pos(pos, Block::new_not_set());
+        self.set_block_by_pos(pos, Block::Clear);
     }
 
     pub fn locked_lines(&self) -> Vec<u32> {
         let mut full_lines: Vec<u32> = vec![];
         self.blocks.line_iter().enumerate().for_each(|(index, l)| {
-            if l.into_iter().all(|b| b.state == BlockState::Locked) {
+            if l.into_iter().all(|b| b.is_set()) {
                 full_lines.push(index as u32);
             }
         });
@@ -68,7 +64,7 @@ impl Playfield {
     pub fn count_locked_lines(&self) -> u32 {
         self.blocks
             .line_iter()
-            .filter(|l| l.into_iter().all(|b| b.state == BlockState::Locked))
+            .filter(|l| l.into_iter().all(|b| b.is_set()))
             .count() as u32
     }
 
@@ -91,7 +87,7 @@ impl Playfield {
                     let block = self.get_block(x, y - 1).clone();
                     self.set_block(x, y, block);
                 } else {
-                    self.set_block(x, y, Block::new_not_set());
+                    self.set_block(x, y, Block::Clear);
                 }
             }
             if y == 0 {
@@ -110,7 +106,7 @@ impl Playfield {
         for y in 0..self.height() {
             for x in 0..self.width() {
                 let pos = Position::new(x as i32, y as i32);
-                if !self.block_is_locked(&pos) {
+                if !self.block_is_set(&pos) {
                     all_open.push(pos);
                 }
             }
@@ -136,7 +132,7 @@ impl Playfield {
                 for test_pos in test_positions.iter() {
                     if self.contains(test_pos)
                         && !*visited.tv_get(test_pos)
-                        && !self.block_is_locked(test_pos)
+                        && !self.block_is_set(test_pos)
                     {
                         visited.tv_set(test_pos, true);
                         fill.push(test_pos.clone());

@@ -16,13 +16,12 @@ pub struct DrawContext {
 
 impl DrawContext {
     pub fn new(block_size: u32, block_spacing: u32, frame_color: Color, fill_color: Color) -> Self {
-        let ctx = DrawContext {
-            block_size: block_size,
-            block_spacing: block_spacing,
-            frame_color: frame_color,
-            fill_color: fill_color,
-        };
-        return ctx;
+        DrawContext {
+            block_size,
+            block_spacing,
+            frame_color,
+            fill_color,
+        }
     }
 
     fn draw_block(&mut self, canvas: &mut Canvas<Window>, x: i32, y: i32, color: Color) {
@@ -35,30 +34,30 @@ impl DrawContext {
             self.block_size,
             self.block_size,
         );
-        let _ = canvas.fill_rect(border_rect);
+        let _ignore = canvas.fill_rect(border_rect);
     }
 
     fn get_block_color(block: &Block) -> Color {
-        let mut color = match block.id {
-            1 => Color::RGB(50, 180, 50),
-            2 => Color::RGB(180, 50, 50),
-            3 => Color::RGB(50, 50, 180),
-            4 => Color::RGB(160, 160, 100),
-            5 => Color::RGB(20, 100, 100),
-            6 => Color::RGB(120, 150, 0),
-            7 => Color::RGB(220, 50, 140),
-            10 => Color::RGB(0, 0, 0),
-            _ => Color::RGB(0, 0, 0),
-        };
-        if block.state == BlockState::Locked {
-            let (r, g, b) = color.rgb();
-            let grey = (r as u32 + g as u32 + b as u32) / 3;
-            color = Color::RGB(grey as u8, grey as u8, grey as u8);
-            /*((r as f32) * 0.5) as u8,
-                               ((g as f32) * 0.5) as u8,
-                               ((b as f32) * 0.5) as u8);*/
+        if let Block::Set(ref id) = block {
+            return match id {
+                1 => Color::RGB(50, 180, 50),
+                2 => Color::RGB(180, 50, 50),
+                3 => Color::RGB(50, 50, 180),
+                4 => Color::RGB(160, 160, 100),
+                5 => Color::RGB(20, 100, 100),
+                6 => Color::RGB(120, 150, 0),
+                7 => Color::RGB(220, 50, 140),
+                10 => Color::RGB(0, 0, 0),
+                _ => Color::RGB(0, 0, 0),
+            };
         }
-        return color;
+        return Color::RGB(0, 0, 0);
+        //let (r, g, b) = color.rgb();
+        //let grey = (r as u32 + g as u32 + b as u32) / 3;
+        //color = Color::RGB(grey as u8, grey as u8, grey as u8);
+        /*((r as f32) * 0.5) as u8,
+        ((g as f32) * 0.5) as u8,
+        ((b as f32) * 0.5) as u8);*/
     }
 
     pub fn draw_playfield(&mut self, canvas: &mut Canvas<Window>, playfield: &Playfield) {
