@@ -237,25 +237,37 @@ impl ComputerType for JitterComputer {
     fn eval_placing(&mut self, fig_pos: &FigurePos, pf: &Playfield) -> f32 {
         let mut pf = pf.clone();
         fig_pos.place(&mut pf);
-        let mut locked_lines = pf.locked_lines();
-        let _lock_cnt = locked_lines.len() as i32 - self.pre_locked_lines;
-        //let tetris = if lock_cnt >= 4 {1000.0} else {0.0};
-        locked_lines.sort();
-        for line in &locked_lines {
+        let avg_height = get_pf_avg_height(&pf);
+        let mut full_lines = pf.locked_lines();
+        full_lines.sort();
+
+        let full_lines_score = if full_lines.len() >= 4 {
+            // Great things!
+            10.0
+        } else if full_lines.len() == 1 {
+            // Single full line - Not too bad but still a bit unnecessary
+            -2.0
+        } else if full_lines.len() >= 2 {
+            // 2 or 3 lines should be avoided as long as the avarage playfield height is low
+            let factor = 1.0 - (avg_height as f32 / PF_HEIGHT as f32);
+            (4 - full_lines.len()) as f32 * -factor * 3.0
+        } else {
+            // No full lines - Don't care
+            0.0
+        };
+
+        for line in &full_lines {
             pf.throw_line(*line);
         }
-        /*let avg_height = get_pf_avg_height(&pf);
-        let remove_lines_score = lock_cnt as f32 * 1000.0 *
-            (self.avg_height_factor - 0.24);*/
 
-        let bottom_block = fig_pos.lowest_block();
-        // Measure playfield jitter - The lower jitter the better
+        let bottom_block = fig_pos.lowest_block() / 2;
+
+        // Measure playfield jitter. Lower jitter is better.
         let col_jitter = get_pf_col_jitter(&pf) as i32 - self.pre_col_jitter;
         let row_jitter = get_pf_row_jitter(&pf) as i32 - self.pre_row_jitter;
-        let voids = 0; //pf.count_voids() as i32 - self.pre_voids;
-        let jitter = col_jitter * 2 + row_jitter;
-        (bottom_block - jitter - voids * 4) as f32 /* +
-                                                   remove_lines_score + tetris*/
+        let jitter_score = -(col_jitter * 3 + row_jitter / 2);
+
+        (bottom_block + jitter_score) as f32 + full_lines_score
     }
 }
 
