@@ -2,9 +2,9 @@ use crate::vec2::Vec2;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Matrix2<T> {
-    tl: Vec2<i32>, // top left coordinate
-    br: Vec2<i32>, // bottom rigth coordinat
-    pub items: Vec<T>,
+    w: u32,
+    h: u32,
+    items: Vec<T>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -27,11 +27,11 @@ where
 {
     type Item = ItemPoint<'a, T>;
     fn next<'s>(&'s mut self) -> Option<Self::Item> {
-        if self.point.x >= self.matrix.br.x {
-            self.point.x = self.matrix.tl.x;
+        if self.point.x as u32 >= self.matrix.width() {
+            self.point.x = 0;
             self.point.y += 1;
         }
-        if self.point.y >= self.matrix.br.y {
+        if self.point.y as u32 >= self.matrix.height() {
             return None;
         }
         let point = ItemPoint {
@@ -63,7 +63,7 @@ where
 {
     type Item = RowPoint<'a, T>;
     fn next<'s>(&'s mut self) -> Option<Self::Item> {
-        if self.point >= self.matrix.br.y {
+        if self.point as u32 >= self.matrix.height() {
             return None;
         }
         let width = self.matrix.width() as usize;
@@ -82,28 +82,16 @@ where
     T: Clone,
 {
     pub fn from_size(width: u32, height: u32, initial_value: T) -> Matrix2<T> {
-        Self::from_coords(
-            Vec2::new((0, 0)),
-            Vec2::new((width as i32, height as i32)),
-            initial_value,
-        )
-    }
-    pub fn from_coords(tl: Vec2<i32>, br: Vec2<i32>, initial_value: T) -> Self {
-        let w = br.x - tl.x;
-        let h = br.y - tl.y;
         Matrix2 {
-            items: vec![initial_value; (h * w) as usize],
-            tl: tl,
-            br: br,
+            items: vec![initial_value; (height * width) as usize],
+            w: width,
+            h: height,
         }
     }
+
     pub fn from_items(items: &[&[T]]) -> Self {
         let height = items.len() as u32;
-        let width = if height == 0 {
-            0
-        } else {
-            items[0].len() as u32
-        };
+        let width = if height == 0 { 0 } else { items[0].len() } as u32;
         let mut m = Self::from_size(width, height, items[0][0].clone());
         for y in 0..height as i32 {
             for x in 0..width as i32 {
