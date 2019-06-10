@@ -103,38 +103,92 @@ where
 
     pub fn iter<'a>(&'a self) -> ItemIt<'a, T> {
         ItemIt {
-            point: self.tl,
+            point: Vec2 { x: 0, y: 0 },
             matrix: &self,
         }
     }
 
     pub fn row_iter<'a>(&'a self) -> RowIt<'a, T> {
         RowIt {
-            point: self.tl.y,
+            point: 0,
             matrix: &self,
         }
     }
 
     pub fn width(&self) -> u32 {
-        (self.br.x - self.tl.x) as u32
+        self.w
     }
+
     pub fn height(&self) -> u32 {
-        (self.br.y - self.tl.y) as u32
+        self.h
     }
+
     pub fn contains(&self, point: Vec2<i32>) -> bool {
-        point.x >= self.tl.x && point.x < self.br.x && point.y >= self.tl.y && point.y < self.br.y
+        point.x >= 0
+            && point.x < self.width() as i32
+            && point.y >= 0
+            && point.y < self.height() as i32
     }
+
     fn index_from_point(&self, point: Vec2<i32>) -> usize {
-        let p0 = (point.x - self.tl.x) as u32;
-        let p1 = (point.y - self.tl.y) as u32;
-        (p1 * self.width() + p0) as usize
+        let p0 = point.x as usize;
+        let p1 = point.y as usize;
+        (p1 * self.width() as usize + p0)
     }
+
     pub fn get(&self, point: Vec2<i32>) -> &T {
         &self.items[self.index_from_point(point)]
     }
+
     pub fn set(&mut self, point: Vec2<i32>, item: T) {
         let index = self.index_from_point(point);
         self.items[index] = item;
+    }
+
+    // Merge another matrix with self
+    pub fn merge<F>(&mut self, at: Vec2<i32>, other: &Matrix2<T>, mut merge_func: F)
+    where
+        F: FnMut(&mut T, &T),
+    {
+        other.items.iter().enumerate().for_each(|(other_index, b)| {
+            let other_index = other_index as i32;
+            let y = other_index / (other.width() as i32);
+            let x = other_index - y * (other.width() as i32);
+            let point = Vec2 {
+                x: at.x + x,
+                y: at.y + y,
+            };
+            if self.contains(point) {
+                let index = self.index_from_point(point);
+                merge_func(&mut self.items[index], b);
+            }
+        });
+    }
+    // Test if another matrix overlaps with self
+    pub fn test_overlap<F>(&self, at: Vec2<i32>, other: &Matrix2<T>, mut test_func: F) -> bool
+    where
+        F: FnMut(Option<&T>, &T) -> bool,
+    {
+        for (other_index, other_item) in other.items.iter().enumerate() {
+            let other_index = other_index as i32;
+            let y = other_index / (other.width() as i32);
+            let x = other_index - y * (other.width() as i32);
+            let point = Vec2 {
+                x: at.x + x,
+                y: at.y + y,
+            };
+            let item = if self.contains(point) {
+                let index = self.index_from_point(point);
+                Some(&self.items[index])
+            } else {
+                None
+            };
+
+            if test_func(item, other_item) {
+                return true;
+            };
+        }
+        return false;
     }
 }
 
@@ -161,6 +215,127 @@ mod tests {
                 point: Vec2 { x: 9, y: 9 },
                 item: &true
             }
+        );
+    }
+
+    #[test]
+    fn test_merge_same_size() {
+        let mut m1 = Matrix2::from_items(&[
+            &[false, false, false],
+            &[false, true, false],
+            &[false, true, false],
+            &[false, false, false],
+        ]);
+        let m2 = Matrix2::from_items(&[
+            &[false, true, false],
+            &[false, false, false],
+            &[false, false, false],
+            &[false, true, false],
+        ]);
+        let expected = Matrix2::from_items(&[
+            &[false, true, false],
+            &[false, true, false],
+            &[false, true, false],
+            &[false, true, false],
+        ]);
+
+        m1.merge(Vec2 { x: 0, y: 0 }, &m2, |a, b| {
+            if *b {
+                *a = *b;
+            }
+        });
+
+        assert_eq!(m1, expected);
+    }
+    #[test]
+    fn test_merge_different_size() {
+        let mut m1 = Matrix2::from_items(&[
+            &[false, false, false],
+            &[false, true, false],
+            &[false, true, false],
+            &[true, true, false],
+        ]);
+        let m2 = Matrix2::from_items(&[&[false, true], &[false, false], &[true, false]]);
+        let expected = Matrix2::from_items(&[
+            &[false, false, false],
+            &[false, true, true],
+            &[false, true, false],
+            &[true, true, false],
+        ]);
+
+        m1.merge(Vec2 { x: 1, y: 1 }, &m2, |a, b| {
+            if *b {
+                *a = *b;
+            }
+        });
+
+        assert_eq!(m1, expected);
+    }
+    #[test]
+    fn test_merge_outside() {
+        let mut m1 = Matrix2::from_items(&[
+            &[false, false, false],
+            &[false, true, false],
+            &[false, true, false],
+            &[true, true, false],
+        ]);
+        let m2 = Matrix2::from_items(&[
+            &[false, true, false],
+            &[false, false, false],
+            &[false, false, false],
+            &[false, true, false],
+        ]);
+        let expected = Matrix2::from_items(&[
+            &[false, false, false],
+            &[false, true, false],
+            &[true, true, false],
+            &[true, true, false],
+        ]);
+
+        m1.merge(Vec2 { x: -1, y: -1 }, &m2, |a, b| {
+            if *b {
+                *a = *b;
+            }
+        });
+
+        assert_eq!(m1, expected);
+    }
+    #[test]
+    fn test_overlap() {
+        let m1 = Matrix2::from_items(&[
+            &[false, false, false],
+            &[false, true, false],
+            &[false, true, false],
+            &[true, false, false],
+        ]);
+
+        // Won't overlap m1
+        let no_overlap = Matrix2::from_items(&[
+            &[false, true, false],
+            &[false, false, false],
+            &[false, false, false],
+            &[false, true, false],
+        ]);
+        assert_eq!(
+            m1.test_overlap(Vec2 { x: 0, y: 0 }, &no_overlap, |a, b| match a {
+                Some(ai) => *ai == true && *b == true,
+                None => *b == true,
+            }),
+            false
+        );
+
+        // Will overlap m1
+        let overlap = Matrix2::from_items(&[
+            &[false, true, false],
+            &[false, true, false],
+            &[false, true, false],
+        ]);
+        assert_eq!(
+            m1.test_overlap(Vec2 { x: 0, y: 0 }, &overlap, |a, b| match a {
+                Some(ai) => *ai == true && *b == true,
+                None => *b == true,
+            }),
+            true
         );
     }
 }
