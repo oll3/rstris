@@ -26,9 +26,7 @@ pub fn try_place_new_figure(player: &mut dyn Player, ticks: u64, pf: &mut Playfi
         fig_pos.get_figure().get_name(),
         player.common().next_figure().get_name()
     );
-    fig_pos.place(pf);
     player.common_mut().set_figure(Some(fig_pos.clone()));
-
     player.new_figure_event(ticks, pf, &fig_pos);
 
     false
@@ -40,7 +38,6 @@ pub fn try_place_new_figure(player: &mut dyn Player, ticks: u64, pf: &mut Playfi
 pub fn execute_move(player: &mut dyn Player, pf: &mut Playfield, move_and_time: MoveAndTime) {
     let (fig_move, move_time) = (move_and_time.movement, move_and_time.time);
     let mut fig_pos = player.common().get_figure().unwrap();
-    fig_pos.remove(pf);
     let test_pos = PosDir::apply_move(fig_pos.get_position(), &fig_move);
 
     let collision = fig_pos.get_figure().test_collision(pf, &test_pos);
@@ -51,9 +48,7 @@ pub fn execute_move(player: &mut dyn Player, pf: &mut Playfield, move_and_time: 
         if !collision {
             fig_pos.set_position(&test_pos);
         }
-        fig_pos.place(pf);
         player.common_mut().set_figure(Some(fig_pos.clone()));
-
         player.figure_move_event(move_time, pf, &fig_pos, &fig_move);
     }
 }

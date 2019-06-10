@@ -1,5 +1,3 @@
-
-
 use rstris::figure_pos::*;
 use rstris::find_path::*;
 use rstris::find_placement::*;

@@ -417,6 +417,9 @@ fn main() {
         draw.clear(&mut canvas, bg_color);
         draw.draw_playfield(&mut canvas, &pf_ctx.pf);
         for (pi, player) in pf_ctx.players.iter().enumerate() {
+            if let Some(current_figure) = player.common().get_figure() {
+                draw.draw_figure(&mut canvas, &current_figure);
+            }
             draw.draw_next_figure(
                 &mut canvas,
                 &player.next_figure(),
