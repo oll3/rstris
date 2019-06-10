@@ -58,7 +58,7 @@ impl<'a> PlayfieldContext<'a> {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 
@@ -121,7 +121,7 @@ fn init_figures() -> Vec<Figure> {
             &[bl!(0), bl!(7), bl!(0)],
         ],
     ));
-    return figure_list;
+    figure_list
 }
 
 fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
@@ -137,7 +137,7 @@ fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
             }
         }
     }
-    return (max_width, max_height);
+    (max_width, max_height)
 }
 
 struct RandomComputer {}
@@ -146,10 +146,6 @@ impl ComputerType for RandomComputer {
     fn eval_placing(&mut self, _: &FigurePos, _: &Playfield) -> f32 {
         rand::random::<f32>()
     }
-}
-
-fn lowest_block(fig_pos: &FigurePos) -> i32 {
-    fig_pos.get_face().row_of_lowest_block() + fig_pos.get_position().get_y()
 }
 
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
@@ -164,7 +160,7 @@ fn get_pf_row_jitter(pf: &Playfield) -> u32 {
             }
         }
     }
-    return jitter;
+    jitter
 }
 fn get_pf_col_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
@@ -178,7 +174,7 @@ fn get_pf_col_jitter(pf: &Playfield) -> u32 {
             }
         }
     }
-    return jitter;
+    jitter
 }
 fn get_pf_avg_height(pf: &Playfield) -> f32 {
     let mut total_height = 0;
@@ -190,7 +186,7 @@ fn get_pf_avg_height(pf: &Playfield) -> f32 {
             }
         }
     }
-    return total_height as f32 / pf.width() as f32;
+    total_height as f32 / pf.width() as f32
 }
 fn get_pf_max_height(pf: &Playfield) -> i32 {
     let mut max_height = 0;
@@ -202,7 +198,7 @@ fn get_pf_max_height(pf: &Playfield) -> i32 {
             }
         }
     }
-    return max_height;
+    max_height
 }
 
 struct JitterComputer {
@@ -252,16 +248,14 @@ impl ComputerType for JitterComputer {
         let remove_lines_score = lock_cnt as f32 * 1000.0 *
             (self.avg_height_factor - 0.24);*/
 
-        let bottom_block = lowest_block(fig_pos);
+        let bottom_block = fig_pos.lowest_block();
         // Measure playfield jitter - The lower jitter the better
         let col_jitter = get_pf_col_jitter(&pf) as i32 - self.pre_col_jitter;
         let row_jitter = get_pf_row_jitter(&pf) as i32 - self.pre_row_jitter;
         let voids = 0; //pf.count_voids() as i32 - self.pre_voids;
         let jitter = col_jitter * 2 + row_jitter;
-        let total_score =
-            (bottom_block - jitter - voids * 4) as f32 /* +
-            remove_lines_score + tetris*/;
-        return total_score;
+        (bottom_block - jitter - voids * 4) as f32 /* +
+                                                   remove_lines_score + tetris*/
     }
 }
 
@@ -307,24 +301,24 @@ fn main() {
         rot_ccw: None,
     };
     let _player1 = HumanPlayer::new(
-        PlayerCommon::new("Human 1", 500000000, figure_list.clone()),
+        PlayerCommon::new("Human 1", 500_000_000, figure_list.clone()),
         player1_key_map,
     );
     let _player2 = HumanPlayer::new(
-        PlayerCommon::new("Human 2", 500000000, figure_list.clone()),
+        PlayerCommon::new("Human 2", 500_000_000, figure_list.clone()),
         player2_key_map,
     );
 
     let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 4000000, figure_list.clone()),
-        4000000,
+        PlayerCommon::new("Computer 1", 4_000_000, figure_list.clone()),
+        4_000_000,
         &mut com_type1,
     );
     let mut com_random2 = RandomComputer {};
     let _com2 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 5000000, figure_list.clone()),
-        5000000,
+        PlayerCommon::new("Computer 1", 5_000_000, figure_list.clone()),
+        5_000_000,
         &mut com_random2,
     );
 
@@ -436,7 +430,7 @@ fn main() {
 
         // Write FPS in window title
         frame_cnt_sec += 1;
-        if (ticks as i64 - sec_timer as i64) >= 1000000000 {
+        if (ticks as i64 - sec_timer as i64) >= 1_000_000_000 {
             let title = format!("RSTris (fps: {})", frame_cnt_sec);
             let window = canvas.window_mut();
 
@@ -444,6 +438,6 @@ fn main() {
             sec_timer = ticks;
             window.set_title(&title).unwrap();
         }
-        std::thread::sleep(std::time::Duration::new(0, 100000));
+        std::thread::sleep(std::time::Duration::new(0, 100_000));
     }
 }

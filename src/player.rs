@@ -70,7 +70,7 @@ impl PlayerCommon {
 
     fn get_rand_figure(figures: &[Figure]) -> &Figure {
         let next_figure = (rand::random::<u8>() % figures.len() as u8) as usize;
-        return &figures[next_figure];
+        &figures[next_figure]
     }
 
     pub fn next_figure(&self) -> &Figure {
@@ -108,14 +108,15 @@ impl PlayerCommon {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     pub fn get_next_move(&mut self, ticks: u64) -> Option<MoveAndTime> {
         if self.time_for_next_move(ticks) {
-            return Some(self.move_queue.pop().unwrap());
+            Some(self.move_queue.pop().unwrap())
+        } else {
+            None
         }
-        return None;
     }
 
     fn set_time_of_last_move(&mut self, movement: &Movement, time: u64) {
@@ -126,9 +127,10 @@ impl PlayerCommon {
 
     pub fn time_last_move(&self, movement: &Movement) -> u64 {
         if let Some(time) = self.time_last_move.get(movement) {
-            return *time;
+            *time
+        } else {
+            0
         }
-        return 0;
     }
 
     pub fn time_since_move(&self, ticks: u64, movement: &Movement) -> i64 {

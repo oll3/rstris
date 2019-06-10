@@ -119,7 +119,6 @@ mod tests {
                 &[bl!(0), bl!(1), bl!(0)]
             ])
         );
-        assert_eq!(fig.get_face(0).rows_with_blocks(), [1, 2]);
         assert_eq!(
             *fig.get_face(1),
             FigureFace::new(&[
@@ -128,7 +127,6 @@ mod tests {
                 &[bl!(0), bl!(1), bl!(0)]
             ])
         );
-        assert_eq!(fig.get_face(1).rows_with_blocks(), [0, 1, 2]);
         assert_eq!(
             *fig.get_face(2),
             FigureFace::new(&[
@@ -137,7 +135,6 @@ mod tests {
                 &[bl!(0), bl!(0), bl!(0)]
             ])
         );
-        assert_eq!(fig.get_face(2).rows_with_blocks(), [0, 1]);
         assert_eq!(
             *fig.get_face(3),
             FigureFace::new(&[
@@ -146,7 +143,6 @@ mod tests {
                 &[bl!(0), bl!(1), bl!(0)]
             ])
         );
-        assert_eq!(fig.get_face(3).rows_with_blocks(), [0, 1, 2]);
     }
     #[test]
     fn test_figure2() {
@@ -169,7 +165,6 @@ mod tests {
                 &[bl!(0), bl!(1), bl!(0)]
             ])
         );
-        assert_eq!(fig.get_face(0).rows_with_blocks(), [0, 1, 2, 3]);
         assert_eq!(
             *fig.get_face(1),
             FigureFace::new(&[
@@ -178,7 +173,6 @@ mod tests {
                 &[bl!(0), bl!(0), bl!(0), bl!(0)]
             ])
         );
-        assert_eq!(fig.get_face(1).rows_with_blocks(), [1]);
     }
     #[test]
     fn test_figure3() {
@@ -191,11 +185,9 @@ mod tests {
             *fig.get_face(0),
             FigureFace::new(&[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]])
         );
-        assert_eq!(fig.get_face(0).rows_with_blocks(), [0, 1, 2]);
         assert_eq!(
             *fig.get_face(1),
             FigureFace::new(&[&[bl!(0), bl!(1), bl!(1)], &[bl!(1), bl!(1), bl!(0)]])
         );
-        assert_eq!(fig.get_face(1).rows_with_blocks(), [0, 1]);
     }
 }

@@ -30,7 +30,8 @@ pub fn try_place_new_figure(player: &mut dyn Player, ticks: u64, pf: &mut Playfi
     player.common_mut().set_figure(Some(fig_pos.clone()));
 
     player.new_figure_event(ticks, pf, &fig_pos);
-    return false;
+
+    false
 }
 
 //

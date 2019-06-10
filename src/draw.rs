@@ -39,7 +39,7 @@ impl DrawContext {
 
     fn get_block_color(block: &Block) -> Color {
         if let Block::Set(ref id) = block {
-            return match id {
+            match id {
                 1 => Color::RGB(50, 180, 50),
                 2 => Color::RGB(180, 50, 50),
                 3 => Color::RGB(50, 50, 180),
@@ -49,15 +49,10 @@ impl DrawContext {
                 7 => Color::RGB(220, 50, 140),
                 10 => Color::RGB(0, 0, 0),
                 _ => Color::RGB(0, 0, 0),
-            };
+            }
+        } else {
+            Color::RGB(0, 0, 0)
         }
-        return Color::RGB(0, 0, 0);
-        //let (r, g, b) = color.rgb();
-        //let grey = (r as u32 + g as u32 + b as u32) / 3;
-        //color = Color::RGB(grey as u8, grey as u8, grey as u8);
-        /*((r as f32) * 0.5) as u8,
-        ((g as f32) * 0.5) as u8,
-        ((b as f32) * 0.5) as u8);*/
     }
 
     pub fn draw_playfield(&mut self, canvas: &mut Canvas<Window>, playfield: &Playfield) {

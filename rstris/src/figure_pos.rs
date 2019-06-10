@@ -13,10 +13,7 @@ impl FigurePos {
     pub fn new(fig: Figure, pos: PosDir) -> Self {
         let mut norm_pos = pos;
         norm_pos.normalize_dir(fig.faces().len());
-        FigurePos {
-            fig,
-            pos: norm_pos,
-        }
+        FigurePos { fig, pos: norm_pos }
     }
     pub fn get_position(&self) -> &PosDir {
         &self.pos
@@ -37,5 +34,8 @@ impl FigurePos {
     }
     pub fn remove(&self, pf: &mut Playfield) {
         self.fig.remove(pf, &self.pos);
+    }
+    pub fn lowest_block(&self) -> i32 {
+        self.get_face().row_of_lowest_block() + self.get_position().get_y()
     }
 }

@@ -6,7 +6,7 @@ use rstris::figure_pos::*;
 use rstris::movement::*;
 use rstris::playfield::*;
 
-static DELAY_FIRST_STEP_DOWN: u64 = 1000_000_000;
+static DELAY_FIRST_STEP_DOWN: u64 = 1_000_000_000;
 
 pub struct KeyMap {
     pub step_left: Option<Keycode>,
@@ -40,17 +40,14 @@ impl Player for HumanPlayer {
     fn handle_input(&mut self, ticks: u64, pressed_keys: &mut HashMap<Keycode, u64>) {
         let keys = pressed_keys.clone();
         for (key, pressed_at) in keys {
-            match self.key_to_movement(key) {
-                Some(movement) => {
-                    let time_last_move = self.common.time_since_move(ticks, &movement);
-                    let time_pressed = ticks - pressed_at;
-                    if ticks <= pressed_at {
-                        self.common.add_move(movement, ticks);
-                    } else if time_pressed > 200000000 && time_last_move > 50000000 {
-                        self.common.add_move(movement, ticks);
-                    }
+            if let Some(movement) = self.key_to_movement(key) {
+                let time_last_move = self.common.time_since_move(ticks, &movement);
+                let time_pressed = ticks - pressed_at;
+                if ticks <= pressed_at
+                    || (time_pressed > 200_000_000 && time_last_move > 50_000_000)
+                {
+                    self.common.add_move(movement, ticks);
                 }
-                None => {}
             }
         }
     }
@@ -66,16 +63,17 @@ impl HumanPlayer {
     }
     fn key_to_movement(&self, key: Keycode) -> Option<Movement> {
         if self.key_map.step_left.is_some() && key == self.key_map.step_left.unwrap() {
-            return Some(Movement::MoveLeft);
+            Some(Movement::MoveLeft)
         } else if self.key_map.step_right.is_some() && key == self.key_map.step_right.unwrap() {
-            return Some(Movement::MoveRight);
+            Some(Movement::MoveRight)
         } else if self.key_map.step_down.is_some() && key == self.key_map.step_down.unwrap() {
-            return Some(Movement::MoveDown);
+            Some(Movement::MoveDown)
         } else if self.key_map.rot_cw.is_some() && key == self.key_map.rot_cw.unwrap() {
-            return Some(Movement::RotateCW);
+            Some(Movement::RotateCW)
         } else if self.key_map.rot_ccw.is_some() && key == self.key_map.rot_ccw.unwrap() {
-            return Some(Movement::RotateCCW);
+            Some(Movement::RotateCCW)
+        } else {
+            None
         }
-        return None;
     }
 }

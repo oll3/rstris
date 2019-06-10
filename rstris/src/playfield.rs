@@ -44,6 +44,30 @@ impl Playfield {
     pub fn clear_block(&mut self, pos: Position) {
         self.set_block(pos, Block::Clear);
     }
+
+    pub fn place(&mut self, pos: Position, m: &Matrix2<Block>) {
+        self.blocks.merge(pos, m, |pf_b, o| {
+            if o.is_set() {
+                *pf_b = o.clone();
+            }
+        });
+    }
+
+    pub fn remove(&mut self, pos: Position, m: &Matrix2<Block>) {
+        self.blocks.merge(pos, m, |pf_b, o| {
+            if o.is_set() {
+                *pf_b = Block::Clear;
+            }
+        });
+    }
+
+    pub fn test_collision(&self, pos: Position, m: &Matrix2<Block>) -> bool {
+        self.blocks.test_overlap(pos, m, |a, b| match a {
+            Some(pf_b) => pf_b.is_set() && b.is_set(),
+            None => b.is_set(),
+        })
+    }
+
     pub fn locked_lines(&self) -> Vec<u32> {
         let mut full_lines: Vec<u32> = vec![];
         self.blocks.row_iter().for_each(|row| {

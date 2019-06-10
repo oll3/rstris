@@ -75,7 +75,7 @@ impl<'a> Player for ComputerPlayer<'a> {
             .init_eval(&pf_no_fig, self.avail_placing.len());
         let mut eval_placing: Vec<EvalPosition> = vec![];
         for p in avail_placing {
-            let eval_pos = FigurePos::new(fig_pos.get_figure().clone(), p.clone());
+            let eval_pos = FigurePos::new(fig_pos.get_figure().clone(), p);
             let eval = self.com_type.eval_placing(&eval_pos, &pf_no_fig);
             let eval_pos = EvalPosition { pos: p, eval };
             eval_placing.push(eval_pos);
@@ -94,13 +94,13 @@ impl<'a> Player for ComputerPlayer<'a> {
                 self.move_time,
                 self.common.force_down_time,
             );
-            if path.len() > 0 {
+            if !path.is_empty() {
                 break;
             }
         }
 
         self.path_per_height.clear();
-        if path.len() > 0 {
+        if !path.is_empty() {
             path.reverse();
 
             // Convert the path from being in exact Movements to
@@ -141,7 +141,7 @@ fn path_to_per_height(path: Vec<(Movement, u64)>) -> Vec<Vec<MoveAndTime>> {
             });
         }
     }
-    if current_level.len() > 0 {
+    if !current_level.is_empty() {
         moves.push(current_level);
     }
     moves
