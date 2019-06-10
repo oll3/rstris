@@ -27,8 +27,8 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
     for dir in 0..fig.faces().len() {
         let fig_face_width = fig.faces()[dir].width() as i32;
         for x in -fig_face_width..pf.width() as i32 {
-            let mut last_pos = Some(PosDir::new((x as i32, 0, dir as i32)));
-            for y in 1..pf.height() {
+            let mut last_pos = None;
+            for y in 0..pf.height() {
                 let tmp_pos = PosDir::new((x as i32, y as i32, dir as i32));
                 if fig.test_collision(&pf, &tmp_pos) {
                     if let Some(p) = last_pos {
@@ -183,7 +183,7 @@ mod tests {
         let start_pos = fig2(0, 0, 0);
         let pf = Playfield::new("pf1", 10, 20);
         let placings = find_placement_quick(&pf, &start_pos);
-        assert_eq!(placings.len(), 52);
+        assert_eq!(placings.len(), 34);
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
         let start_pos = fig3(0, 0, 0);
         let pf = Playfield::new("pf1", 20, 20);
         let placings = find_placement_quick(&pf, &start_pos);
-        assert_eq!(placings.len(), 92);
+        assert_eq!(placings.len(), 74);
     }
     /*
     use test::Bencher;
