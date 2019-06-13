@@ -20,10 +20,9 @@ struct EvalPosition {
 pub struct ComputerPlayer<'a> {
     common: PlayerCommon,
     com_type: &'a mut dyn ComputerType,
-    last_fig: String,
     avail_placing: Vec<EvalPosition>,
     last_path_update: u64,
-    move_time: u64,
+    moves_per_down_step: f32,
     path_per_height: Vec<Vec<MoveAndTime>>,
 }
 
@@ -57,25 +56,16 @@ impl<'a> Player for ComputerPlayer<'a> {
     }
 
     fn new_figure_event(&mut self, ticks: u64, pf: &Playfield, fig_pos: &FigurePos) {
-        let mut pf_no_fig = pf.clone();
-        fig_pos.remove(&mut pf_no_fig);
-
         // Find all possible placings
-        let avail_placing = find_placement_quick(&pf_no_fig, fig_pos);
-        println!(
-            "New figure ({}) - {} available placings",
-            self.last_fig,
-            avail_placing.len()
-        );
+        let avail_placing = find_placement_quick(&pf, fig_pos);
 
         // Evaluate all placings to find the best one
-        self.com_type
-            .init_eval(&pf_no_fig, self.avail_placing.len());
+        self.com_type.init_eval(&pf, self.avail_placing.len());
         let mut eval_placing: Vec<EvalPosition> = vec![];
-        for p in avail_placing {
-            let eval_pos = FigurePos::new(fig_pos.get_figure().clone(), p);
-            let eval = self.com_type.eval_placing(&eval_pos, &pf_no_fig);
-            let eval_pos = EvalPosition { pos: p, eval };
+        for p in &avail_placing {
+            let eval_pos = FigurePos::new(fig_pos.get_figure().clone(), *p);
+            let eval = self.com_type.eval_placing(&eval_pos, &pf);
+            let eval_pos = EvalPosition { pos: *p, eval };
             eval_placing.push(eval_pos);
         }
         eval_placing.sort_by(|a, b| b.eval.partial_cmp(&a.eval).unwrap());
@@ -85,12 +75,11 @@ impl<'a> Player for ComputerPlayer<'a> {
         let mut path = Vec::new();
         for eval_pos in &self.avail_placing {
             path = find_path(
-                &pf_no_fig,
+                &pf,
                 &fig_pos.get_figure(),
                 &fig_pos.get_position(),
                 &eval_pos.pos,
-                self.move_time,
-                self.common.force_down_time,
+                self.moves_per_down_step,
             );
             if !path.is_empty() {
                 break;
@@ -104,6 +93,11 @@ impl<'a> Player for ComputerPlayer<'a> {
             // Convert the path from being in exact Movements to
             // describe the sideways/rotational movements per height level
             self.path_per_height = path_to_per_height(path);
+            println!(
+                "Found path for figure {} ({} available placements)",
+                fig_pos.get_figure().get_name(),
+                avail_placing.len()
+            );
         }
 
         self.last_path_update = ticks;
@@ -112,13 +106,16 @@ impl<'a> Player for ComputerPlayer<'a> {
 }
 
 impl<'a> ComputerPlayer<'a> {
-    pub fn new(common: PlayerCommon, move_time: u64, com_type: &'a mut dyn ComputerType) -> Self {
+    pub fn new(
+        common: PlayerCommon,
+        moves_per_down_step: f32,
+        com_type: &'a mut dyn ComputerType,
+    ) -> Self {
         ComputerPlayer {
             common,
             avail_placing: Vec::new(),
-            last_fig: "".to_string(),
             last_path_update: 0,
-            move_time,
+            moves_per_down_step,
             com_type,
             path_per_height: Vec::new(),
         }

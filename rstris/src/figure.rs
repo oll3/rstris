@@ -6,6 +6,11 @@ use crate::pos_dir::PosDir;
 #[derive(Clone, Debug)]
 pub struct Figure {
     figure_name: String,
+
+    // Maximum size of figure in any direction
+    max_face_width: u32,
+
+    // Each rotation of the figure is represented as a 2D matrix
     vfaces: Vec<Matrix2<Block>>,
 }
 
@@ -14,6 +19,7 @@ impl Figure {
         Figure {
             figure_name: name.to_owned(),
             vfaces: vec![],
+            max_face_width: 0,
         }
     }
 
@@ -24,6 +30,7 @@ impl Figure {
         let mut fig = Figure::new(name);
         let mut face = Matrix2::from_items(blocks);
         fig.vfaces.push(face.clone());
+        fig.max_face_width = std::cmp::max(blocks.len(), blocks[0].len()) as u32;
         for _ in 0..3 {
             let mut next_face = Matrix2::from_size(face.height(), face.width(), Block::Clear);
             for y in 0..face.height() as i32 {
@@ -39,9 +46,10 @@ impl Figure {
             face = next_face;
         }
         println!(
-            "Built figure {} with {} faces",
+            "Built figure {} with {} faces (max width: {})",
             fig.get_name(),
-            fig.faces().len()
+            fig.faces().len(),
+            fig.max_face_width
         );
         fig
     }
@@ -53,6 +61,10 @@ impl Figure {
         }
         false
     }
+    pub fn max_width(&self) -> u32 {
+        self.max_face_width
+    }
+
     pub fn get_name(&self) -> &String {
         &self.figure_name
     }

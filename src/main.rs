@@ -323,14 +323,14 @@ fn main() {
 
     let mut com_type1 = JitterComputer::new();
     let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 4_000_000, figure_list.clone()),
-        4_000_000,
+        PlayerCommon::new("Fast Computer", 5_000_000, figure_list.clone()),
+        5.0,
         &mut com_type1,
     );
     let mut com_random2 = RandomComputer {};
     let _com2 = ComputerPlayer::new(
-        PlayerCommon::new("Computer 1", 5_000_000, figure_list.clone()),
-        5_000_000,
+        PlayerCommon::new("Slow Computer", 5_000_000, figure_list.clone()),
+        0.1,
         &mut com_random2,
     );
 
