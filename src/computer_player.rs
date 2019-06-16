@@ -1,3 +1,5 @@
+use log::*;
+
 use rstris::figure_pos::*;
 use rstris::find_path::*;
 use rstris::find_placement::*;
@@ -93,7 +95,7 @@ impl<'a> Player for ComputerPlayer<'a> {
             // Convert the path from being in exact Movements to
             // describe the sideways/rotational movements per height level
             self.path_per_height = path_to_per_height(path);
-            println!(
+            info!(
                 "Found path for figure {} ({} available placements)",
                 fig_pos.get_figure().get_name(),
                 avail_placing.len()

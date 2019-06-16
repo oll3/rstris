@@ -1,3 +1,7 @@
+extern crate fern;
+extern crate log;
+
+use log::*;
 use rand;
 
 use sdl2;
@@ -271,7 +275,32 @@ impl ComputerType for JitterComputer {
     }
 }
 
+fn init_log(level: log::LevelFilter) {
+    let local_level = level;
+    fern::Dispatch::new()
+        .format(move |out, message, record| {
+            if local_level > log::LevelFilter::Info {
+                // Add some extra info to each message in debug
+                out.finish(format_args!(
+                    "[{}]({})({}) {}",
+                    chrono::Local::now().format("%H:%M:%S%.6f"), //%Y-%m-%dT
+                    record.target(),
+                    record.level(),
+                    message
+                ))
+            } else {
+                out.finish(format_args!("{}", message))
+            }
+        })
+        .level(level)
+        .chain(std::io::stdout())
+        .apply()
+        .expect("unable to initialize log");
+}
+
 fn main() {
+    init_log(log::LevelFilter::Debug);
+
     let frame_color = Color::RGB(200, 64, 64);
     let fill_color = Color::RGB(98, 204, 244);
     let bg_color = Color::RGB(101, 208, 246);
@@ -281,7 +310,7 @@ fn main() {
 
     let figure_list = init_figures();
     let (figure_max_width, figure_max_height) = get_max_figure_dimensions(&figure_list);
-    println!(
+    info!(
         "Max figure dimensions: {} x {}",
         figure_max_width, figure_max_height
     );
@@ -364,9 +393,9 @@ fn main() {
                 } => {
                     pause = !pause;
                     if pause {
-                        println!("Paused");
+                        info!("Paused");
                     } else {
-                        println!("Continued");
+                        info!("Continued");
                     }
                 }
                 Event::KeyDown {
@@ -418,7 +447,7 @@ fn main() {
         if !pf_ctx.lines_to_throw.is_empty() && !pf_ctx.figures_in_play() {
             pf_ctx.lines_to_throw.sort();
             pf_ctx.lines_to_throw.dedup();
-            println!("Throw away lines: {:?}", pf_ctx.lines_to_throw);
+            info!("Throw away lines: {:?}", pf_ctx.lines_to_throw);
             for line in &pf_ctx.lines_to_throw {
                 pf_ctx.pf.throw_line(*line);
             }

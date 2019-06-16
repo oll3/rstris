@@ -1,3 +1,5 @@
+use log::*;
+
 use crate::player::*;
 
 use rstris::figure_pos::*;
@@ -12,7 +14,7 @@ pub fn try_place_new_figure(player: &mut dyn Player, ticks: u64, pf: &mut Playfi
     let figure = player.common().next_figure().clone();
     let pos = PosDir::new(((pf.width() / 2 - 1) as i32, 0, 0));
     if figure.test_collision(pf, &pos) {
-        println!("Figure collided");
+        info!("Figure collided");
         return true;
     }
     let fig_pos = FigurePos::new(figure, pos);
@@ -20,7 +22,7 @@ pub fn try_place_new_figure(player: &mut dyn Player, ticks: u64, pf: &mut Playfi
     let next_down = ticks + player.common().force_down_time;
     player.common_mut().add_move(Movement::MoveDown, next_down);
 
-    println!(
+    info!(
         "{}: Placed figure {} in playfield (next is {})",
         player.common().get_name(),
         fig_pos.get_figure().get_name(),
