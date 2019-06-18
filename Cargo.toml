@@ -17,4 +17,3 @@ name = "demo1"
 crate-type = ["bin"]
 
 [dependencies]
-time = "0.1"

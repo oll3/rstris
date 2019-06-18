@@ -1,5 +1,3 @@
-extern crate time;
-
 use crate::figure_pos::*;
 use crate::matrix3::*;
 use crate::movement::*;
@@ -8,21 +6,9 @@ use crate::pos_dir::*;
 use crate::vec3::Vec3;
 use std::collections::LinkedList;
 
-static DEBUG_FIND_PLACEMENT: bool = false;
-
 pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
-    let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
-    let start_pos = fig_pos.get_position();
     let fig = fig_pos.get_figure();
-
-    if DEBUG_FIND_PLACEMENT {
-        println!(
-            "Find valid placements for figure {} (starting at {:?})",
-            fig.get_name(),
-            start_pos
-        );
-    }
 
     for dir in 0..fig.faces().len() {
         let fig_face_width = fig.faces()[dir].width() as i32;
@@ -42,34 +28,15 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
         }
     }
 
-    if DEBUG_FIND_PLACEMENT {
-        println!(
-            "Found {} valid placements for {} ({} ms)",
-            placements.len(),
-            fig.get_name(),
-            (time::precise_time_ns() - current_ticks) as f64 / 1_000_000.0
-        );
-    }
-
     placements
 }
 
 pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
-    let current_ticks = time::precise_time_ns();
     let mut placements: Vec<PosDir> = Vec::new();
     let mut moves: LinkedList<PosDir> = LinkedList::new();
     let mut visited: Matrix3<bool> = Matrix3::new(pf.width() as u32, pf.height() as u32, 4, false);
-    let mut it_cnt = 0;
     let start_pos = fig_pos.get_position();
     let fig = fig_pos.get_figure();
-
-    if DEBUG_FIND_PLACEMENT {
-        println!(
-            "Find valid placements for figure {} (starting at {:?})",
-            fig.get_name(),
-            start_pos
-        );
-    }
 
     if fig.test_collision(pf, &start_pos) {
         println!(
@@ -119,19 +86,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
             moves.push_back(tmp_pos);
             visited.set(tmp_pos, true);
         }
-        it_cnt += 1;
     }
-
-    if DEBUG_FIND_PLACEMENT {
-        println!(
-            "Found {} valid placements for {} (iterated {} times, {} ms)",
-            placements.len(),
-            fig.get_name(),
-            it_cnt,
-            (time::precise_time_ns() - current_ticks) as f64 / 1_000_000.0
-        );
-    }
-
     placements
 }
 
