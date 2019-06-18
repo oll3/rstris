@@ -4,7 +4,7 @@ use crate::matrix2::Matrix2;
 use crate::playfield::Playfield;
 use crate::pos_dir::PosDir;
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct FigurePos {
     fig: Figure,
     pos: PosDir,

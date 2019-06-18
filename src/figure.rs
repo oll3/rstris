@@ -3,7 +3,7 @@ use crate::matrix2::Matrix2;
 use crate::playfield::Playfield;
 use crate::pos_dir::PosDir;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Figure {
     figure_name: String,
 

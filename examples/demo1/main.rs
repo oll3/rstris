@@ -2,22 +2,19 @@ extern crate fern;
 extern crate log;
 
 use log::*;
-use rand;
 
 use sdl2;
 use time;
 
 mod computer_player;
 mod draw;
-mod game_logic;
-mod human_player;
-mod player;
+
+mod game;
+
+use crate::game::*;
 
 use crate::computer_player::*;
 use crate::draw::*;
-use crate::game_logic::*;
-use crate::human_player::*;
-use crate::player::*;
 use rstris::block::*;
 use rstris::figure::*;
 use rstris::figure_pos::*;
@@ -31,40 +28,8 @@ use std::collections::HashMap;
 
 static PF_WIDTH: u32 = 16;
 static PF_HEIGHT: u32 = 30;
-static BLOCK_SIZE: u32 = 20;
+static BLOCK_SIZE: u32 = 16;
 static BLOCK_SPACING: u32 = 1;
-
-struct PlayfieldContext<'a> {
-    pf: Playfield,
-    players: Vec<&'a mut dyn Player>,
-    game_over: bool,
-    lines_to_throw: Vec<u32>,
-}
-
-impl<'a> PlayfieldContext<'a> {
-    pub fn new(pf: Playfield) -> Self {
-        PlayfieldContext {
-            pf,
-            players: Vec::new(),
-            game_over: false,
-            lines_to_throw: Vec::new(),
-        }
-    }
-
-    pub fn add_player(&mut self, player: &'a mut dyn Player) {
-        self.players.push(player);
-    }
-
-    // Test if there are figures currently being played
-    pub fn figures_in_play(&self) -> bool {
-        for player in &self.players {
-            if player.figure_in_play() {
-                return true;
-            }
-        }
-        false
-    }
-}
 
 macro_rules! bl {
     ($x:expr) => {
@@ -78,6 +43,7 @@ macro_rules! bl {
 //
 // Build list of figures
 //
+#[allow(clippy::cognitive_complexity)]
 fn init_figures() -> Vec<Figure> {
     let mut figure_list: Vec<Figure> = Vec::new();
     figure_list.push(Figure::new_from_face(
@@ -142,14 +108,6 @@ fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
         }
     }
     (max_width, max_height)
-}
-
-struct RandomComputer {}
-impl ComputerType for RandomComputer {
-    fn init_eval(&mut self, _: &Playfield, _: usize) {}
-    fn eval_placing(&mut self, _: &FigurePos, _: &Playfield) -> f32 {
-        rand::random::<f32>()
-    }
 }
 
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
@@ -326,51 +284,13 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut draw = DrawContext::new(BLOCK_SIZE, BLOCK_SPACING, frame_color, fill_color);
 
-    let player1_key_map = KeyMap {
-        step_left: Some(Keycode::Left),
-        step_right: Some(Keycode::Right),
-        step_down: Some(Keycode::Down),
-        rot_cw: Some(Keycode::Up),
-        rot_ccw: None,
-    };
+    let mut com1 = ComputerPlayer::new(1.0, JitterComputer::new());
 
-    let player2_key_map = KeyMap {
-        step_left: Some(Keycode::A),
-        step_right: Some(Keycode::D),
-        step_down: Some(Keycode::S),
-        rot_cw: Some(Keycode::W),
-        rot_ccw: None,
-    };
-    let _player1 = HumanPlayer::new(
-        PlayerCommon::new("Human 1", 500_000_000, figure_list.clone()),
-        player1_key_map,
+    let mut game = Game::new(
+        Playfield::new("Playfield 1", PF_WIDTH, PF_HEIGHT),
+        figure_list.clone(),
+        10_000_000,
     );
-    let _player2 = HumanPlayer::new(
-        PlayerCommon::new("Human 2", 500_000_000, figure_list.clone()),
-        player2_key_map,
-    );
-
-    let mut com_type1 = JitterComputer::new();
-    let mut com1 = ComputerPlayer::new(
-        PlayerCommon::new("Fast Computer", 5_000_000, figure_list.clone()),
-        5.0,
-        &mut com_type1,
-    );
-    let mut com_random2 = RandomComputer {};
-    let _com2 = ComputerPlayer::new(
-        PlayerCommon::new("Slow Computer", 5_000_000, figure_list.clone()),
-        0.1,
-        &mut com_random2,
-    );
-
-    let pf1 = Playfield::new("Playfield 1", PF_WIDTH, PF_HEIGHT);
-    let mut pf_ctx = PlayfieldContext::new(pf1);
-
-    //    pf_ctx.add_player(&mut player1);
-    //    pf_ctx.add_player(&mut player2);
-    pf_ctx.add_player(&mut com1);
-    //    pf_ctx.add_player(&mut com2);
-    //    pf_ctx.add_player(&mut com3);
 
     let mut pause = false;
     let mut frame_cnt_sec = 0;
@@ -415,62 +335,31 @@ fn main() {
             }
         }
 
-        if pause || pf_ctx.game_over {
+        if pause || game.game_is_over() {
             continue;
         }
 
-        // Handle movement and figure creation
-        for player in &mut pf_ctx.players {
-            player.update(ticks, &pf_ctx.pf);
-            player.handle_input(ticks, &mut pressed_keys);
-
-            if player.figure_in_play() {
-                // Player has a figure in game
-                let move_and_time = player.common_mut().get_next_move(ticks);
-                if let Some(move_and_time) = move_and_time {
-                    execute_move(*player, &mut pf_ctx.pf, move_and_time);
-                    if !player.figure_in_play() {
-                        let mut locked = pf_ctx.pf.locked_lines();
-                        pf_ctx.pf.set_lines(&locked, &Block::Set(10));
-                        pf_ctx.lines_to_throw.append(&mut locked);
-                    }
-                }
-            } else if pf_ctx.lines_to_throw.is_empty() {
-                let placement_result = try_place_new_figure(*player, ticks, &mut pf_ctx.pf);
-                if placement_result {
-                    pf_ctx.game_over = true;
-                }
-            }
-        }
-
-        // Throw full lines (when there are no figures being played)
-        if !pf_ctx.lines_to_throw.is_empty() && !pf_ctx.figures_in_play() {
-            pf_ctx.lines_to_throw.sort();
-            pf_ctx.lines_to_throw.dedup();
-            info!("Throw away lines: {:?}", pf_ctx.lines_to_throw);
-            for line in &pf_ctx.lines_to_throw {
-                pf_ctx.pf.throw_line(*line);
-            }
-            pf_ctx.lines_to_throw.clear();
-        }
+        com1.act_on_game(&mut game, ticks);
+        game.update(ticks);
 
         // Render graphics
-        draw.clear(&mut canvas, bg_color);
-        draw.draw_playfield(&mut canvas, &pf_ctx.pf);
-        for (pi, player) in pf_ctx.players.iter().enumerate() {
-            if let Some(current_figure) = player.common().get_figure() {
-                draw.draw_figure(&mut canvas, &current_figure);
+        {
+            draw.clear(&mut canvas, bg_color);
+            draw.draw_playfield(&mut canvas, game.get_playfield());
+            if let Some(ref current_figure) = game.get_current_figure() {
+                draw.draw_figure(&mut canvas, current_figure);
             }
             draw.draw_next_figure(
                 &mut canvas,
-                &player.next_figure(),
+                game.get_next_figure(),
                 (PF_WIDTH + 3) as i32,
-                ((figure_max_height + 1) * pi as u32) as i32,
+                (figure_max_height + 1) as i32,
                 figure_max_width as i32,
                 figure_max_height as i32,
             );
+
+            draw.present(&mut canvas);
         }
-        draw.present(&mut canvas);
 
         // Write FPS in window title
         frame_cnt_sec += 1;
@@ -482,6 +371,6 @@ fn main() {
             sec_timer = ticks;
             window.set_title(&title).unwrap();
         }
-        std::thread::sleep(std::time::Duration::new(0, 100_000));
+        std::thread::sleep(std::time::Duration::new(0, 50_000));
     }
 }
