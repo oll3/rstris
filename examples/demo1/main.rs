@@ -28,8 +28,8 @@ use std::collections::HashMap;
 
 static PF_WIDTH: u32 = 16;
 static PF_HEIGHT: u32 = 30;
-static BLOCK_SIZE: u32 = 16;
-static BLOCK_SPACING: u32 = 1;
+static BLOCK_SIZE: u32 = 8;
+static BLOCK_SPACING: u32 = 0;
 
 macro_rules! bl {
     ($x:expr) => {
@@ -95,16 +95,18 @@ fn init_figures() -> Vec<Figure> {
 }
 
 fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
-    let mut max_width: u32 = 0;
-    let mut max_height: u32 = 0;
+    let mut max_width = 0;
+    let mut max_height = 0;
     for fig in figure_list {
-        for face in fig.faces() {
-            if face.width() as u32 > max_width {
-                max_width = face.width() as u32;
-            }
-            if face.height() as u32 > max_height {
-                max_height = face.height() as u32;
-            }
+        for face in fig.iter_faces() {
+            max_width = std::cmp::max(
+                max_width,
+                u32::from(face.iter().map(|(x, _y, _id)| *x).max().unwrap() + 1),
+            );
+            max_height = std::cmp::max(
+                max_height,
+                u32::from(face.iter().map(|(_x, y, _id)| *y).max().unwrap() + 1),
+            );
         }
     }
     (max_width, max_height)

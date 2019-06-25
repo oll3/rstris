@@ -32,11 +32,12 @@ impl PosDir {
             y: self.y,
         }
     }
-    pub fn normalize_dir(&mut self, num_directions: usize) {
+    pub fn normalize_dir(&mut self, num_directions: u8) {
+        let num_directions = i32::from(num_directions);
         if self.z < 0 {
             // Handle negative rotation
-            self.z += num_directions as i32;
+            self.z += num_directions;
         }
-        self.z %= num_directions as i32;
+        self.z %= num_directions;
     }
 }

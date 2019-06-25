@@ -1,5 +1,4 @@
 use crate::block::Block;
-use crate::matrix2::Matrix2;
 use crate::playfield::Playfield;
 use crate::pos_dir::PosDir;
 
@@ -8,18 +7,22 @@ pub struct Figure {
     figure_name: String,
 
     // Maximum size of figure in any direction
-    max_face_width: u32,
+    max_face_width: u8,
 
-    // Each rotation of the figure is represented as a 2D matrix
-    vfaces: Vec<Matrix2<Block>>,
+    // Each face of the figure is represented as a number of coordinates
+    blocks_per_face: u8,
+    num_faces: u8,
+    faces: Vec<(u8, u8, u8)>,
 }
 
 impl Figure {
     pub fn new(name: &str) -> Figure {
         Figure {
             figure_name: name.to_owned(),
-            vfaces: vec![],
+            faces: Vec::new(),
+            blocks_per_face: 0,
             max_face_width: 0,
+            num_faces: 0,
         }
     }
 
@@ -27,53 +30,106 @@ impl Figure {
     // Build new figure by rotating the face of a figure 90 degrees
     //
     pub fn new_from_face(name: &str, blocks: &[&[Block]]) -> Figure {
-        let mut fig = Figure::new(name);
-        let mut face = Matrix2::from_items(blocks);
-        fig.vfaces.push(face.clone());
-        fig.max_face_width = std::cmp::max(blocks.len(), blocks[0].len()) as u32;
-        for _ in 0..3 {
-            let mut next_face = Matrix2::from_size(face.height(), face.width(), Block::Clear);
-            for y in 0..face.height() as i32 {
-                for x in 0..face.width() as i32 {
-                    let ty = face.height() as i32 - y - 1;
-                    let b = face.get((x, ty).into());
-                    next_face.set((y, x).into(), b.clone());
+        let blocks_per_face = blocks
+            .iter()
+            .map(|row| row.iter().filter(|b| b.is_set()).count() as u8)
+            .sum();
+
+        println!("Figure {} - blocks_per_face={}", name, blocks_per_face);
+        let mut face1 = Vec::new();
+        let mut face2 = Vec::new();
+        let mut face3 = Vec::new();
+        let mut face4 = Vec::new();
+        // Direction 1
+        for (row, row_blocks) in blocks.iter().enumerate() {
+            for col in 0..row_blocks.len() {
+                let block = &row_blocks[col];
+                if let Block::Set(ref id) = block {
+                    face1.push((col as u8, row as u8, *id));
                 }
             }
-            if !fig.test_face_present(&next_face) {
-                fig.vfaces.push(next_face.clone());
-            }
-            face = next_face;
         }
+        // Direction 2
+        for row in 0..blocks[0].len() {
+            for (col, col_blocks) in blocks.iter().enumerate() {
+                let block = &col_blocks[row];
+                if let Block::Set(ref id) = block {
+                    face2.push((col as u8, row as u8, *id));
+                }
+            }
+        }
+        // Direction 3
+        for row in 0..blocks.len() {
+            for col in 0..blocks[row].len() {
+                let block = &blocks[blocks.len() - (row + 1)][blocks[row].len() - (col + 1)];
+                if let Block::Set(ref id) = block {
+                    face3.push((col as u8, row as u8, *id));
+                }
+            }
+        }
+        // Direction 4
+        for row in 0..blocks[0].len() {
+            for col in 0..blocks.len() {
+                let block = &blocks[blocks.len() - (col + 1)][blocks[0].len() - (row + 1)];
+                if let Block::Set(ref id) = block {
+                    face4.push((col as u8, row as u8, *id));
+                }
+            }
+        }
+
+        // Remove duplicated faces
+        let mut faces = Vec::new();
+        faces.extend_from_slice(&face1);
+        faces.extend_from_slice(&face2);
+        if face3 != face1 {
+            faces.extend_from_slice(&face3);
+        }
+        if face4 != face2 {
+            faces.extend_from_slice(&face4);
+        }
+
+        let max_width = faces
+            .iter()
+            .map(|e| std::cmp::max(e.0 + 1, e.1 + 1))
+            .max()
+            .unwrap();
+
+        let fig = Figure {
+            figure_name: name.to_owned(),
+            num_faces: (faces.len() / blocks_per_face as usize) as u8,
+            faces,
+            blocks_per_face,
+            max_face_width: max_width,
+        };
+
         println!(
-            "Built figure {} with {} faces (max width: {})",
-            fig.get_name(),
-            fig.faces().len(),
+            "Built figure {} with {} faces (blocks per face: {}, max width: {})",
+            fig.name(),
+            fig.num_faces(),
+            fig.blocks_per_face,
             fig.max_face_width
         );
         fig
     }
-    fn test_face_present(&self, face: &Matrix2<Block>) -> bool {
-        for f in &self.vfaces {
-            if *f == *face {
-                return true;
-            }
-        }
-        false
-    }
-    pub fn max_width(&self) -> u32 {
+    pub fn max_width(&self) -> u8 {
         self.max_face_width
     }
 
-    pub fn get_name(&self) -> &String {
+    pub fn name(&self) -> &String {
         &self.figure_name
     }
-    pub fn faces(&self) -> &Vec<Matrix2<Block>> {
-        &self.vfaces
+    pub fn num_faces(&self) -> u8 {
+        self.num_faces
     }
-    pub fn get_face(&self, face_index: usize) -> &Matrix2<Block> {
-        let face_index = face_index % self.vfaces.len();
-        &self.vfaces[face_index]
+
+    pub fn get_face(&self, face_index: usize) -> &[(u8, u8, u8)] {
+        let face_index = face_index % self.num_faces as usize;
+        let start_index = face_index * self.blocks_per_face as usize;
+        &self.faces[start_index..start_index + self.blocks_per_face as usize]
+    }
+
+    pub fn iter_faces(&self) -> impl Iterator<Item = &[(u8, u8, u8)]> {
+        self.faces.chunks(self.blocks_per_face as usize)
     }
 
     //
@@ -118,38 +174,22 @@ mod tests {
                 &[bl!(0), bl!(1), bl!(0)],
             ],
         );
-        assert_eq!(fig.faces().len(), 4);
+        assert_eq!(fig.num_faces(), 4);
         assert_eq!(
-            *fig.get_face(0),
-            Matrix2::from_items(&[
-                &[bl!(0), bl!(0), bl!(0)],
-                &[bl!(1), bl!(1), bl!(1)],
-                &[bl!(0), bl!(1), bl!(0)]
-            ])
+            fig.get_face(0),
+            &[(0, 1, 1), (1, 1, 1), (2, 1, 1), (1, 2, 1)]
         );
         assert_eq!(
-            *fig.get_face(1),
-            Matrix2::from_items(&[
-                &[bl!(0), bl!(1), bl!(0)],
-                &[bl!(1), bl!(1), bl!(0)],
-                &[bl!(0), bl!(1), bl!(0)]
-            ])
+            fig.get_face(1),
+            &[(1, 0, 1), (1, 1, 1), (2, 1, 1), (1, 2, 1)]
         );
         assert_eq!(
-            *fig.get_face(2),
-            Matrix2::from_items(&[
-                &[bl!(0), bl!(1), bl!(0)],
-                &[bl!(1), bl!(1), bl!(1)],
-                &[bl!(0), bl!(0), bl!(0)]
-            ])
+            fig.get_face(2),
+            &[(1, 0, 1), (0, 1, 1), (1, 1, 1), (2, 1, 1)]
         );
         assert_eq!(
-            *fig.get_face(3),
-            Matrix2::from_items(&[
-                &[bl!(0), bl!(1), bl!(0)],
-                &[bl!(0), bl!(1), bl!(1)],
-                &[bl!(0), bl!(1), bl!(0)]
-            ])
+            fig.get_face(3),
+            &[(1, 0, 1), (0, 1, 1), (1, 1, 1), (1, 2, 1)]
         );
     }
     #[test]
@@ -163,23 +203,14 @@ mod tests {
                 &[bl!(0), bl!(1), bl!(0)],
             ],
         );
-        assert_eq!(fig.faces().len(), 2);
+        assert_eq!(fig.num_faces(), 2);
         assert_eq!(
-            *fig.get_face(0),
-            Matrix2::from_items(&[
-                &[bl!(0), bl!(1), bl!(0)],
-                &[bl!(0), bl!(1), bl!(0)],
-                &[bl!(0), bl!(1), bl!(0)],
-                &[bl!(0), bl!(1), bl!(0)]
-            ])
+            fig.get_face(0),
+            [(1, 0, 1), (1, 1, 1), (1, 2, 1), (1, 3, 1)]
         );
         assert_eq!(
-            *fig.get_face(1),
-            Matrix2::from_items(&[
-                &[bl!(0), bl!(0), bl!(0), bl!(0)],
-                &[bl!(1), bl!(1), bl!(1), bl!(1)],
-                &[bl!(0), bl!(0), bl!(0), bl!(0)]
-            ])
+            fig.get_face(1),
+            &[(0, 1, 1), (1, 1, 1), (2, 1, 1), (3, 1, 1)]
         );
     }
     #[test]
@@ -188,14 +219,14 @@ mod tests {
             "Figure 3",
             &[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]],
         );
-        assert_eq!(fig.faces().len(), 2);
+        assert_eq!(fig.num_faces(), 2);
         assert_eq!(
-            *fig.get_face(0),
-            Matrix2::from_items(&[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]])
+            fig.get_face(0),
+            &[(0, 0, 1), (0, 1, 1), (1, 1, 1), (1, 2, 1)]
         );
         assert_eq!(
-            *fig.get_face(1),
-            Matrix2::from_items(&[&[bl!(0), bl!(1), bl!(1)], &[bl!(1), bl!(1), bl!(0)]])
+            fig.get_face(1),
+            &[(0, 0, 1), (1, 0, 1), (1, 1, 1), (2, 1, 1)]
         );
     }
 }

@@ -1,6 +1,4 @@
-use crate::block::Block;
 use crate::figure::Figure;
-use crate::matrix2::Matrix2;
 use crate::playfield::Playfield;
 use crate::pos_dir::PosDir;
 
@@ -13,7 +11,7 @@ pub struct FigurePos {
 impl FigurePos {
     pub fn new(fig: Figure, pos: PosDir) -> Self {
         let mut norm_pos = pos;
-        norm_pos.normalize_dir(fig.faces().len());
+        norm_pos.normalize_dir(fig.num_faces());
         FigurePos { fig, pos: norm_pos }
     }
     pub fn get_position(&self) -> &PosDir {
@@ -22,12 +20,12 @@ impl FigurePos {
     pub fn get_figure(&self) -> &Figure {
         &self.fig
     }
-    pub fn get_face(&self) -> &Matrix2<Block> {
+    pub fn get_face(&self) -> &[(u8, u8, u8)] {
         &self.fig.get_face(self.pos.get_dir() as usize)
     }
     pub fn set_position(&mut self, pos: &PosDir) {
         let mut norm_pos = *pos;
-        norm_pos.normalize_dir(self.fig.faces().len());
+        norm_pos.normalize_dir(self.fig.num_faces());
         self.pos = norm_pos;
     }
     pub fn place(&self, pf: &mut Playfield) {
@@ -36,16 +34,14 @@ impl FigurePos {
     pub fn remove(&self, pf: &mut Playfield) {
         self.fig.remove(pf, &self.pos);
     }
-    fn row_of_lowest_block(face: &Matrix2<Block>) -> i32 {
-        let mut lowest = i32::min_value();
-        face.row_iter().enumerate().for_each(|(index, row)| {
-            if row.iter().any(|b| b.is_set()) && index as i32 > lowest {
-                lowest = index as i32;
-            }
-        });
+    fn row_of_lowest_block(face: &[(u8, u8, u8)]) -> u8 {
+        let mut lowest = 0;
+        for (_x, y, _id) in face.iter() {
+            lowest = std::cmp::max(lowest, *y);
+        }
         lowest
     }
     pub fn lowest_block(&self) -> i32 {
-        Self::row_of_lowest_block(self.get_face()) + self.get_position().get_y()
+        i32::from(Self::row_of_lowest_block(self.get_face())) + self.get_position().get_y()
     }
 }

@@ -1,33 +1,32 @@
+//use crate::figure::Figure;
 use crate::figure_pos::*;
 use crate::matrix3::*;
 use crate::movement::*;
 use crate::playfield::*;
 use crate::pos_dir::*;
 use crate::vec3::Vec3;
+
 use std::collections::LinkedList;
 
 pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
     let mut placements: Vec<PosDir> = Vec::new();
     let fig = fig_pos.get_figure();
-
-    for dir in 0..fig.faces().len() {
-        let fig_face_width = fig.faces()[dir].width() as i32;
-        for x in -fig_face_width..pf.width() as i32 {
+    for (dir, face) in fig.iter_faces().enumerate() {
+        for x in -(i32::from(fig.max_width() / 2))..pf.width() as i32 {
             let mut last_pos = None;
             for y in 0..pf.height() {
-                let tmp_pos = PosDir::new((x as i32, y as i32, dir as i32));
-                if fig.test_collision(&pf, &tmp_pos) {
+                let pos = (x as i32, y as i32).into();
+                if pf.test_collision(pos, face) {
                     if let Some(p) = last_pos {
                         placements.push(p);
                     }
                     last_pos = None;
                 } else {
-                    last_pos = Some(tmp_pos);
+                    last_pos = Some((x as i32, y as i32, dir as i32).into());
                 }
             }
         }
     }
-
     placements
 }
 
@@ -42,7 +41,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
         println!(
             "Invalid starting point ({:?}) for figure {}",
             start_pos,
-            fig.get_name()
+            fig.name()
         );
         return placements;
     }
@@ -67,7 +66,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
             moves.push_back(tmp_pos);
         }
         let tmp_pos = PosDir::apply_move(&current_pos, Movement::RotateCW);
-        if tmp_pos.get_dir() < fig.faces().len() as i32
+        if tmp_pos.get_dir() < i32::from(fig.num_faces())
             && !visited.get(tmp_pos)
             && !fig.test_collision(&pf, &tmp_pos)
         {

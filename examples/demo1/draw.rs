@@ -38,21 +38,17 @@ impl DrawContext {
         let _ignore = canvas.fill_rect(border_rect);
     }
 
-    fn get_block_color(block: &Block) -> Color {
-        if let Block::Set(ref id) = block {
-            match id {
-                1 => Color::RGB(50, 180, 50),
-                2 => Color::RGB(180, 50, 50),
-                3 => Color::RGB(50, 50, 180),
-                4 => Color::RGB(160, 160, 100),
-                5 => Color::RGB(20, 100, 100),
-                6 => Color::RGB(120, 150, 0),
-                7 => Color::RGB(220, 50, 140),
-                10 => Color::RGB(0, 0, 0),
-                _ => Color::RGB(0, 0, 0),
-            }
-        } else {
-            Color::RGB(0, 0, 0)
+    fn get_block_color(id: u8) -> Color {
+        match id {
+            1 => Color::RGB(50, 180, 50),
+            2 => Color::RGB(180, 50, 50),
+            3 => Color::RGB(50, 50, 180),
+            4 => Color::RGB(160, 160, 100),
+            5 => Color::RGB(20, 100, 100),
+            6 => Color::RGB(120, 150, 0),
+            7 => Color::RGB(220, 50, 140),
+            10 => Color::RGB(0, 0, 0),
+            _ => Color::RGB(0, 0, 0),
         }
     }
 
@@ -63,8 +59,8 @@ impl DrawContext {
             self.draw_block(canvas, 0, y, frame_color);
             for x in 0..playfield.width() as i32 {
                 let block = playfield.get_block((x, y).into());
-                if block.is_set() {
-                    self.draw_block(canvas, x + 1, y, DrawContext::get_block_color(&block));
+                if let Block::Set(ref id) = block {
+                    self.draw_block(canvas, x + 1, y, DrawContext::get_block_color(*id));
                 } else {
                     self.draw_block(canvas, x + 1, y, fill_color);
                 }
@@ -77,19 +73,13 @@ impl DrawContext {
     }
 
     pub fn draw_figure(&mut self, canvas: &mut Canvas<Window>, fig_pos: &FigurePos) {
-        let face = fig_pos.get_face();
-        for y in 0..face.height() as i32 {
-            for x in 0..face.width() as i32 {
-                let block = face.get((x, y).into());
-                if block.is_set() {
-                    self.draw_block(
-                        canvas,
-                        x + 1 + fig_pos.get_position().x,
-                        y + fig_pos.get_position().y,
-                        DrawContext::get_block_color(&block),
-                    );
-                }
-            }
+        for (x, y, id) in fig_pos.get_face() {
+            self.draw_block(
+                canvas,
+                i32::from(*x) + 1 + fig_pos.get_position().x,
+                i32::from(*y) + fig_pos.get_position().y,
+                DrawContext::get_block_color(*id),
+            );
         }
     }
 
@@ -114,21 +104,15 @@ impl DrawContext {
             }
         }
 
-        let face = &figure.get_face(0);
-        let fig_x_offs = (fig_max_width - face.width() as i32) / 2;
-        let fig_y_offs = (fig_max_heigth - face.height() as i32) / 2;
-        for y in 0..face.height() as i32 {
-            for x in 0..face.width() as i32 {
-                let block = face.get((x, y).into());
-                if block.is_set() {
-                    self.draw_block(
-                        canvas,
-                        x + offs_x + 1 + fig_x_offs,
-                        y + offs_y + 1 + fig_y_offs,
-                        DrawContext::get_block_color(&block),
-                    );
-                }
-            }
+        let fig_x_offs = 0; //(fig_max_width - face.width() as i32) / 2;
+        let fig_y_offs = 0; //(fig_max_heigth - face.height() as i32) / 2;
+        for (x, y, id) in figure.get_face(0) {
+            self.draw_block(
+                canvas,
+                i32::from(*x) + offs_x + 1 + fig_x_offs,
+                i32::from(*y) + offs_y + 1 + fig_y_offs,
+                DrawContext::get_block_color(*id),
+            );
         }
     }
     pub fn clear(&mut self, canvas: &mut Canvas<Window>, color: Color) {

@@ -204,8 +204,8 @@ impl Game {
                 let fig_pos = FigurePos::new(next_figure, pos);
                 info!(
                     "New figure {} (next is {})",
-                    fig_pos.get_figure().get_name(),
-                    self.next_figure.get_name()
+                    fig_pos.get_figure().name(),
+                    self.next_figure.name()
                 );
                 self.current_figure = Some(fig_pos);
             }

@@ -56,11 +56,11 @@ impl NodeContext {
             moves_per_down_step,
             node_by_id: Vec::new(),
             node_by_pos: Matrix3::new_coords(
-                Vec3::new((-(fig.max_width() as i32), -(fig.max_width() as i32), 0)),
+                Vec3::new((-i32::from(fig.max_width()), -i32::from(fig.max_width()), 0)),
                 Vec3::new((
-                    (pf.width() + fig.max_width()) as i32,
-                    (pf.height() + fig.max_width()) as i32,
-                    fig.faces().len() as i32,
+                    pf.width() as i32 + i32::from(fig.max_width()),
+                    pf.height() as i32 + i32::from(fig.max_width()),
+                    i32::from(fig.num_faces()),
                 )),
                 None,
             ),
@@ -156,7 +156,7 @@ impl Node {
 
     fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement, move_count: f32) -> usize {
         let mut fig_pos = PosDir::apply_move(&self.pos, movement);
-        fig_pos.normalize_dir(ctx.fig.faces().len());
+        fig_pos.normalize_dir(ctx.fig.num_faces());
 
         let distance_to_end = est_pos_distance(&fig_pos, &ctx.end_pos);
         let node_id = ctx.node_by_id.len();

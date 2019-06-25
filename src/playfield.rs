@@ -54,35 +54,29 @@ impl Playfield {
         self.set_block(pos, Block::Clear);
     }
 
-    pub fn place(&mut self, pos: Position, m: &Matrix2<Block>) {
-        self.blocks.merge(pos, m, |pf_b, o| {
-            if o.is_set() {
-                *pf_b = o.clone();
-            }
-        });
+    pub fn place(&mut self, pos: Position, face: &[(u8, u8, u8)]) {
+        for (x, y, id) in face {
+            let x = i32::from(*x) + pos.x;
+            let y = i32::from(*y) + pos.y;
+            self.blocks.set((x, y).into(), Block::Set(*id));
+        }
     }
 
-    pub fn remove(&mut self, pos: Position, m: &Matrix2<Block>) {
-        self.blocks.merge(pos, m, |pf_b, o| {
-            if o.is_set() {
-                *pf_b = Block::Clear;
-            }
-        });
+    pub fn remove(&mut self, pos: Position, face: &[(u8, u8, u8)]) {
+        for (x, y, _id) in face {
+            let x = i32::from(*x) + pos.x;
+            let y = i32::from(*y) + pos.y;
+            self.blocks.set((x, y).into(), Block::Clear);
+        }
     }
 
-    pub fn test_collision(&self, pos: Position, other: &Matrix2<Block>) -> bool {
-        let mut other_x = 0;
-        let mut other_y = 0;
-        for other_block in other.items().iter() {
-            let point = Position::new((pos.x + other_x, pos.y + other_y));
-            let block = self.get_block(point);
-            if block.is_set() && other_block.is_set() {
+    pub fn test_collision(&self, pos: Position, face: &[(u8, u8, u8)]) -> bool {
+        for (x, y, _id) in face {
+            let x = i32::from(*x) + pos.x;
+            let y = i32::from(*y) + pos.y;
+            let block = self.get_block((x, y).into());
+            if block.is_set() {
                 return true;
-            }
-            other_x += 1;
-            if other_x >= other.width() as i32 {
-                other_x = 0;
-                other_y += 1;
             }
         }
         false

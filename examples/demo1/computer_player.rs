@@ -107,7 +107,7 @@ where
             path_to_moves_per_level(&mut self.moves_per_level, &self.path);
             info!(
                 "Found path for figure {} ({} available placements)",
-                fig_pos.get_figure().get_name(),
+                fig_pos.get_figure().name(),
                 avail_placing.len()
             );
         }
