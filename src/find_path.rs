@@ -31,9 +31,9 @@ impl PartialEq for NodeIdAndEst {
 }
 
 #[derive(Debug)]
-struct NodeContext {
-    pf: Playfield,
-    fig: Figure,
+struct NodeContext<'a> {
+    pf: &'a Playfield,
+    fig: &'a Figure,
     end_pos: PosDir,
     moves_per_down_step: f32,
 
@@ -47,11 +47,11 @@ struct NodeContext {
     open_set: BinaryHeap<NodeIdAndEst>,
 }
 
-impl NodeContext {
-    fn new(moves_per_down_step: f32, pf: &Playfield, fig: &Figure, end_pos: &PosDir) -> Self {
+impl<'a> NodeContext<'a> {
+    fn new(moves_per_down_step: f32, pf: &'a Playfield, fig: &'a Figure, end_pos: &PosDir) -> Self {
         NodeContext {
-            pf: pf.clone(),
-            fig: fig.clone(),
+            pf,
+            fig,
             end_pos: *end_pos,
             moves_per_down_step,
             node_by_id: Vec::new(),
@@ -70,9 +70,9 @@ impl NodeContext {
     fn get_node_from_id(&self, id: usize) -> &Node {
         &self.node_by_id[id]
     }
-    fn pop_best_open(&mut self) -> Node {
+    fn pop_best_open(&mut self) -> &Node {
         let best_node = self.open_set.pop().unwrap();
-        self.get_node_from_id(best_node.id).clone()
+        &self.get_node_from_id(best_node.id)
     }
     fn mark_best_pos(&mut self, node: &Node) {
         self.node_by_pos.set(node.pos, Some(node.id));
@@ -83,7 +83,6 @@ impl NodeContext {
     fn mark_open(&mut self, id_and_est: NodeIdAndEst) {
         self.open_set.push(id_and_est);
     }
-    fn mark_closed(&mut self, _: &Node) {}
     fn no_pos_with_lower_est(&self, node: &Node) -> bool {
         if let Some(best_node) = *self.node_by_pos.get(node.pos) {
             let n = self.get_node_from_id(best_node);
@@ -93,10 +92,10 @@ impl NodeContext {
         }
         true
     }
-    fn process_and_test_for_end(&mut self, end_pos: &PosDir, node_id: usize) -> bool {
+    fn process_and_test_for_end(&mut self, node_id: usize) -> bool {
         let node = &self.node_by_id[node_id];
         let id_and_est = node.get_id_and_est();
-        if node.pos == *end_pos {
+        if node.pos == self.end_pos {
             return true;
         } else if !self.fig.test_collision(&self.pf, &node.pos) && self.no_pos_with_lower_est(node)
         {
@@ -231,27 +230,13 @@ impl FindPath {
 
             q.get_possible_moves(&mut self.possible_nodes, &mut ctx);
             for node_id in &self.possible_nodes {
-                if ctx.process_and_test_for_end(end_pos, *node_id) {
+                if ctx.process_and_test_for_end(*node_id) {
                     // End was found - Reconstruct path from end node
                     ctx.get_node_from_id(*node_id).get_path(path, &ctx);
                     return;
                 }
-                /*
-                let node = ctx.get_node_from_id(*node_id);
-                let id_and_est = node.get_id_and_est();
-                if node.pos == *end_pos {
-                    // End was found - Reconstruct path from end node
-                    node.get_path(path, &ctx);
-                    return;
-                } else if !fig.test_collision(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(node)
-                {
-                    ctx.mark_best_pos(node);
-                    ctx.mark_open(id_and_est);
-                }
-                */
             }
             self.possible_nodes.clear();
-            ctx.mark_closed(&q);
         }
         // No path found
     }
