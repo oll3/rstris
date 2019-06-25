@@ -8,7 +8,7 @@ use crate::playfield::*;
 use crate::pos_dir::*;
 use crate::vec3::Vec3;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct NodeIdAndEst {
     id: usize,
     est: u64,
@@ -80,11 +80,7 @@ impl NodeContext {
     fn add_node(&mut self, node: Node) {
         self.node_by_id.push(node);
     }
-    fn mark_open(&mut self, node: &Node) {
-        let id_and_est = NodeIdAndEst {
-            id: node.id,
-            est: node.get_tot_est(),
-        };
+    fn mark_open(&mut self, id_and_est: NodeIdAndEst) {
         self.open_set.push(id_and_est);
     }
     fn mark_closed(&mut self, _: &Node) {}
@@ -96,6 +92,18 @@ impl NodeContext {
             }
         }
         true
+    }
+    fn process_and_test_for_end(&mut self, end_pos: &PosDir, node_id: usize) -> bool {
+        let node = &self.node_by_id[node_id];
+        let id_and_est = node.get_id_and_est();
+        if node.pos == *end_pos {
+            return true;
+        } else if !self.fig.test_collision(&self.pf, &node.pos) && self.no_pos_with_lower_est(node)
+        {
+            self.node_by_pos.set(node.pos, Some(node_id));
+            self.mark_open(id_and_est);
+        }
+        false
     }
 }
 
@@ -110,7 +118,7 @@ struct Node {
     pos: PosDir,
     walked: u64,  // g
     est_end: u64, // h
-    mvmnt: Option<Movement>,
+    movement: Option<Movement>,
     move_count: f32,
 }
 
@@ -121,7 +129,7 @@ impl Node {
         pos: &PosDir,
         walked: u64,
         est_distance_end: u64,
-        mvmnt: Option<Movement>,
+        movement: Option<Movement>,
         move_count: f32,
     ) -> Self {
         Node {
@@ -130,7 +138,7 @@ impl Node {
             pos: *pos,
             walked,
             est_end: est_distance_end,
-            mvmnt,
+            movement,
             move_count,
         }
     }
@@ -139,13 +147,21 @@ impl Node {
         self.walked + self.est_end
     }
 
-    fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement, move_count: f32) -> Self {
+    fn get_id_and_est(&self) -> NodeIdAndEst {
+        NodeIdAndEst {
+            id: self.id,
+            est: self.get_tot_est(),
+        }
+    }
+
+    fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement, move_count: f32) -> usize {
         let mut fig_pos = PosDir::apply_move(&self.pos, movement);
         fig_pos.normalize_dir(ctx.fig.faces().len());
 
         let distance_to_end = est_pos_distance(&fig_pos, &ctx.end_pos);
+        let node_id = ctx.node_by_id.len();
         let node = Node::new(
-            ctx.node_by_id.len(),
+            node_id,
             Some(self.id),
             &fig_pos,
             self.walked + 1,
@@ -153,11 +169,11 @@ impl Node {
             Some(movement),
             move_count,
         );
-        ctx.add_node(node.clone());
-        node
+        ctx.add_node(node);
+        node_id
     }
 
-    fn get_possible_moves(&self, moves: &mut Vec<Node>, ctx: &mut NodeContext) {
+    fn get_possible_moves(&self, moves: &mut Vec<usize>, ctx: &mut NodeContext) {
         if self.move_count <= 0.0 {
             // We're allowed to move in any direction
             let new_move_count = self.move_count + 1.0 / ctx.moves_per_down_step;
@@ -172,7 +188,7 @@ impl Node {
     fn get_path(&self, path: &mut Vec<Movement>, ctx: &NodeContext) {
         let mut p = self;
         while p.id != 0 {
-            if let Some(ref movement) = p.mvmnt {
+            if let Some(ref movement) = p.movement {
                 path.push(*movement);
             }
             p = &ctx.node_by_id[p.parent_id.unwrap()];
@@ -180,46 +196,63 @@ impl Node {
     }
 }
 
-pub fn find_path(
-    path: &mut Vec<Movement>,
-    pf: &Playfield,
-    fig: &Figure,
-    start_pos: &PosDir,
-    end_pos: &PosDir,
-    moves_per_down_step: f32,
-) {
-    let mut possible_nodes = vec![];
-    let mut ctx = NodeContext::new(moves_per_down_step, pf, fig, end_pos);
-    let start_node = Node::new(
-        ctx.node_by_id.len(),
-        None,
-        start_pos,
-        0,
-        est_pos_distance(start_pos, end_pos),
-        None,
-        0.0,
-    );
-    ctx.add_node(start_node.clone());
-    ctx.mark_open(&start_node);
-    ctx.mark_best_pos(&start_node);
-    path.clear();
+#[derive(Default)]
+pub struct FindPath {
+    possible_nodes: Vec<usize>,
+}
+impl FindPath {
+    pub fn search(
+        &mut self,
+        path: &mut Vec<Movement>,
+        pf: &Playfield,
+        fig: &Figure,
+        start_pos: &PosDir,
+        end_pos: &PosDir,
+        moves_per_down_step: f32,
+    ) {
+        let mut ctx = NodeContext::new(moves_per_down_step, pf, fig, end_pos);
+        let start_node = Node::new(
+            ctx.node_by_id.len(),
+            None,
+            start_pos,
+            0,
+            est_pos_distance(start_pos, end_pos),
+            None,
+            0.0,
+        );
+        ctx.add_node(start_node.clone());
+        ctx.mark_open(start_node.get_id_and_est());
+        ctx.mark_best_pos(&start_node);
+        path.clear();
 
-    while !ctx.open_set.is_empty() {
-        let q = ctx.pop_best_open();
+        self.possible_nodes.clear();
+        while !ctx.open_set.is_empty() {
+            let q = ctx.pop_best_open();
 
-        q.get_possible_moves(&mut possible_nodes, &mut ctx);
-        for node in &possible_nodes {
-            if node.pos == *end_pos {
-                // End was found - Reconstruct path from end node
-                node.get_path(path, &ctx);
-                return;
-            } else if !fig.test_collision(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(&node) {
-                ctx.mark_open(&node);
-                ctx.mark_best_pos(&node);
+            q.get_possible_moves(&mut self.possible_nodes, &mut ctx);
+            for node_id in &self.possible_nodes {
+                if ctx.process_and_test_for_end(end_pos, *node_id) {
+                    // End was found - Reconstruct path from end node
+                    ctx.get_node_from_id(*node_id).get_path(path, &ctx);
+                    return;
+                }
+                /*
+                let node = ctx.get_node_from_id(*node_id);
+                let id_and_est = node.get_id_and_est();
+                if node.pos == *end_pos {
+                    // End was found - Reconstruct path from end node
+                    node.get_path(path, &ctx);
+                    return;
+                } else if !fig.test_collision(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(node)
+                {
+                    ctx.mark_best_pos(node);
+                    ctx.mark_open(id_and_est);
+                }
+                */
             }
+            self.possible_nodes.clear();
+            ctx.mark_closed(&q);
         }
-        possible_nodes.clear();
-        ctx.mark_closed(&q);
+        // No path found
     }
-    // No path found
 }

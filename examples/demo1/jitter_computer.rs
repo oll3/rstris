@@ -1,6 +1,5 @@
 use rstris::figure_pos::*;
 use rstris::playfield::*;
-use rstris::position::*;
 
 use crate::computer_player::*;
 
@@ -58,7 +57,8 @@ fn get_pf_avg_height(pf: &Playfield) -> f32 {
     let mut total_height = 0;
     for x in 0..(pf.width() as i32) {
         for y in 0..(pf.height() as i32) {
-            if pf.block_is_set(Position::new((x, y))) {
+            let block = pf.blocks().get((x, y).into());
+            if block.is_set() {
                 total_height += pf.height() as i32 - y;
                 break;
             }

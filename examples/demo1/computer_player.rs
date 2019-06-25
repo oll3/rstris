@@ -28,6 +28,7 @@ where
     last_figure: Option<FigurePos>,
 
     // Some cache variables
+    find_path: FindPath,
     eval_placing: Vec<EvalPosition>,
     path: Vec<Movement>,
     moves_per_level: Vec<(i32, Movement)>,
@@ -45,6 +46,7 @@ where
             last_figure: None,
             eval_placing: Vec::new(),
             path: Vec::new(),
+            find_path: FindPath::default(),
         }
     }
 
@@ -83,7 +85,7 @@ where
         // Find a path to first (and best) available placing
         self.path.clear();
         for eval_pos in &self.eval_placing {
-            find_path(
+            self.find_path.search(
                 &mut self.path,
                 &pf,
                 &fig_pos.get_figure(),
