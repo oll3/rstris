@@ -48,7 +48,7 @@ impl MoveQueue {
         }
     }
 
-    fn to_index(movement: &Movement) -> usize {
+    fn movement_to_index(movement: Movement) -> usize {
         match movement {
             Movement::MoveLeft => 0,
             Movement::MoveRight => 1,
@@ -70,18 +70,19 @@ impl MoveQueue {
     pub fn pop_next_move(&mut self, ticks: u64) -> Option<MoveAndTime> {
         if let Some(move_and_time) = self.queue.peek() {
             if move_and_time.time <= ticks {
-                self.last_move_time[Self::to_index(&move_and_time.movement)] = move_and_time.time;
+                self.last_move_time[Self::movement_to_index(move_and_time.movement)] =
+                    move_and_time.time;
                 return self.queue.pop();
             }
         }
         None
     }
 
-    pub fn time_last_move(&self, movement: &Movement) -> u64 {
-        self.last_move_time[Self::to_index(movement)]
+    pub fn time_last_move(&self, movement: Movement) -> u64 {
+        self.last_move_time[Self::movement_to_index(movement)]
     }
 
-    pub fn time_since_move(&self, ticks: u64, movement: &Movement) -> i64 {
+    pub fn time_since_move(&self, ticks: u64, movement: Movement) -> i64 {
         ticks as i64 - self.time_last_move(movement) as i64
     }
 
@@ -173,7 +174,7 @@ impl Game {
             return;
         }
         if self.current_figure.is_some() {
-            let time_since_down = self.move_queue.time_since_move(ticks, &Movement::MoveDown);
+            let time_since_down = self.move_queue.time_since_move(ticks, Movement::MoveDown);
             if time_since_down >= self.down_step_time as i64 {
                 // Let the figure fall
                 self.add_move(Movement::MoveDown, ticks);

@@ -58,7 +58,7 @@ where
             let mut move_time = 0;
             while !self.moves_per_level.is_empty() && y == self.moves_per_level[0].0 {
                 let movement = self.moves_per_level.remove(0);
-                game.add_move(movement.1.clone(), ticks + move_time);
+                game.add_move(movement.1, ticks + move_time);
                 move_time += (game.get_down_step_time() as f32 / self.moves_per_down_step) as u64;
             }
         }
@@ -129,14 +129,14 @@ where
     }
 }
 
-fn path_to_moves_per_level(moves: &mut Vec<(i32, Movement)>, path: &Vec<Movement>) {
+fn path_to_moves_per_level(moves: &mut Vec<(i32, Movement)>, path: &[Movement]) {
     moves.clear();
     let mut level: i32 = 0;
     for movement in path {
         if *movement == Movement::MoveDown {
             level += 1;
         } else {
-            moves.push((level, movement.clone()));
+            moves.push((level, *movement));
         }
     }
 }
