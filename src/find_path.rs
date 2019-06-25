@@ -140,7 +140,7 @@ impl Node {
     }
 
     fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement, move_count: f32) -> Self {
-        let mut fig_pos = PosDir::apply_move(&self.pos, &movement);
+        let mut fig_pos = PosDir::apply_move(&self.pos, movement);
         fig_pos.normalize_dir(ctx.fig.faces().len());
 
         let distance_to_end = est_pos_distance(&fig_pos, &ctx.end_pos);
@@ -150,7 +150,7 @@ impl Node {
             &fig_pos,
             self.walked + 1,
             distance_to_end,
-            Some(movement.clone()),
+            Some(movement),
             move_count,
         );
         ctx.add_node(node.clone());
@@ -169,24 +169,26 @@ impl Node {
         moves.push(self.new_moved_node(ctx, Movement::MoveDown, self.move_count - 1.0));
     }
 
-    fn get_path(&self, ctx: &NodeContext) -> Vec<(Movement, u64)> {
+    fn get_path(&self, path: &mut Vec<Movement>, ctx: &NodeContext) {
         let mut p = self;
-        let mut path: Vec<(Movement, u64)> = Vec::new();
         while p.id != 0 {
-            path.push((p.mvmnt.clone().unwrap(), 0));
+            if let Some(ref movement) = p.mvmnt {
+                path.push(*movement);
+            }
             p = &ctx.node_by_id[p.parent_id.unwrap()];
         }
-        path
     }
 }
 
 pub fn find_path(
+    path: &mut Vec<Movement>,
     pf: &Playfield,
     fig: &Figure,
     start_pos: &PosDir,
     end_pos: &PosDir,
     moves_per_down_step: f32,
-) -> Vec<(Movement, u64)> {
+) {
+    let mut possible_nodes = vec![];
     let mut ctx = NodeContext::new(moves_per_down_step, pf, fig, end_pos);
     let start_node = Node::new(
         ctx.node_by_id.len(),
@@ -200,8 +202,8 @@ pub fn find_path(
     ctx.add_node(start_node.clone());
     ctx.mark_open(&start_node);
     ctx.mark_best_pos(&start_node);
+    path.clear();
 
-    let mut possible_nodes = vec![];
     while !ctx.open_set.is_empty() {
         let q = ctx.pop_best_open();
 
@@ -209,7 +211,8 @@ pub fn find_path(
         for node in &possible_nodes {
             if node.pos == *end_pos {
                 // End was found - Reconstruct path from end node
-                return node.get_path(&ctx);
+                node.get_path(path, &ctx);
+                return;
             } else if !fig.test_collision(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(&node) {
                 ctx.mark_open(&node);
                 ctx.mark_best_pos(&node);
@@ -219,5 +222,4 @@ pub fn find_path(
         ctx.mark_closed(&q);
     }
     // No path found
-    vec![]
 }

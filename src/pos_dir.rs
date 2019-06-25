@@ -5,9 +5,9 @@ use crate::vec3::*;
 pub type PosDir = Vec3<i32>;
 
 impl PosDir {
-    pub fn apply_move(&self, movement: &Movement) -> Self {
+    pub fn apply_move(&self, movement: Movement) -> Self {
         let mut pos = *self;
-        match *movement {
+        match movement {
             Movement::MoveLeft => pos.x -= 1,
             Movement::MoveRight => pos.x += 1,
             Movement::MoveDown => pos.y += 1,

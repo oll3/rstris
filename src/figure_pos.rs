@@ -38,9 +38,9 @@ impl FigurePos {
     }
     fn row_of_lowest_block(face: &Matrix2<Block>) -> i32 {
         let mut lowest = i32::min_value();
-        face.row_iter().for_each(|row| {
-            if row.items.iter().any(|b| b.is_set()) && row.point > lowest {
-                lowest = row.point;
+        face.row_iter().enumerate().for_each(|(index, row)| {
+            if row.iter().any(|b| b.is_set()) && index as i32 > lowest {
+                lowest = index as i32;
             }
         });
         lowest

@@ -55,18 +55,18 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
 
         // Visist all the closest positions that has not been visited
         // already (one left, right, down, rotate cw).
-        let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveLeft);
+        let tmp_pos = PosDir::apply_move(&current_pos, Movement::MoveLeft);
         let point: Vec3<i32> = tmp_pos;
         if !visited.get(point) && !fig.test_collision(&pf, &tmp_pos) {
             visited.set(point, true);
             moves.push_back(tmp_pos);
         }
-        let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveRight);
+        let tmp_pos = PosDir::apply_move(&current_pos, Movement::MoveRight);
         if !visited.get(tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
             visited.set(tmp_pos, true);
             moves.push_back(tmp_pos);
         }
-        let tmp_pos = PosDir::apply_move(&current_pos, &Movement::RotateCW);
+        let tmp_pos = PosDir::apply_move(&current_pos, Movement::RotateCW);
         if tmp_pos.get_dir() < fig.faces().len() as i32
             && !visited.get(tmp_pos)
             && !fig.test_collision(&pf, &tmp_pos)
@@ -77,7 +77,7 @@ pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
 
         // Down is special. If we can't move down from current position then
         // the current position is a valid placement.
-        let tmp_pos = PosDir::apply_move(&current_pos, &Movement::MoveDown);
+        let tmp_pos = PosDir::apply_move(&current_pos, Movement::MoveDown);
         if fig.test_collision(&pf, &tmp_pos) {
             // Valid placement
             // println!("Valid position: {:?}", tmp_pos);

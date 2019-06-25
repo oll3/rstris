@@ -35,6 +35,9 @@ impl Playfield {
             self.blocks.set(pos, block);
         }
     }
+    pub fn blocks(&self) -> &Matrix2<Block> {
+        &self.blocks
+    }
     pub fn width(&self) -> u32 {
         self.blocks.width()
     }
@@ -67,25 +70,37 @@ impl Playfield {
         });
     }
 
-    pub fn test_collision(&self, pos: Position, m: &Matrix2<Block>) -> bool {
-        self.blocks.test_overlap(pos, m, |a, b| match a {
-            Some(pf_b) => pf_b.is_set() && b.is_set(),
-            None => b.is_set(),
-        })
+    pub fn test_collision(&self, pos: Position, other: &Matrix2<Block>) -> bool {
+        let mut other_x = 0;
+        let mut other_y = 0;
+        for other_block in other.items().iter() {
+            let point = Position::new((pos.x + other_x, pos.y + other_y));
+            let block = self.get_block(point);
+            if block.is_set() && other_block.is_set() {
+                return true;
+            }
+            other_x += 1;
+            if other_x >= other.width() as i32 {
+                other_x = 0;
+                other_y += 1;
+            }
+        }
+        false
     }
 
     pub fn full_lines(&self) -> impl Iterator<Item = u32> + '_ {
         self.blocks
             .row_iter()
-            .filter(|row| row.items.iter().all(|b| b.is_set()))
-            .map(|row| row.point as u32)
+            .enumerate()
+            .filter(|(_index_, row)| row.iter().all(|b| b.is_set()))
+            .map(|(index, _row)| index as u32)
     }
 
     pub fn locked_lines(&self) -> Vec<u32> {
         let mut full_lines: Vec<u32> = vec![];
-        self.blocks.row_iter().for_each(|row| {
-            if row.items.iter().all(|b| b.is_set()) {
-                full_lines.push(row.point as u32);
+        self.blocks.row_iter().enumerate().for_each(|(index, row)| {
+            if row.iter().all(|b| b.is_set()) {
+                full_lines.push(index as u32);
             }
         });
         full_lines
@@ -93,7 +108,7 @@ impl Playfield {
     pub fn count_locked_lines(&self) -> u32 {
         self.blocks
             .row_iter()
-            .filter(|row| row.items.iter().all(|b| b.is_set()))
+            .filter(|row| row.iter().all(|b| b.is_set()))
             .count() as u32
     }
 

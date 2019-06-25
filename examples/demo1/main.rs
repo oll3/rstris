@@ -1,5 +1,5 @@
-extern crate fern;
-extern crate log;
+use fern;
+use log;
 
 use log::*;
 
@@ -112,14 +112,19 @@ fn get_max_figure_dimensions(figure_list: &[Figure]) -> (u32, u32) {
 
 fn get_pf_row_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
-    for y in 0..(pf.height() as i32) {
-        let mut last_state = pf.block_is_set(Position::new((-1, y)));
-        for x in 0..=(pf.width() as i32) {
-            let state = pf.block_is_set(Position::new((x, y)));
+    for row in pf.blocks().row_iter() {
+        // For each row...
+        let mut last_state = true;
+        for block in row {
+            // ...measure its jitter
+            let state = block.is_set();
             if last_state != state {
                 last_state = state;
                 jitter += 1;
             }
+        }
+        if !last_state {
+            jitter += 1;
         }
     }
     jitter
@@ -127,17 +132,34 @@ fn get_pf_row_jitter(pf: &Playfield) -> u32 {
 fn get_pf_col_jitter(pf: &Playfield) -> u32 {
     let mut jitter = 0;
     for x in 0..(pf.width() as i32) {
-        let mut last_state = pf.block_is_set(Position::new((x, 0)));
-        for y in 0..((pf.height() + 1) as i32) {
-            let state = pf.block_is_set(Position::new((x, y)));
+        // For each column...
+        let mut last_state = false;
+        for y in 0..(pf.height() as i32) {
+            // ...measure its jitter
+            let block = pf.blocks().get((x, y).into());
+            let state = block.is_set();
             if last_state != state {
                 last_state = state;
                 jitter += 1;
             }
         }
+        if !last_state {
+            jitter += 1;
+        }
     }
     jitter
 }
+
+fn get_pf_max_height(pf: &Playfield) -> u32 {
+    for (y, row) in pf.blocks().row_iter().enumerate() {
+        // For each row...
+        if row.iter().any(|b| b.is_set()) {
+            return y as u32;
+        }
+    }
+    0
+}
+
 fn get_pf_avg_height(pf: &Playfield) -> f32 {
     let mut total_height = 0;
     for x in 0..(pf.width() as i32) {
@@ -150,18 +172,6 @@ fn get_pf_avg_height(pf: &Playfield) -> f32 {
     }
     total_height as f32 / pf.width() as f32
 }
-fn get_pf_max_height(pf: &Playfield) -> i32 {
-    let mut max_height = 0;
-    for x in 0..(pf.width() as i32) {
-        for y in 0..(pf.height() as i32) {
-            let height = pf.height() as i32 - y;
-            if pf.block_is_set(Position::new((x, y))) && height > max_height {
-                max_height = height;
-            }
-        }
-    }
-    max_height
-}
 
 struct JitterComputer {
     pre_col_jitter: i32,
@@ -169,7 +179,7 @@ struct JitterComputer {
     pre_voids: i32,
     pre_avg_height: f32,
     avg_height_factor: f32,
-    pre_max_height: i32,
+    pre_max_height: u32,
     pre_locked_lines: i32,
     pf: Option<Playfield>,
 }
@@ -292,6 +302,7 @@ fn main() {
         .unwrap();
     let mut canvas = window.into_canvas().build().unwrap();
     let mut draw = DrawContext::new(BLOCK_SIZE, BLOCK_SPACING, frame_color, fill_color);
+    let mut events = sdl_context.event_pump().unwrap();
 
     let mut com1 = ComputerPlayer::new(1.0, JitterComputer::new());
 
@@ -305,10 +316,10 @@ fn main() {
     let mut frame_cnt_sec = 0;
     let mut sec_timer = 0;
     let mut pressed_keys: HashMap<Keycode, u64> = HashMap::new();
-    let mut events = sdl_context.event_pump().unwrap();
     let start_ticks = time::precise_time_ns();
     'running: loop {
         let ticks = time::precise_time_ns() - start_ticks;
+
         for event in events.poll_iter() {
             match event {
                 Event::Quit { .. }

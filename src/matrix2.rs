@@ -7,76 +7,6 @@ pub struct Matrix2<T> {
     items: Vec<T>,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct ItemPoint<'a, T: 'a> {
-    pub point: Vec2<i32>,
-    pub item: &'a T,
-}
-
-pub struct ItemIt<'a, T: 'a>
-where
-    T: Clone,
-{
-    pub point: Vec2<i32>,
-    matrix: &'a Matrix2<T>,
-}
-
-impl<'a, T: 'a> Iterator for ItemIt<'a, T>
-where
-    T: Clone,
-{
-    type Item = ItemPoint<'a, T>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.point.x as u32 >= self.matrix.width() {
-            self.point.x = 0;
-            self.point.y += 1;
-        }
-        if self.point.y as u32 >= self.matrix.height() {
-            return None;
-        }
-        let point = ItemPoint {
-            point: self.point,
-            item: self.matrix.get(self.point),
-        };
-        self.point.x += 1;
-        Some(point)
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct RowPoint<'a, T: 'a> {
-    pub point: i32,
-    pub items: &'a [T],
-}
-
-pub struct RowIt<'a, T: 'a>
-where
-    T: Clone,
-{
-    pub point: i32,
-    matrix: &'a Matrix2<T>,
-}
-
-impl<'a, T: 'a> Iterator for RowIt<'a, T>
-where
-    T: Clone,
-{
-    type Item = RowPoint<'a, T>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.point as u32 >= self.matrix.height() {
-            return None;
-        }
-        let width = self.matrix.width() as usize;
-        let index = self.matrix.index_from_point((0, self.point).into());
-        let point = RowPoint {
-            point: self.point,
-            items: &self.matrix.items[index..index + width],
-        };
-        self.point += 1;
-        Some(point)
-    }
-}
-
 impl<T> Matrix2<T>
 where
     T: Clone,
@@ -105,18 +35,8 @@ where
         self.items.clone_from_slice(&other.items);
     }
 
-    pub fn iter(&self) -> ItemIt<T> {
-        ItemIt {
-            point: Vec2 { x: 0, y: 0 },
-            matrix: &self,
-        }
-    }
-
-    pub fn row_iter(&self) -> RowIt<T> {
-        RowIt {
-            point: 0,
-            matrix: &self,
-        }
+    pub fn row_iter(&self) -> impl Iterator<Item = &[T]> {
+        self.items.chunks(self.w as usize)
     }
 
     pub fn width(&self) -> u32 {
@@ -158,42 +78,50 @@ where
     where
         F: FnMut(&mut T, &T),
     {
-        other.items.iter().enumerate().for_each(|(other_index, b)| {
-            let other_index = other_index as i32;
-            let y = other_index / (other.width() as i32);
-            let x = other_index - y * (other.width() as i32);
+        let mut other_x = 0;
+        let mut other_y = 0;
+        for other_item in other.items.iter() {
             let point = Vec2 {
-                x: at.x + x,
-                y: at.y + y,
+                x: at.x + other_x,
+                y: at.y + other_y,
             };
             if self.contains(point) {
                 let index = self.index_from_point(point);
-                merge_func(&mut self.items[index], b);
+                merge_func(&mut self.items[index], other_item);
             }
-        });
+            other_x += 1;
+            if other_x >= other.width() as i32 {
+                other_x = 0;
+                other_y += 1;
+            }
+        }
     }
     // Test if another matrix overlaps with self
     pub fn test_overlap<F>(&self, at: Vec2<i32>, other: &Matrix2<T>, mut test_func: F) -> bool
     where
         F: FnMut(Option<&T>, &T) -> bool,
     {
-        for (other_index, other_item) in other.items.iter().enumerate() {
-            let other_index = other_index as i32;
-            let y = other_index / (other.width() as i32);
-            let x = other_index - y * (other.width() as i32);
+        let mut other_x = 0;
+        let mut other_y = 0;
+        for other_item in other.items.iter() {
             let point = Vec2 {
-                x: at.x + x,
-                y: at.y + y,
+                x: at.x + other_x,
+                y: at.y + other_y,
             };
+
             let item = if self.contains(point) {
-                let index = self.index_from_point(point);
-                Some(&self.items[index])
+                Some(&self.items[self.index_from_point(point)])
             } else {
                 None
             };
 
             if test_func(item, other_item) {
                 return true;
+            }
+            other_x += 1;
+            if other_x >= other.width() as i32 {
+                other_x = 0;
+                other_y += 1;
             }
         }
         false
@@ -203,28 +131,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_iter() {
-        let mut m1 = Matrix2::from_size(10, 10, false);
-        m1.set((2, 3).into(), true);
-        m1.set((9, 9).into(), true);
-        let r: Vec<ItemPoint<bool>> = m1.iter().filter(|p| *p.item == true).collect();
-        assert_eq!(
-            r[0],
-            ItemPoint {
-                point: Vec2 { x: 2, y: 3 },
-                item: &true
-            }
-        );
-        assert_eq!(
-            r[1],
-            ItemPoint {
-                point: Vec2 { x: 9, y: 9 },
-                item: &true
-            }
-        );
-    }
 
     #[test]
     fn test_merge_same_size() {
