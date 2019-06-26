@@ -101,6 +101,10 @@ where
         matrix
     }
 
+    pub fn clone_from_slice(&mut self, other: &Matrix2<T>) {
+        self.items.clone_from_slice(&other.items);
+    }
+
     pub fn iter(&self) -> ItemIt<T> {
         ItemIt {
             point: Vec2 { x: 0, y: 0 },
@@ -121,6 +125,10 @@ where
 
     pub fn height(&self) -> u32 {
         self.h
+    }
+
+    pub fn items(&self) -> &Vec<T> {
+        &self.items
     }
 
     pub fn contains(&self, point: Vec2<i32>) -> bool {

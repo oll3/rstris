@@ -17,6 +17,12 @@ impl Playfield {
             outside_block: Block::Set(0),
         }
     }
+    pub fn copy(&mut self, other: &Playfield) {
+        if self.height() != other.height() || self.width() != other.width() {
+            panic!("can't copy playfield of different sizes");
+        }
+        self.blocks.clone_from_slice(&other.blocks);
+    }
     pub fn get_block(&self, pos: Position) -> &Block {
         if !self.blocks.contains(pos) {
             &self.outside_block
@@ -66,6 +72,13 @@ impl Playfield {
             Some(pf_b) => pf_b.is_set() && b.is_set(),
             None => b.is_set(),
         })
+    }
+
+    pub fn full_lines(&self) -> impl Iterator<Item = u32> + '_ {
+        self.blocks
+            .row_iter()
+            .filter(|row| row.items.iter().all(|b| b.is_set()))
+            .map(|row| row.point as u32)
     }
 
     pub fn locked_lines(&self) -> Vec<u32> {
