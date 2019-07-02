@@ -28,8 +28,8 @@ use std::collections::HashMap;
 
 static PF_WIDTH: u32 = 16;
 static PF_HEIGHT: u32 = 30;
-static BLOCK_SIZE: u32 = 8;
-static BLOCK_SPACING: u32 = 0;
+static BLOCK_SIZE: u32 = 16;
+static BLOCK_SPACING: u32 = 1;
 
 macro_rules! bl {
     ($x:expr) => {
@@ -225,13 +225,13 @@ fn main() {
         // Render graphics
         {
             draw.clear(&mut canvas, bg_color);
-            draw.draw_playfield(&mut canvas, game.get_playfield());
-            if let Some(ref current_figure) = game.get_current_figure() {
-                draw.draw_figure(&mut canvas, current_figure);
+            draw.draw_playfield(&mut canvas, game.playfield());
+            if let Some((fig, pos)) = game.current_figure() {
+                draw.draw_figure(&mut canvas, fig, *pos);
             }
             draw.draw_next_figure(
                 &mut canvas,
-                game.get_next_figure(),
+                game.next_figure(),
                 (PF_WIDTH + 3) as i32,
                 (figure_max_height + 1) as i32,
                 figure_max_width as i32,

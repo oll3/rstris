@@ -1,7 +1,7 @@
 use rstris::block::Block;
 use rstris::figure::Figure;
-use rstris::figure_pos::FigurePos;
 use rstris::playfield::Playfield;
+use rstris::position::Position;
 
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -72,12 +72,12 @@ impl DrawContext {
         }
     }
 
-    pub fn draw_figure(&mut self, canvas: &mut Canvas<Window>, fig_pos: &FigurePos) {
-        for (x, y, id) in fig_pos.get_face() {
+    pub fn draw_figure(&mut self, canvas: &mut Canvas<Window>, fig: &Figure, pos: Position) {
+        for (x, y, id) in fig.face(pos.dir()) {
             self.draw_block(
                 canvas,
-                i32::from(*x) + 1 + fig_pos.get_position().x,
-                i32::from(*y) + fig_pos.get_position().y,
+                i32::from(*x) + 1 + pos.x(),
+                i32::from(*y) + pos.y(),
                 DrawContext::get_block_color(*id),
             );
         }
@@ -106,7 +106,7 @@ impl DrawContext {
 
         let fig_x_offs = 0; //(fig_max_width - face.width() as i32) / 2;
         let fig_y_offs = 0; //(fig_max_heigth - face.height() as i32) / 2;
-        for (x, y, id) in figure.get_face(0) {
+        for (x, y, id) in figure.face(0) {
             self.draw_block(
                 canvas,
                 i32::from(*x) + offs_x + 1 + fig_x_offs,

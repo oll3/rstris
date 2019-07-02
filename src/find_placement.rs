@@ -1,16 +1,8 @@
-//use crate::figure::Figure;
-use crate::figure_pos::*;
-use crate::matrix3::*;
-use crate::movement::*;
+use crate::figure::Figure;
 use crate::playfield::*;
-use crate::pos_dir::*;
-use crate::vec3::Vec3;
+use crate::position::Position;
 
-use std::collections::LinkedList;
-
-pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
-    let mut placements: Vec<PosDir> = Vec::new();
-    let fig = fig_pos.get_figure();
+pub fn find_placement(placements: &mut Vec<Position>, pf: &Playfield, fig: &Figure) {
     for (dir, face) in fig.iter_faces().enumerate() {
         for x in -(i32::from(fig.max_width() / 2))..pf.width() as i32 {
             let mut last_pos = None;
@@ -27,66 +19,6 @@ pub fn find_placement_quick(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> 
             }
         }
     }
-    placements
-}
-
-pub fn find_placement(pf: &Playfield, fig_pos: &FigurePos) -> Vec<PosDir> {
-    let mut placements: Vec<PosDir> = Vec::new();
-    let mut moves: LinkedList<PosDir> = LinkedList::new();
-    let mut visited: Matrix3<bool> = Matrix3::new(pf.width() as u32, pf.height() as u32, 4, false);
-    let start_pos = fig_pos.get_position();
-    let fig = fig_pos.get_figure();
-
-    if fig.test_collision(pf, &start_pos) {
-        println!(
-            "Invalid starting point ({:?}) for figure {}",
-            start_pos,
-            fig.name()
-        );
-        return placements;
-    }
-
-    visited.set(*start_pos, true);
-    moves.push_back(*start_pos);
-
-    while !moves.is_empty() {
-        let current_pos = moves.pop_front().unwrap();
-
-        // Visist all the closest positions that has not been visited
-        // already (one left, right, down, rotate cw).
-        let tmp_pos = PosDir::apply_move(&current_pos, Movement::MoveLeft);
-        let point: Vec3<i32> = tmp_pos;
-        if !visited.get(point) && !fig.test_collision(&pf, &tmp_pos) {
-            visited.set(point, true);
-            moves.push_back(tmp_pos);
-        }
-        let tmp_pos = PosDir::apply_move(&current_pos, Movement::MoveRight);
-        if !visited.get(tmp_pos) && !fig.test_collision(&pf, &tmp_pos) {
-            visited.set(tmp_pos, true);
-            moves.push_back(tmp_pos);
-        }
-        let tmp_pos = PosDir::apply_move(&current_pos, Movement::RotateCW);
-        if tmp_pos.get_dir() < i32::from(fig.num_faces())
-            && !visited.get(tmp_pos)
-            && !fig.test_collision(&pf, &tmp_pos)
-        {
-            visited.set(tmp_pos, true);
-            moves.push_back(tmp_pos);
-        }
-
-        // Down is special. If we can't move down from current position then
-        // the current position is a valid placement.
-        let tmp_pos = PosDir::apply_move(&current_pos, Movement::MoveDown);
-        if fig.test_collision(&pf, &tmp_pos) {
-            // Valid placement
-            // println!("Valid position: {:?}", tmp_pos);
-            placements.push(current_pos);
-        } else if !visited.get(tmp_pos) {
-            moves.push_back(tmp_pos);
-            visited.set(tmp_pos, true);
-        }
-    }
-    placements
 }
 
 #[cfg(test)]
@@ -104,48 +36,44 @@ mod tests {
         };
     }
 
-    fn fig2(x: i32, y: i32, dir: i32) -> FigurePos {
-        FigurePos::new(
-            Figure::new_from_face(
-                "2",
-                &[
-                    &[bl!(0), bl!(0), bl!(0)],
-                    &[bl!(2), bl!(2), bl!(2)],
-                    &[bl!(0), bl!(0), bl!(2)],
-                ],
-            ),
-            PosDir::new((x, y, dir)),
+    fn fig2() -> Figure {
+        Figure::new_from_face(
+            "2",
+            &[
+                &[bl!(0), bl!(0), bl!(0)],
+                &[bl!(2), bl!(2), bl!(2)],
+                &[bl!(0), bl!(0), bl!(2)],
+            ],
         )
     }
 
-    fn fig3(x: i32, y: i32, dir: i32) -> FigurePos {
-        FigurePos::new(
-            Figure::new_from_face(
-                "3",
-                &[
-                    &[bl!(0), bl!(0), bl!(3)],
-                    &[bl!(3), bl!(3), bl!(3)],
-                    &[bl!(0), bl!(0), bl!(0)],
-                ],
-            ),
-            PosDir::new((x, y, dir)),
+    fn fig3() -> Figure {
+        Figure::new_from_face(
+            "3",
+            &[
+                &[bl!(0), bl!(0), bl!(3)],
+                &[bl!(3), bl!(3), bl!(3)],
+                &[bl!(0), bl!(0), bl!(0)],
+            ],
         )
     }
 
     #[test]
     fn find1() {
-        let start_pos = fig2(0, 0, 0);
+        let mut placements = Vec::new();
+        let fig = fig2();
         let pf = Playfield::new("pf1", 10, 20);
-        let placings = find_placement_quick(&pf, &start_pos);
-        assert_eq!(placings.len(), 34);
+        find_placement(&mut placements, &pf, &fig);
+        assert_eq!(placements.len(), 34);
     }
 
     #[test]
     fn find2() {
-        let start_pos = fig3(0, 0, 0);
+        let mut placements = Vec::new();
+        let fig = fig3();
         let pf = Playfield::new("pf1", 20, 20);
-        let placings = find_placement_quick(&pf, &start_pos);
-        assert_eq!(placings.len(), 74);
+        find_placement(&mut placements, &pf, &fig);
+        assert_eq!(placements.len(), 74);
     }
     /*
     use test::Bencher;

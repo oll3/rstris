@@ -1,12 +1,11 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
-use crate::figure::*;
+use crate::figure::Figure;
 use crate::matrix3::Matrix3;
-use crate::movement::*;
-use crate::playfield::*;
-use crate::pos_dir::*;
-use crate::vec3::Vec3;
+use crate::movement::Movement;
+use crate::playfield::Playfield;
+use crate::position::Position;
 
 #[derive(Debug, Clone, Copy)]
 struct NodeIdAndEst {
@@ -34,7 +33,7 @@ impl PartialEq for NodeIdAndEst {
 struct NodeContext {
     pf: Playfield,
     fig: Figure,
-    end_pos: PosDir,
+    end_pos: Position,
     moves_per_down_step: f32,
 
     // Node by id contains all created nodes, indexed by id
@@ -48,16 +47,16 @@ struct NodeContext {
 }
 
 impl NodeContext {
-    fn new(moves_per_down_step: f32, pf: &Playfield, fig: &Figure, end_pos: &PosDir) -> Self {
+    fn new(moves_per_down_step: f32, pf: &Playfield, fig: &Figure, end_pos: Position) -> Self {
         NodeContext {
             pf: pf.clone(),
             fig: fig.clone(),
-            end_pos: *end_pos,
+            end_pos,
             moves_per_down_step,
             node_by_id: Vec::new(),
             node_by_pos: Matrix3::new_coords(
-                Vec3::new((-i32::from(fig.max_width()), -i32::from(fig.max_width()), 0)),
-                Vec3::new((
+                Position::new((-i32::from(fig.max_width()), -i32::from(fig.max_width()), 0)),
+                Position::new((
                     pf.width() as i32 + i32::from(fig.max_width()),
                     pf.height() as i32 + i32::from(fig.max_width()),
                     i32::from(fig.num_faces()),
@@ -93,13 +92,12 @@ impl NodeContext {
         }
         true
     }
-    fn process_and_test_for_end(&mut self, end_pos: &PosDir, node_id: usize) -> bool {
+    fn process_and_test_for_end(&mut self, end_pos: Position, node_id: usize) -> bool {
         let node = &self.node_by_id[node_id];
         let id_and_est = node.get_id_and_est();
-        if node.pos == *end_pos {
+        if node.pos == end_pos {
             return true;
-        } else if !self.fig.test_collision(&self.pf, &node.pos) && self.no_pos_with_lower_est(node)
-        {
+        } else if !self.fig.test_collision(&self.pf, node.pos) && self.no_pos_with_lower_est(node) {
             self.node_by_pos.set(node.pos, Some(node_id));
             self.mark_open(id_and_est);
         }
@@ -107,15 +105,15 @@ impl NodeContext {
     }
 }
 
-fn est_pos_distance(start: &PosDir, end: &PosDir) -> u64 {
-    ((start.get_x() - end.get_x()).abs() as u64 + (start.get_dir() - end.get_dir()).abs() as u64)
+fn est_pos_distance(start: Position, end: Position) -> u64 {
+    ((start.x() - end.x()).abs() as u64 + (start.dir() - end.dir()).abs() as u64)
 }
 
 #[derive(Clone, Debug)]
 struct Node {
     id: usize,
     parent_id: Option<usize>,
-    pos: PosDir,
+    pos: Position,
     walked: u64,  // g
     est_end: u64, // h
     movement: Option<Movement>,
@@ -126,7 +124,7 @@ impl Node {
     fn new(
         id: usize,
         parent_id: Option<usize>,
-        pos: &PosDir,
+        pos: Position,
         walked: u64,
         est_distance_end: u64,
         movement: Option<Movement>,
@@ -135,7 +133,7 @@ impl Node {
         Node {
             id,
             parent_id,
-            pos: *pos,
+            pos,
             walked,
             est_end: est_distance_end,
             movement,
@@ -155,15 +153,15 @@ impl Node {
     }
 
     fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement, move_count: f32) -> usize {
-        let mut fig_pos = PosDir::apply_move(&self.pos, movement);
+        let mut fig_pos = Position::apply_move(&self.pos, movement);
         fig_pos.normalize_dir(ctx.fig.num_faces());
 
-        let distance_to_end = est_pos_distance(&fig_pos, &ctx.end_pos);
+        let distance_to_end = est_pos_distance(fig_pos, ctx.end_pos);
         let node_id = ctx.node_by_id.len();
         let node = Node::new(
             node_id,
             Some(self.id),
-            &fig_pos,
+            fig_pos,
             self.walked + 1,
             distance_to_end,
             Some(movement),
@@ -206,8 +204,8 @@ impl FindPath {
         path: &mut Vec<Movement>,
         pf: &Playfield,
         fig: &Figure,
-        start_pos: &PosDir,
-        end_pos: &PosDir,
+        start_pos: Position,
+        end_pos: Position,
         moves_per_down_step: f32,
     ) {
         let mut ctx = NodeContext::new(moves_per_down_step, pf, fig, end_pos);
@@ -236,19 +234,6 @@ impl FindPath {
                     ctx.get_node_from_id(*node_id).get_path(path, &ctx);
                     return;
                 }
-                /*
-                let node = ctx.get_node_from_id(*node_id);
-                let id_and_est = node.get_id_and_est();
-                if node.pos == *end_pos {
-                    // End was found - Reconstruct path from end node
-                    node.get_path(path, &ctx);
-                    return;
-                } else if !fig.test_collision(&ctx.pf, &node.pos) && ctx.no_pos_with_lower_est(node)
-                {
-                    ctx.mark_best_pos(node);
-                    ctx.mark_open(id_and_est);
-                }
-                */
             }
             self.possible_nodes.clear();
             ctx.mark_closed(&q);

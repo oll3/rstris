@@ -1,6 +1,6 @@
 use crate::block::Block;
 use crate::playfield::Playfield;
-use crate::pos_dir::PosDir;
+use crate::position::Position;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Figure {
@@ -122,9 +122,14 @@ impl Figure {
         self.num_faces
     }
 
-    pub fn get_face(&self, face_index: usize) -> &[(u8, u8, u8)] {
-        let face_index = face_index % self.num_faces as usize;
-        let start_index = face_index * self.blocks_per_face as usize;
+    pub fn face(&self, mut dir: i32) -> &[(u8, u8, u8)] {
+        let num_directions = i32::from(self.num_faces());
+        while dir < 0 {
+            // Handle negative rotation
+            dir += num_directions;
+        }
+        dir %= num_directions;
+        let start_index = dir as usize * self.blocks_per_face as usize;
         &self.faces[start_index..start_index + self.blocks_per_face as usize]
     }
 
@@ -135,18 +140,29 @@ impl Figure {
     //
     // Place figure in playfield
     //
-    pub fn place(&self, pf: &mut Playfield, pos: &PosDir) {
-        pf.place(pos.get_pos(), self.get_face(pos.get_dir() as usize));
+    pub fn place(&self, pf: &mut Playfield, position: Position) {
+        pf.place(position.xy(), self.face(position.dir()));
     }
     //
     // Remove figure from playfield
     //
-    pub fn remove(&self, pf: &mut Playfield, pos: &PosDir) {
-        pf.remove(pos.get_pos(), self.get_face(pos.get_dir() as usize));
+    pub fn remove(&self, pf: &mut Playfield, position: Position) {
+        pf.remove(position.xy(), self.face(position.dir()));
     }
 
-    pub fn test_collision(&self, pf: &Playfield, pos: &PosDir) -> bool {
-        pf.test_collision(pos.get_pos(), self.get_face(pos.get_dir() as usize))
+    pub fn test_collision(&self, pf: &Playfield, position: Position) -> bool {
+        pf.test_collision(position.xy(), self.face(position.dir()))
+    }
+
+    fn row_of_lowest_block(face: &[(u8, u8, u8)]) -> u8 {
+        let mut lowest = 0;
+        for (_x, y, _id) in face.iter() {
+            lowest = std::cmp::max(lowest, *y);
+        }
+        lowest
+    }
+    pub fn lowest_block(&self, dir: i32) -> u8 {
+        Self::row_of_lowest_block(self.face(dir))
     }
 }
 
@@ -175,22 +191,10 @@ mod tests {
             ],
         );
         assert_eq!(fig.num_faces(), 4);
-        assert_eq!(
-            fig.get_face(0),
-            &[(0, 1, 1), (1, 1, 1), (2, 1, 1), (1, 2, 1)]
-        );
-        assert_eq!(
-            fig.get_face(1),
-            &[(1, 0, 1), (1, 1, 1), (2, 1, 1), (1, 2, 1)]
-        );
-        assert_eq!(
-            fig.get_face(2),
-            &[(1, 0, 1), (0, 1, 1), (1, 1, 1), (2, 1, 1)]
-        );
-        assert_eq!(
-            fig.get_face(3),
-            &[(1, 0, 1), (0, 1, 1), (1, 1, 1), (1, 2, 1)]
-        );
+        assert_eq!(fig.face(0), &[(0, 1, 1), (1, 1, 1), (2, 1, 1), (1, 2, 1)]);
+        assert_eq!(fig.face(1), &[(1, 0, 1), (1, 1, 1), (2, 1, 1), (1, 2, 1)]);
+        assert_eq!(fig.face(2), &[(1, 0, 1), (0, 1, 1), (1, 1, 1), (2, 1, 1)]);
+        assert_eq!(fig.face(3), &[(1, 0, 1), (0, 1, 1), (1, 1, 1), (1, 2, 1)]);
     }
     #[test]
     fn test_figure2() {
@@ -204,14 +208,8 @@ mod tests {
             ],
         );
         assert_eq!(fig.num_faces(), 2);
-        assert_eq!(
-            fig.get_face(0),
-            [(1, 0, 1), (1, 1, 1), (1, 2, 1), (1, 3, 1)]
-        );
-        assert_eq!(
-            fig.get_face(1),
-            &[(0, 1, 1), (1, 1, 1), (2, 1, 1), (3, 1, 1)]
-        );
+        assert_eq!(fig.face(0), [(1, 0, 1), (1, 1, 1), (1, 2, 1), (1, 3, 1)]);
+        assert_eq!(fig.face(1), &[(0, 1, 1), (1, 1, 1), (2, 1, 1), (3, 1, 1)]);
     }
     #[test]
     fn test_figure3() {
@@ -220,13 +218,7 @@ mod tests {
             &[&[bl!(1), bl!(0)], &[bl!(1), bl!(1)], &[bl!(0), bl!(1)]],
         );
         assert_eq!(fig.num_faces(), 2);
-        assert_eq!(
-            fig.get_face(0),
-            &[(0, 0, 1), (0, 1, 1), (1, 1, 1), (1, 2, 1)]
-        );
-        assert_eq!(
-            fig.get_face(1),
-            &[(0, 0, 1), (1, 0, 1), (1, 1, 1), (2, 1, 1)]
-        );
+        assert_eq!(fig.face(0), &[(0, 0, 1), (0, 1, 1), (1, 1, 1), (1, 2, 1)]);
+        assert_eq!(fig.face(1), &[(0, 0, 1), (1, 0, 1), (1, 1, 1), (2, 1, 1)]);
     }
 }

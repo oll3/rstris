@@ -11,13 +11,6 @@ impl<T> Matrix3<T>
 where
     T: Clone,
 {
-    pub fn new(width: u32, height: u32, depth: u32, initial_value: T) -> Self {
-        Self::new_coords(
-            Vec3::new((0 as i32, 0 as i32, 0 as i32)),
-            Vec3::new((width as i32, height as i32, depth as i32)),
-            initial_value,
-        )
-    }
     pub fn new_coords(tl: Vec3<i32>, br: Vec3<i32>, initial_value: T) -> Self {
         Matrix3 {
             items: vec![initial_value; ((br.x - tl.x) * (br.y - tl.y) * (br.z - tl.z)) as usize],

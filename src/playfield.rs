@@ -1,6 +1,6 @@
 use crate::block::Block;
 use crate::matrix2::Matrix2;
-use crate::position::Position;
+use crate::vec2::Vec2;
 
 #[derive(Debug, Clone)]
 pub struct Playfield {
@@ -23,16 +23,16 @@ impl Playfield {
         }
         self.blocks.clone_from_slice(&other.blocks);
     }
-    pub fn get_block(&self, pos: Position) -> &Block {
-        if !self.blocks.contains(pos) {
+    pub fn get_block(&self, point: Vec2<i32>) -> &Block {
+        if !self.blocks.contains(point) {
             &self.outside_block
         } else {
-            &self.blocks.get(pos)
+            &self.blocks.get(point)
         }
     }
-    pub fn set_block(&mut self, pos: Position, block: Block) {
-        if self.blocks.contains(pos) {
-            self.blocks.set(pos, block);
+    pub fn set_block(&mut self, point: Vec2<i32>, block: Block) {
+        if self.blocks.contains(point) {
+            self.blocks.set(point, block);
         }
     }
     pub fn blocks(&self) -> &Matrix2<Block> {
@@ -44,36 +44,36 @@ impl Playfield {
     pub fn height(&self) -> u32 {
         self.blocks.height()
     }
-    pub fn contains(&self, pos: Position) -> bool {
-        self.blocks.contains(pos)
+    pub fn contains(&self, point: Vec2<i32>) -> bool {
+        self.blocks.contains(point)
     }
-    pub fn block_is_set(&self, pos: Position) -> bool {
-        self.get_block(pos).is_set()
+    pub fn block_is_set(&self, point: Vec2<i32>) -> bool {
+        self.get_block(point).is_set()
     }
-    pub fn clear_block(&mut self, pos: Position) {
-        self.set_block(pos, Block::Clear);
+    pub fn clear_block(&mut self, point: Vec2<i32>) {
+        self.set_block(point, Block::Clear);
     }
 
-    pub fn place(&mut self, pos: Position, face: &[(u8, u8, u8)]) {
+    pub fn place(&mut self, point: Vec2<i32>, face: &[(u8, u8, u8)]) {
         for (x, y, id) in face {
-            let x = i32::from(*x) + pos.x;
-            let y = i32::from(*y) + pos.y;
+            let x = i32::from(*x) + point.x;
+            let y = i32::from(*y) + point.y;
             self.blocks.set((x, y).into(), Block::Set(*id));
         }
     }
 
-    pub fn remove(&mut self, pos: Position, face: &[(u8, u8, u8)]) {
+    pub fn remove(&mut self, point: Vec2<i32>, face: &[(u8, u8, u8)]) {
         for (x, y, _id) in face {
-            let x = i32::from(*x) + pos.x;
-            let y = i32::from(*y) + pos.y;
+            let x = i32::from(*x) + point.x;
+            let y = i32::from(*y) + point.y;
             self.blocks.set((x, y).into(), Block::Clear);
         }
     }
 
-    pub fn test_collision(&self, pos: Position, face: &[(u8, u8, u8)]) -> bool {
+    pub fn test_collision(&self, point: Vec2<i32>, face: &[(u8, u8, u8)]) -> bool {
         for (x, y, _id) in face {
-            let x = i32::from(*x) + pos.x;
-            let y = i32::from(*y) + pos.y;
+            let x = i32::from(*x) + point.x;
+            let y = i32::from(*y) + point.y;
             let block = self.get_block((x, y).into());
             if block.is_set() {
                 return true;
@@ -133,52 +133,6 @@ impl Playfield {
             }
             y -= 1;
         }
-    }
-
-    pub fn count_voids(&self) -> u32 {
-        let mut voids = 0;
-        let mut visited: Matrix2<bool> =
-            Matrix2::from_size(self.blocks.width(), self.blocks.height(), false);
-        let mut all_open: Vec<Position> =
-            Vec::with_capacity((self.blocks.width() * self.blocks.height()) as usize);
-        for y in 0..self.height() {
-            for x in 0..self.width() {
-                let pos = Position::new((x as i32, y as i32));
-                if !self.block_is_set(pos) {
-                    all_open.push(pos);
-                }
-            }
-        }
-        for pos in all_open {
-            if *visited.get(pos) {
-                continue;
-            }
-            voids += 1;
-            visited.set(pos, true);
-
-            let mut fill: Vec<Position> = Vec::new();
-            fill.push(pos);
-            while !fill.is_empty() {
-                let pos = fill.pop().unwrap();
-                let test_positions = [
-                    pos + Position { x: 1, y: 0 },
-                    pos + Position { x: 0, y: 1 },
-                    pos + Position { x: -1, y: 0 },
-                    pos + Position { x: 0, y: -1 },
-                ];
-
-                for test_pos in test_positions.into_iter() {
-                    if self.contains(*test_pos)
-                        && !visited.get(*test_pos)
-                        && !self.block_is_set(*test_pos)
-                    {
-                        visited.set(*test_pos, true);
-                        fill.push(*test_pos);
-                    }
-                }
-            }
-        }
-        voids
     }
 }
 
