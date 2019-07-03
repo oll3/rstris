@@ -29,82 +29,6 @@ impl PartialEq for NodeIdAndEst {
     }
 }
 
-#[derive(Debug)]
-struct NodeContext {
-    pf: Playfield,
-    fig: Figure,
-    end_pos: Position,
-    moves_per_down_step: f32,
-
-    // Node by id contains all created nodes, indexed by id
-    node_by_id: Vec<Node>,
-
-    // Node by position is used to make the search for already
-    // visited positions quicker.
-    node_by_pos: Matrix3<Option<usize>>,
-
-    open_set: BinaryHeap<NodeIdAndEst>,
-}
-
-impl NodeContext {
-    fn new(moves_per_down_step: f32, pf: &Playfield, fig: &Figure, end_pos: Position) -> Self {
-        NodeContext {
-            pf: pf.clone(),
-            fig: fig.clone(),
-            end_pos,
-            moves_per_down_step,
-            node_by_id: Vec::new(),
-            node_by_pos: Matrix3::new_coords(
-                Position::new((-i32::from(fig.max_width()), -i32::from(fig.max_width()), 0)),
-                Position::new((
-                    pf.width() as i32 + i32::from(fig.max_width()),
-                    pf.height() as i32 + i32::from(fig.max_width()),
-                    i32::from(fig.num_faces()),
-                )),
-                None,
-            ),
-            open_set: BinaryHeap::new(),
-        }
-    }
-    fn get_node_from_id(&self, id: usize) -> &Node {
-        &self.node_by_id[id]
-    }
-    fn pop_best_open(&mut self) -> Node {
-        let best_node = self.open_set.pop().unwrap();
-        self.get_node_from_id(best_node.id).clone()
-    }
-    fn mark_best_pos(&mut self, node: &Node) {
-        self.node_by_pos.set(node.pos, Some(node.id));
-    }
-    fn add_node(&mut self, node: Node) {
-        self.node_by_id.push(node);
-    }
-    fn mark_open(&mut self, id_and_est: NodeIdAndEst) {
-        self.open_set.push(id_and_est);
-    }
-    fn mark_closed(&mut self, _: &Node) {}
-    fn no_pos_with_lower_est(&self, node: &Node) -> bool {
-        if let Some(best_node) = *self.node_by_pos.get(node.pos) {
-            let n = self.get_node_from_id(best_node);
-            if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
-                return false;
-            }
-        }
-        true
-    }
-    fn process_and_test_for_end(&mut self, end_pos: Position, node_id: usize) -> bool {
-        let node = &self.node_by_id[node_id];
-        let id_and_est = node.get_id_and_est();
-        if node.pos == end_pos {
-            return true;
-        } else if !self.fig.test_collision(&self.pf, node.pos) && self.no_pos_with_lower_est(node) {
-            self.node_by_pos.set(node.pos, Some(node_id));
-            self.mark_open(id_and_est);
-        }
-        false
-    }
-}
-
 fn est_pos_distance(start: Position, end: Position) -> u64 {
     ((start.x() - end.x()).abs() as u64 + (start.dir() - end.dir()).abs() as u64)
 }
@@ -152,38 +76,7 @@ impl Node {
         }
     }
 
-    fn new_moved_node(&self, ctx: &mut NodeContext, movement: Movement, move_count: f32) -> usize {
-        let mut fig_pos = Position::apply_move(&self.pos, movement);
-        fig_pos.normalize_dir(ctx.fig.num_faces());
-
-        let distance_to_end = est_pos_distance(fig_pos, ctx.end_pos);
-        let node_id = ctx.node_by_id.len();
-        let node = Node::new(
-            node_id,
-            Some(self.id),
-            fig_pos,
-            self.walked + 1,
-            distance_to_end,
-            Some(movement),
-            move_count,
-        );
-        ctx.add_node(node);
-        node_id
-    }
-
-    fn get_possible_moves(&self, moves: &mut Vec<usize>, ctx: &mut NodeContext) {
-        if self.move_count <= 0.0 {
-            // We're allowed to move in any direction
-            let new_move_count = self.move_count + 1.0 / ctx.moves_per_down_step;
-            moves.push(self.new_moved_node(ctx, Movement::MoveLeft, new_move_count));
-            moves.push(self.new_moved_node(ctx, Movement::MoveRight, new_move_count));
-            moves.push(self.new_moved_node(ctx, Movement::RotateCW, new_move_count));
-            moves.push(self.new_moved_node(ctx, Movement::RotateCCW, new_move_count));
-        }
-        moves.push(self.new_moved_node(ctx, Movement::MoveDown, self.move_count - 1.0));
-    }
-
-    fn get_path(&self, path: &mut Vec<Movement>, ctx: &NodeContext) {
+    fn get_path(&self, path: &mut Vec<Movement>, ctx: &FindPath) {
         let mut p = self;
         while p.id != 0 {
             if let Some(ref movement) = p.movement {
@@ -194,11 +87,159 @@ impl Node {
     }
 }
 
-#[derive(Default)]
+struct NodeByPos {
+    pf_width: i32,
+    pf_height: i32,
+    max_fig_width: i32,
+    m: Matrix3<Option<usize>>,
+}
+
+impl NodeByPos {
+    fn new(pf_width: i32, pf_height: i32, max_fig_width: i32) -> Self {
+        Self {
+            pf_width,
+            pf_height,
+            max_fig_width,
+            m: Matrix3::new_coords(
+                Position::new((-max_fig_width, -max_fig_width, 0)),
+                Position::new((pf_width + max_fig_width, pf_height + max_fig_width, 4)),
+                None,
+            ),
+        }
+    }
+
+    fn resize_and_clear(&mut self, pf_width: i32, pf_height: i32, max_fig_width: i32) {
+        if pf_width > self.pf_width
+            || pf_height > self.pf_height
+            || max_fig_width > self.max_fig_width
+        {
+            self.pf_width = pf_width;
+            self.pf_height = pf_height;
+            self.max_fig_width = max_fig_width;
+            self.m = Matrix3::new_coords(
+                Position::new((-max_fig_width, -max_fig_width, 0)),
+                Position::new((pf_width + max_fig_width, pf_height + max_fig_width, 4)),
+                None,
+            );
+        } else {
+            self.m.fill(None);
+        }
+    }
+}
+
 pub struct FindPath {
     possible_nodes: Vec<usize>,
+    end_pos: Position,
+    moves_per_down_step: f32,
+    fig_faces: u8,
+    // Node by id contains all created nodes, indexed by id
+    node_by_id: Vec<Node>,
+
+    // Node by position is used to make the search for already
+    // visited positions quicker.
+    node_by_pos: NodeByPos,
+
+    open_set: BinaryHeap<NodeIdAndEst>,
 }
+
+impl Default for FindPath {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FindPath {
+    // Create new find path cache
+    pub fn new() -> Self {
+        Self {
+            possible_nodes: Vec::new(),
+            end_pos: Position::new((0, 0, 0)),
+            fig_faces: 0,
+            moves_per_down_step: 0.0,
+            node_by_id: Vec::new(),
+            node_by_pos: NodeByPos::new(0, 0, 0),
+            open_set: BinaryHeap::new(),
+        }
+    }
+
+    // Prepare the cache for new search
+    fn prepare(
+        &mut self,
+        moves_per_down_step: f32,
+        pf: &Playfield,
+        fig: &Figure,
+        end_pos: Position,
+    ) {
+        self.end_pos = end_pos;
+        self.fig_faces = fig.num_faces();
+        self.moves_per_down_step = moves_per_down_step;
+        self.node_by_id.clear();
+        self.open_set.clear();
+        self.node_by_pos.resize_and_clear(
+            pf.width() as i32,
+            pf.height() as i32,
+            i32::from(fig.max_width()),
+        );
+    }
+    fn new_moved_node(&mut self, node_id: usize, movement: Movement, move_count: f32) {
+        let node = &self.node_by_id[node_id];
+        let mut fig_pos = Position::apply_move(&node.pos, movement);
+        fig_pos.normalize_dir(self.fig_faces);
+
+        let distance_to_end = est_pos_distance(fig_pos, self.end_pos);
+        let node_id = self.node_by_id.len();
+        let node = Node::new(
+            node_id,
+            Some(node.id),
+            fig_pos,
+            node.walked + 1,
+            distance_to_end,
+            Some(movement),
+            move_count,
+        );
+        self.node_by_id.push(node);
+        self.possible_nodes.push(node_id);
+    }
+
+    fn get_possible_moves(&mut self, node_id: usize) {
+        self.possible_nodes.clear();
+        if self.node_by_id[node_id].move_count <= 0.0 {
+            // We're allowed to move in any direction
+            let new_move_count =
+                self.node_by_id[node_id].move_count + 1.0 / self.moves_per_down_step;
+            for movement in &[
+                Movement::MoveLeft,
+                Movement::MoveRight,
+                Movement::RotateCW,
+                Movement::RotateCCW,
+            ] {
+                self.new_moved_node(node_id, *movement, new_move_count);
+            }
+        }
+        self.new_moved_node(
+            node_id,
+            Movement::MoveDown,
+            self.node_by_id[node_id].move_count - 1.0,
+        );
+    }
+
+    fn get_node_from_id(&self, id: usize) -> &Node {
+        &self.node_by_id[id]
+    }
+    fn pop_best_open(&mut self) -> usize {
+        let best_node = self.open_set.pop().unwrap();
+        best_node.id
+    }
+    fn no_pos_with_lower_est(&self, node: &Node) -> bool {
+        if let Some(best_node) = *self.node_by_pos.m.get(node.pos) {
+            let n = self.get_node_from_id(best_node);
+            if n.id != node.id && n.get_tot_est() <= node.get_tot_est() {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn search(
         &mut self,
         path: &mut Vec<Movement>,
@@ -208,9 +249,9 @@ impl FindPath {
         end_pos: Position,
         moves_per_down_step: f32,
     ) {
-        let mut ctx = NodeContext::new(moves_per_down_step, pf, fig, end_pos);
+        self.prepare(moves_per_down_step, pf, fig, end_pos);
         let start_node = Node::new(
-            ctx.node_by_id.len(),
+            self.node_by_id.len(),
             None,
             start_pos,
             0,
@@ -218,25 +259,26 @@ impl FindPath {
             None,
             0.0,
         );
-        ctx.add_node(start_node.clone());
-        ctx.mark_open(start_node.get_id_and_est());
-        ctx.mark_best_pos(&start_node);
+
+        self.node_by_id.push(start_node.clone());
+        self.open_set.push(start_node.get_id_and_est());
+        self.node_by_pos.m.set(start_node.pos, Some(start_node.id));
         path.clear();
 
-        self.possible_nodes.clear();
-        while !ctx.open_set.is_empty() {
-            let q = ctx.pop_best_open();
-
-            q.get_possible_moves(&mut self.possible_nodes, &mut ctx);
+        while !self.open_set.is_empty() {
+            let best_node_id = self.pop_best_open();
+            self.get_possible_moves(best_node_id);
             for node_id in &self.possible_nodes {
-                if ctx.process_and_test_for_end(end_pos, *node_id) {
-                    // End was found - Reconstruct path from end node
-                    ctx.get_node_from_id(*node_id).get_path(path, &ctx);
+                let node = &self.node_by_id[*node_id];
+                let id_and_est = node.get_id_and_est();
+                if node.pos == end_pos {
+                    self.get_node_from_id(*node_id).get_path(path, self);
                     return;
+                } else if !fig.test_collision(pf, node.pos) && self.no_pos_with_lower_est(node) {
+                    self.node_by_pos.m.set(node.pos, Some(*node_id));
+                    self.open_set.push(id_and_est);
                 }
             }
-            self.possible_nodes.clear();
-            ctx.mark_closed(&q);
         }
         // No path found
     }

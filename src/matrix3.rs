@@ -18,6 +18,12 @@ where
             br,
         }
     }
+    pub fn fill(&mut self, value: T)
+    where
+        T: Copy,
+    {
+        self.items.iter_mut().for_each(|v| *v = value);
+    }
     pub fn width(&self) -> u32 {
         (self.br.x - self.tl.x) as u32
     }
